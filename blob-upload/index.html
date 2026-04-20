@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Image Blob Upload</title>
+        <style>
+            body {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background-color: #f0f2f5;
+            }
+
+            .upload-container {
+                width: 400px;
+                max-width: 90%;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                padding: 24px;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .form-label {
+                font-weight: 600;
+                color: #334155;
+                font-size: 1rem;
+            }
+
+            .drop-zone {
+                position: relative;
+                width: 100%;
+                height: 250px;
+                border: 2px dashed #cbd5e1;
+                border-radius: 8px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                overflow: hidden;
+                transition:
+                    border-color 0.3s,
+                    background-color 0.3s;
+                box-sizing: border-box;
+            }
+
+            .drop-zone.active {
+                border-color: #3b82f6;
+                background-color: #eff6ff;
+            }
+
+            .drop-zone-text {
+                color: #64748b;
+                text-align: center;
+                padding: 20px;
+                pointer-events: none;
+            }
+
+            .drop-zone-text svg {
+                width: 48px;
+                height: 48px;
+                margin-bottom: 12px;
+                color: #94a3b8;
+            }
+
+            #file-input {
+                display: none;
+            }
+
+            .preview-container {
+                display: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: #fff;
+            }
+
+            .preview-container img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+
+            .delete-btn {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: rgba(239, 68, 68, 0.9);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                transition: background 0.2s;
+                z-index: 10;
+            }
+
+            .delete-btn:hover {
+                background: rgba(220, 38, 38, 1);
+            }
+
+            .delete-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="upload-container">
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="file-input" class="form-label"
+                        >Illustration</label
+                    >
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-zone-text" id="drop-zone-text">
+                            <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                ></path>
+                            </svg>
+                            <p>Drag & drop an image here</p>
+                            <p style="font-size: 0.875rem; margin-top: 8px">
+                                or click to browse, or paste (Ctrl+V)
+                            </p>
+                        </div>
+
+                        <div class="preview-container" id="preview-container">
+                            <img id="preview-img" src="" alt="Preview" />
+                            <button
+                                class="delete-btn"
+                                id="delete-btn"
+                                aria-label="Delete image"
+                            >
+                                <svg
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    ></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <input type="file" id="file-input" accept="image/*" />
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const dropZone = document.getElementById("drop-zone");
+                const fileInput = document.getElementById("file-input");
+                const previewContainer =
+                    document.getElementById("preview-container");
+                const previewImg = document.getElementById("preview-img");
+                const deleteBtn = document.getElementById("delete-btn");
+                let currentObjectUrl = null;
+
+                // Handle Click to upload
+                dropZone.addEventListener("click", (e) => {
+                    // Prevent clicking the delete button from opening the file dialog
+                    if (e.target.closest(".delete-btn")) return;
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener("change", (e) => {
+                    if (e.target.files.length > 0) {
+                        handleFile(e.target.files[0]);
+                    }
+                });
+
+                // Handle Drag and Drop
+                ["dragenter", "dragover", "dragleave", "drop"].forEach(
+                    (eventName) => {
+                        dropZone.addEventListener(
+                            eventName,
+                            preventDefaults,
+                            false,
+                        );
+                    },
+                );
+
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                ["dragenter", "dragover"].forEach((eventName) => {
+                    dropZone.addEventListener(
+                        eventName,
+                        () => dropZone.classList.add("active"),
+                        false,
+                    );
+                });
+
+                ["dragleave", "drop"].forEach((eventName) => {
+                    dropZone.addEventListener(
+                        eventName,
+                        () => dropZone.classList.remove("active"),
+                        false,
+                    );
+                });
+
+                dropZone.addEventListener("drop", (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+
+                    if (files.length > 0) {
+                        handleFile(files[0]);
+                    }
+                });
+
+                // Handle Paste
+                document.addEventListener("paste", (e) => {
+                    const clipboardData =
+                        e.clipboardData || window.clipboardData;
+                    const items = clipboardData.items;
+                    let handled = false;
+
+                    for (let i = 0; i < items.length; i++) {
+                        const item = items[i];
+                        if (
+                            item.kind === "file" &&
+                            item.type.startsWith("image/")
+                        ) {
+                            const blob = item.getAsFile();
+                            handleFile(blob);
+                            handled = true;
+                            break; // Only handle the first image
+                        }
+                    }
+
+                    if (!handled) {
+                        const pastedData = clipboardData.getData("Text");
+                        if (pastedData) {
+                            try {
+                                const url = new URL(pastedData.trim());
+                                if (
+                                    url.protocol === "http:" ||
+                                    url.protocol === "https:"
+                                ) {
+                                    handleUrl(url.href);
+                                }
+                            } catch (err) {
+                                // Not a valid URL
+                            }
+                        }
+                    }
+                });
+
+                function handleUrl(url) {
+                    if (currentObjectUrl) {
+                        URL.revokeObjectURL(currentObjectUrl);
+                        currentObjectUrl = null;
+                    }
+                    previewImg.src = url;
+                    previewContainer.style.display = "block";
+                }
+
+                // Handle File Processing
+                function handleFile(file) {
+                    if (!file || !file.type.startsWith("image/")) {
+                        alert("Please upload an image file.");
+                        return;
+                    }
+
+                    // Clean up previous object URL to avoid memory leaks
+                    if (currentObjectUrl) {
+                        URL.revokeObjectURL(currentObjectUrl);
+                    }
+
+                    currentObjectUrl = URL.createObjectURL(file);
+                    previewImg.src = currentObjectUrl;
+                    previewContainer.style.display = "block";
+                }
+
+                // Handle Delete
+                deleteBtn.addEventListener("click", (e) => {
+                    e.stopPropagation(); // Stop event from bubbling up to dropZone click
+                    clearPreview();
+                });
+
+                function clearPreview() {
+                    if (currentObjectUrl) {
+                        URL.revokeObjectURL(currentObjectUrl);
+                        currentObjectUrl = null;
+                    }
+                    previewImg.src = "";
+                    previewContainer.style.display = "none";
+                    fileInput.value = ""; // Reset file input
+                }
+            });
+        </script>
+    </body>
+</html>
