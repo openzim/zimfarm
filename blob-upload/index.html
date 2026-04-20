@@ -4,6 +4,10 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Image Blob Upload</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"
+        />
         <style>
             body {
                 font-family:
@@ -88,19 +92,78 @@
                 width: 100%;
                 height: 100%;
                 background: #fff;
+                flex-direction: column;
             }
 
-            .preview-container img {
+            .image-workspace {
+                position: relative;
+                flex: 1;
+                width: 100%;
+                min-height: 0;
+                overflow: hidden;
+                background: #e2e8f0;
+            }
+
+            .image-workspace img {
                 width: 100%;
                 height: 100%;
                 object-fit: contain;
+                display: block;
             }
 
-            .delete-btn {
+            .preview-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 12px;
+                background: #f8fafc;
+                border-top: 1px solid #cbd5e1;
+                font-size: 13px;
+                height: 48px;
+                box-sizing: border-box;
+            }
+
+            .dimensions-display {
+                color: #475569;
+                font-weight: 500;
+            }
+
+            .crop-actions {
+                display: none;
+                gap: 8px;
+            }
+
+            .btn-sm {
+                padding: 6px 12px;
+                font-size: 13px;
+                font-weight: 600;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+
+            .save-crop-btn {
+                background: rgba(34, 197, 94, 0.9);
+                color: white;
+            }
+
+            .save-crop-btn:hover {
+                background: rgba(22, 163, 74, 1);
+            }
+
+            .cancel-crop-btn {
+                background: rgba(148, 163, 184, 0.9);
+                color: white;
+            }
+
+            .cancel-crop-btn:hover {
+                background: rgba(100, 116, 139, 1);
+            }
+
+            .action-btn {
                 position: absolute;
                 top: 8px;
-                right: 8px;
-                background: rgba(239, 68, 68, 0.9);
                 color: white;
                 border: none;
                 border-radius: 50%;
@@ -114,11 +177,25 @@
                 z-index: 10;
             }
 
+            .delete-btn {
+                right: 8px;
+                background: rgba(239, 68, 68, 0.9);
+            }
+
             .delete-btn:hover {
                 background: rgba(220, 38, 38, 1);
             }
 
-            .delete-btn svg {
+            .crop-btn {
+                right: 48px;
+                background: rgba(59, 130, 246, 0.9);
+            }
+
+            .crop-btn:hover {
+                background: rgba(37, 99, 235, 1);
+            }
+
+            .action-btn svg {
                 width: 16px;
                 height: 16px;
             }
@@ -153,26 +230,71 @@
                         </div>
 
                         <div class="preview-container" id="preview-container">
-                            <img id="preview-img" src="" alt="Preview" />
-                            <button
-                                class="delete-btn"
-                                id="delete-btn"
-                                aria-label="Delete image"
-                            >
-                                <svg
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
+                            <div class="image-workspace">
+                                <img id="preview-img" src="" alt="Preview" />
+                                <button
+                                    type="button"
+                                    class="action-btn crop-btn"
+                                    id="crop-btn"
+                                    aria-label="Crop image"
                                 >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    ></path>
-                                </svg>
-                            </button>
+                                    <svg
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M14.385 15.385L18 19m-3.615-3.615l-3.615-3.615m3.615 3.615L10.77 19m3.615-3.615L18 11.77M6 5v14m12-14v4M5 6h14M5 18h4"
+                                        ></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="action-btn delete-btn"
+                                    id="delete-btn"
+                                    aria-label="Delete image"
+                                >
+                                    <svg
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        ></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="preview-footer">
+                                <div
+                                    class="dimensions-display"
+                                    id="dimensions-display"
+                                ></div>
+                                <div class="crop-actions" id="crop-actions">
+                                    <button
+                                        type="button"
+                                        class="btn-sm cancel-crop-btn"
+                                        id="cancel-crop-btn"
+                                    >
+                                        Abort
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn-sm save-crop-btn"
+                                        id="save-crop-btn"
+                                    >
+                                        Save Crop
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <input type="file" id="file-input" accept="image/*" />
@@ -181,6 +303,7 @@
             </form>
         </div>
 
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
         <script>
             document.addEventListener("DOMContentLoaded", () => {
                 const dropZone = document.getElementById("drop-zone");
@@ -189,12 +312,74 @@
                     document.getElementById("preview-container");
                 const previewImg = document.getElementById("preview-img");
                 const deleteBtn = document.getElementById("delete-btn");
+                const cropBtn = document.getElementById("crop-btn");
+                const saveCropBtn = document.getElementById("save-crop-btn");
+                const cancelCropBtn =
+                    document.getElementById("cancel-crop-btn");
+                const cropActions = document.getElementById("crop-actions");
+                const dimensionsDisplay =
+                    document.getElementById("dimensions-display");
+
                 let currentObjectUrl = null;
+                let cropper = null;
+
+                previewImg.onload = function () {
+                    if (this.src) {
+                        dimensionsDisplay.textContent = `${this.naturalWidth} × ${this.naturalHeight} px`;
+                    }
+                };
+
+                function destroyCropper() {
+                    if (cropper) {
+                        cropper.destroy();
+                        cropper = null;
+                    }
+                    cropActions.style.display = "none";
+                    cropBtn.style.display = "flex";
+                }
+
+                cropBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (!cropper) {
+                        cropper = new Cropper(previewImg, {
+                            viewMode: 1,
+                            autoCropArea: 1,
+                        });
+                        cropActions.style.display = "flex";
+                        cropBtn.style.display = "none";
+                    }
+                });
+
+                cancelCropBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    destroyCropper();
+                });
+
+                saveCropBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (cropper) {
+                        const canvas = cropper.getCroppedCanvas();
+                        canvas.toBlob((blob) => {
+                            destroyCropper();
+
+                            if (currentObjectUrl) {
+                                URL.revokeObjectURL(currentObjectUrl);
+                            }
+                            currentObjectUrl = URL.createObjectURL(blob);
+                            previewImg.src = currentObjectUrl;
+                        }, "image/jpeg");
+                    }
+                });
 
                 // Handle Click to upload
                 dropZone.addEventListener("click", (e) => {
-                    // Prevent clicking the delete button from opening the file dialog
-                    if (e.target.closest(".delete-btn")) return;
+                    // Prevent clicking the buttons or cropper from opening the file dialog
+                    if (
+                        e.target.closest(".action-btn") ||
+                        e.target.closest(".crop-actions") ||
+                        e.target.closest(".cropper-container")
+                    )
+                        return;
                     fileInput.click();
                 });
 
@@ -284,12 +469,13 @@
                 });
 
                 function handleUrl(url) {
+                    destroyCropper();
                     if (currentObjectUrl) {
                         URL.revokeObjectURL(currentObjectUrl);
                         currentObjectUrl = null;
                     }
                     previewImg.src = url;
-                    previewContainer.style.display = "block";
+                    previewContainer.style.display = "flex";
                 }
 
                 // Handle File Processing
@@ -299,6 +485,8 @@
                         return;
                     }
 
+                    destroyCropper();
+
                     // Clean up previous object URL to avoid memory leaks
                     if (currentObjectUrl) {
                         URL.revokeObjectURL(currentObjectUrl);
@@ -306,7 +494,7 @@
 
                     currentObjectUrl = URL.createObjectURL(file);
                     previewImg.src = currentObjectUrl;
-                    previewContainer.style.display = "block";
+                    previewContainer.style.display = "flex";
                 }
 
                 // Handle Delete
@@ -316,6 +504,7 @@
                 });
 
                 function clearPreview() {
+                    destroyCropper();
                     if (currentObjectUrl) {
                         URL.revokeObjectURL(currentObjectUrl);
                         currentObjectUrl = null;
