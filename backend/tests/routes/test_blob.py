@@ -5,35 +5,14 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from pytest import MonkeyPatch
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.api.routes.blobs import logic as blob_logic
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.common.schemas.offliners import transformers
-from zimfarm_backend.common.schemas.offliners.models import PreparedBlob
 from zimfarm_backend.common.schemas.offliners.transformers import prepare_blob
+from zimfarm_backend.db.blob import create_blob_schema
 from zimfarm_backend.db.models import Account, Blob, Recipe
-
-
-@pytest.fixture(autouse=True)
-def mock_upload_blob(monkeypatch: MonkeyPatch):
-    def _mock_upload_blob(prepared_blob: PreparedBlob):
-        pass
-
-    monkeypatch.setattr(blob_logic, "upload_blob", _mock_upload_blob)
-
-
-@pytest.fixture(autouse=True)
-def set_env(monkeypatch: MonkeyPatch):
-    monkeypatch.setattr(
-        transformers, "BLOB_PRIVATE_STORAGE_URL", "http://www.example.com"
-    )
-    monkeypatch.setattr(
-        transformers, "BLOB_PUBLIC_STORAGE_URL", "http://www.example.com"
-    )
 
 
 def test_get_blobs_empty(client: TestClient):
@@ -64,6 +43,7 @@ def test_get_blobs_pagination(
     client: TestClient,
     recipe: Recipe,
     access_token: str,
+    css_content: bytes,
     skip: int,
     limit: int,
     expected_results: int,
@@ -73,8 +53,9 @@ def test_get_blobs_pagination(
             Blob(
                 kind="css",
                 flag_name="custom-css",
-                url=f"https://www.example.com/style{i}.css",
+                url=None,
                 checksum=f"{i}",
+                content=css_content,
             )
         )
     dbsession.add(recipe)
@@ -138,6 +119,7 @@ def test_create_blob_returns_existing_if_already_uploaded(
     dbsession: OrmSession,
     recipe: Recipe,
     access_token: str,
+    css_content: bytes,
 ):
     test_data = encode_test_data("test content")
     prepared_blob = prepare_blob(
@@ -147,7 +129,8 @@ def test_create_blob_returns_existing_if_already_uploaded(
         flag_name=prepared_blob.flag_name,
         kind=prepared_blob.kind,
         checksum=prepared_blob.checksum,
-        url=str(prepared_blob.public_url),
+        content=css_content,
+        url=None,
     )
     recipe.blobs.append(blob)
     dbsession.add(recipe)
@@ -168,7 +151,7 @@ def test_create_blob_returns_existing_if_already_uploaded(
     data = response.json()
 
     assert data["checksum"] == prepared_blob.checksum
-    assert data["url"] == str(prepared_blob.public_url)
+    assert data["url"] is not None
     assert data["kind"] == prepared_blob.kind
     assert data["flag_name"] == prepared_blob.flag_name
 
@@ -178,12 +161,14 @@ def test_update_blob_with_empty_payload(
     dbsession: OrmSession,
     recipe: Recipe,
     access_token: str,
+    css_content: bytes,
 ):
     blob = Blob(
         kind="css",
         flag_name="custom-css",
-        url="https://www.example.com/style.css",
+        url=None,
         checksum="checksum",
+        content=css_content,
     )
     recipe.blobs.append(blob)
     dbsession.add(recipe)
@@ -205,12 +190,14 @@ def test_delete_blob_success(
     dbsession: OrmSession,
     recipe: Recipe,
     access_token: str,
+    css_content: bytes,
 ):
     blob = Blob(
         kind="css",
         flag_name="custom-css",
-        url="https://www.example.com/style.css",
         checksum="checksum",
+        content=css_content,
+        url=None,
     )
     recipe.blobs.append(blob)
     dbsession.add(recipe)
@@ -235,4 +222,52 @@ def test_delete_blob_not_found(
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_download_blob_success(
+    client: TestClient,
+    dbsession: OrmSession,
+    recipe: Recipe,
+    css_content: bytes,
+):
+    blob = Blob(
+        kind="css",
+        flag_name="custom-css",
+        checksum="checksum",
+        url=None,
+        content=css_content,
+    )
+    recipe.blobs.append(blob)
+    dbsession.add(recipe)
+    dbsession.flush()
+
+    blob_schema = create_blob_schema(blob)
+    response = client.get(
+        f"/v2/blobs/download/{blob_schema.filename}",
+    )
+    assert response.status_code == HTTPStatus.OK
+
+
+def test_download_blob_wrong_extension(
+    client: TestClient,
+    dbsession: OrmSession,
+    recipe: Recipe,
+    css_content: bytes,
+):
+    blob = Blob(
+        kind="css",
+        flag_name="custom-css",
+        checksum="checksum",
+        url=None,
+        content=css_content,
+    )
+    recipe.blobs.append(blob)
+    dbsession.add(recipe)
+    dbsession.flush()
+
+    blob_schema = create_blob_schema(blob)
+    response = client.get(
+        f"/v2/blobs/download/{blob_schema.id}.jpg",
+    )
     assert response.status_code == HTTPStatus.NOT_FOUND

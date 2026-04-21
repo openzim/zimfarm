@@ -1,22 +1,12 @@
 import hashlib
-import uuid
 from collections.abc import Callable
 from functools import partial
 from itertools import chain
 from urllib.parse import urlparse
 
-import requests
 from humanfriendly import format_size
-from pydantic import AnyUrl
 
-from zimfarm_backend.common.constants import (
-    BLOB_MAX_SIZE,
-    BLOB_PRIVATE_STORAGE_URL,
-    BLOB_PUBLIC_STORAGE_URL,
-    BLOB_STORAGE_PASSWORD,
-    BLOB_STORAGE_USERNAME,
-    REQUESTS_TIMEOUT,
-)
+from zimfarm_backend.common.constants import BLOB_MAX_SIZE
 from zimfarm_backend.common.schemas.offliners.models import (
     PreparedBlob,
     TransformerSchema,
@@ -76,26 +66,12 @@ def prepare_blob(*, blob_data: bytes, kind: str, flag_name: str) -> PreparedBlob
             f"({format_size(BLOB_MAX_SIZE, binary=True)})"
         )
 
-    filename = generate_blob_name_uuid(kind)
     return PreparedBlob(
         kind=kind,
-        private_url=AnyUrl(f"{BLOB_PRIVATE_STORAGE_URL}/{filename}"),
-        url=AnyUrl(f"{BLOB_PUBLIC_STORAGE_URL}/{filename}"),
         flag_name=flag_name,
         checksum=hashlib.sha256(blob_data).hexdigest(),
         data=blob_data,
     )
-
-
-def generate_blob_name_uuid(
-    kind: str,
-) -> str:
-    """
-    Generate random UUID-based filename.
-    """
-    blob_uuid = uuid.uuid4()
-    extension = get_extension_from_kind(kind)
-    return f"{blob_uuid}{extension}"
 
 
 def get_extension_from_kind(kind: str) -> str:
@@ -109,20 +85,3 @@ def get_extension_from_kind(kind: str) -> str:
     elif kind == "txt":
         return ".txt"
     return ".bin"
-
-
-def upload_blob(request: PreparedBlob):
-    """
-    Upload blob data to upstream storage.
-    """
-    headers = {
-        "Content-Type": "application/octet-stream",
-    }
-    response = requests.put(
-        str(request.private_url),
-        headers=headers,
-        data=request.data,
-        timeout=REQUESTS_TIMEOUT,
-        auth=(BLOB_STORAGE_USERNAME, BLOB_STORAGE_PASSWORD),
-    )
-    response.raise_for_status()

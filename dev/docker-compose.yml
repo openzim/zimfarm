@@ -45,10 +45,7 @@ services:
       # username and password of admin user
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
-      BLOB_PRIVATE_STORAGE_URL: http://blob-storage
-      BLOB_PUBLIC_STORAGE_URL: http://localhost:8003
-      BLOB_STORAGE_USERNAME: zimfarm
-      BLOB_STORAGE_PASSWORD: zimpass
+      API_ENDPOINT: http://localhost:8000/v2
       OAUTH_JWKS_URI: https://ory.login-staging.kiwix.org/.well-known/jwks.json
       OAUTH_ISSUER: https://ory.login-staging.kiwix.org
       OAUTH_OIDC_CLIENT_ID: 38302485-7f3d-4e88-b1b3-ec02fb92ec8c
@@ -74,8 +71,6 @@ services:
     depends_on:
       postgresdb:
         condition: service_healthy
-      blob-storage:
-        condition: service_started
 
   background-tasks:
     build:
@@ -98,10 +93,7 @@ services:
       ZIMCHECK_OPTION: --all
       INIT_USERNAME: admin
       INIT_PASSWORD: admin
-      BLOB_PRIVATE_STORAGE_URL: http://blob-storage
-      BLOB_PUBLIC_STORAGE_URL: http://localhost:8003
-      BLOB_STORAGE_USERNAME: zimfarm
-      BLOB_STORAGE_PASSWORD: zimpass
+      API_ENDPOINT: http://localhost:8000/v2
     depends_on:
       postgresdb:
         condition: service_healthy
@@ -300,18 +292,6 @@ services:
       - worker
       - watcher
 
-  blob-storage:
-    image: ghcr.io/kiwix/nginx-webdav:latest
-    container_name: zf_blob_storage
-    environment:
-      - USERNAME=zimfarm
-      - PASSWORD=zimpass
-      - NAME=Zimfarm Blob Storage
-    ports:
-      - 127.0.0.1:8003:80
-    volumes:
-      - blob_data_zimfarm:/data
-
   healthcheck:
     build:
       context: ../healthcheck
@@ -357,4 +337,3 @@ services:
 volumes:
   pg_data_zimfarm:
   minio_data_zimfarm:
-  blob_data_zimfarm:

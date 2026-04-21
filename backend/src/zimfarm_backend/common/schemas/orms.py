@@ -8,7 +8,10 @@ import pytz
 from pydantic import AfterValidator, AnyUrl, Field, computed_field, field_serializer
 
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.constants import WORKER_OFFLINE_DELAY_DURATION
+from zimfarm_backend.common.constants import (
+    API_ENDPOINT,
+    WORKER_OFFLINE_DELAY_DURATION,
+)
 from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.fields import ZIMCPU, ZIMDisk, ZIMMemory
@@ -20,6 +23,9 @@ from zimfarm_backend.common.schemas.models import (
     RecipeNotificationSchema,
 )
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
+from zimfarm_backend.common.schemas.offliners.transformers import (
+    get_extension_from_kind,
+)
 
 
 def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
@@ -534,18 +540,32 @@ class BaseWorkerWithSshKeysSchema(BaseSshKeySchema):
     worker_name: str
 
 
-class CreateBlobSchema(BaseModel):
+class BaseBlobSchema(BaseModel):
     flag_name: str
     kind: str
-    url: AnyUrl
     checksum: str
     comments: str | None = None
 
 
-class BlobSchema(CreateBlobSchema):
+class CreateBlobSchema(BaseBlobSchema):
+    content: bytes
+
+
+class BlobSchema(BaseBlobSchema):
     id: UUID
     recipe_id: UUID | None = Field(exclude=True, default=None)
     created_at: datetime.datetime
+    content: bytes | None = Field(exclude=True)
+
+    @computed_field
+    @property
+    def filename(self) -> str:
+        return f"{self.id}{get_extension_from_kind(self.kind)}"
+
+    @computed_field
+    @property
+    def url(self) -> str:
+        return f"{API_ENDPOINT}/blobs/download/{self.filename}"
 
 
 class WorkerMetricsSchema(WorkerLightSchema):

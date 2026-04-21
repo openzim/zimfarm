@@ -174,10 +174,7 @@ ALEMBIC_UPGRADE_HEAD_ON_START = parse_bool(
     getenv("ALEMBIC_UPGRADE_HEAD_ON_START", default="false")
 )
 
-BLOB_PRIVATE_STORAGE_URL = getenv("BLOB_PRIVATE_STORAGE_URL")
-BLOB_PUBLIC_STORAGE_URL = getenv("BLOB_PUBLIC_STORAGE_URL")
-BLOB_STORAGE_USERNAME = getenv("BLOB_STORAGE_USERNAME")
-BLOB_STORAGE_PASSWORD = getenv("BLOB_STORAGE_PASSWORD")
+API_ENDPOINT = getenv("API_ENDPOINT", default="https://api.farm.openzim.org/v2")
 BLOB_MAX_SIZE = parse_size(getenv("BLOB_MAX_SIZE", default="1MB"), binary=True)
 
 # When DISABLE_WAREHOUSE_PATH is set to true, tasks are configured to use their root

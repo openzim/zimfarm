@@ -1,9 +1,12 @@
 import base64
+import io
+import pathlib
 from http import HTTPStatus
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query, Response
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.image import convert_image_to_png, create_zim_illustration
@@ -23,13 +26,14 @@ from zimfarm_backend.common.schemas.fields import (
 )
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
 from zimfarm_backend.common.schemas.offliners.transformers import (
+    get_extension_from_kind,
     prepare_blob,
-    upload_blob,
 )
 from zimfarm_backend.common.schemas.orms import BlobSchema, CreateBlobSchema
 from zimfarm_backend.db.blob import create_or_update_blob as db_create_or_update_blob
 from zimfarm_backend.db.blob import delete_blob as db_delete_blob
 from zimfarm_backend.db.blob import get_blob as db_get_blob
+from zimfarm_backend.db.blob import get_blob_by_id
 from zimfarm_backend.db.blob import get_blob_by_id as db_get_blob_by_id
 from zimfarm_backend.db.blob import get_blob_or_none as db_get_blob_or_none
 from zimfarm_backend.db.blob import get_blobs as db_get_blobs
@@ -50,6 +54,8 @@ def create_blob(
 ) -> BlobSchema:
     "Create a blob for recipe"
 
+    recipe = get_recipe(session, recipe_name=recipe_name)
+
     if request.data.startswith("data:"):
         _, encoded_data = request.data.split(",", 1)
     else:
@@ -66,7 +72,6 @@ def create_blob(
     prepared_blob = prepare_blob(
         blob_data=blob_data, flag_name=request.flag_name, kind=request.kind
     )
-    recipe = get_recipe(session, recipe_name=recipe_name)
 
     if existing_blob := db_get_blob_or_none(
         session,
@@ -76,8 +81,6 @@ def create_blob(
     ):
         return existing_blob
 
-    upload_blob(prepared_blob)
-
     db_create_or_update_blob(
         session,
         recipe_id=recipe.id,
@@ -86,7 +89,7 @@ def create_blob(
             kind=request.kind,
             checksum=prepared_blob.checksum,
             comments=request.comments,
-            url=prepared_blob.public_url,
+            content=prepared_blob.data,
         ),
     )
     return db_get_blob(
@@ -142,6 +145,9 @@ def update_blob(
     if blob.recipe_id is None:
         raise RecordDoesNotExistError("Blob does not belong to any recipe.")
 
+    if blob.content is None:
+        raise RecordDoesNotExistError("Blob does not have any data.")
+
     db_create_or_update_blob(
         session,
         recipe_id=blob.recipe_id,
@@ -150,9 +156,10 @@ def update_blob(
             kind=blob.kind,
             checksum=blob.checksum,
             comments=request.comments,
-            url=blob.url,
+            content=blob.content,
         ),
     )
+
     return db_get_blob(
         session,
         recipe_id=blob.recipe_id,
@@ -189,4 +196,23 @@ def get_blob(
     recipe = get_recipe(session, recipe_name=recipe_name)
     return db_get_blob(
         session, recipe_id=recipe.id, flag_name=flag_name, checksum=checksum
+    )
+
+
+@router.get("/download/{filename}")
+def download_blob(
+    filename: Annotated[pathlib.Path, Path()],
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+):
+    try:
+        blob_id, ext = UUID(filename.stem), filename.suffix
+    except ValueError as exc:
+        raise RecordDoesNotExistError("Blob does not exist.") from exc
+
+    blob = get_blob_by_id(session, blob_id=blob_id)
+    if get_extension_from_kind(blob.kind) != ext or blob.content is None:
+        raise RecordDoesNotExistError("Blob does not exist")
+    byte_stream = io.BytesIO(blob.content)
+    return StreamingResponse(
+        content=byte_stream,
     )
