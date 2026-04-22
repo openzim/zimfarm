@@ -106,7 +106,7 @@ function usage() {
     echo "  shutdown        stops the manager and all running tasks"
     echo ""
     echo "  ps              list of running containers with zimfarm labels"
-    echo "  prune           remove all docker containers/images/volums"
+    echo "  prune           remove all docker containers/images/volumes"
     echo "  update          display commands to update this script (apply with 'update do')"
     echo "  version         display version of this script"
     echo ""
@@ -272,7 +272,7 @@ function main() {
         ;;
 
       "ps")
-        # optionnal: pass params to ps (-a, -nX)
+        # optional: pass params to ps (-a, -nX)
         ps $target $3
         ;;
 

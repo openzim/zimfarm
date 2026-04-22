@@ -5,7 +5,7 @@
 ./report_youtube_api_keys.py
 
 Configuration file named "report_youtube_api_keys.conf.json" must be placed in
-same folder as script and contain a dictionnary of sha256(api_key) =>
+same folder as script and contain a dictionary of sha256(api_key) =>
 api_key_display_name
 """
 

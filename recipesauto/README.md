@@ -9,7 +9,7 @@ The goals of this project are:
 - easily create many recipes following the same "model", but with specificities for all of them
 - easily maintain these recipes over time
   - detect missing recipes and create them as needed (typically a new StackExchange website or a new TED topic appeared)
-  - delete obsolete ones (typically a StackExchange website or TED topic is abandonned)
+  - delete obsolete ones (typically a StackExchange website or TED topic is abandoned)
   - update parameters as needed (e.g. change all recipes periodicity, ...)
 - source data for these recipes from "source of truth", typically local / remote "data" files or APIs (potentially mixing data from multiple sources)
 - easy to configure when new project arise, reusing building blocks

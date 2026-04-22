@@ -334,7 +334,7 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "Update recipe flags thats are blob URLs by moving them to unified storage."
+            "Update recipe flags that are blob URLs by moving them to unified storage."
         ),
     )
 

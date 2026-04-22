@@ -65,7 +65,7 @@ def update_recipes(
             Recipe.offliner_definition_id == offliner_definition.id,
         )
     ).scalars():
-        logger.info(f"seting similarity data for recipe {recipe.name}")
+        logger.info(f"setting similarity data for recipe {recipe.name}")
         recipe.similarity_data = generate_similarity_data(
             recipe.config["offliner"], offliner, offliner_definition.schema_
         )

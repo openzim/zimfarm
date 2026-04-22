@@ -137,7 +137,7 @@ def scp_upload_file(
         ended_on = now()
 
         if scp.returncode == 0:
-            logger.info("Uploader ran successfuly.")
+            logger.info("Uploader ran successfully.")
             if delete:
                 remove_source_file(src_path)
             display_stats(filesize, started_on, ended_on)
@@ -177,7 +177,7 @@ def scp_upload_file(
         return scp.returncode
 
     logger.info(
-        f"[WIP] uploaded to temp file `{temp_fname}` successfuly. "
+        f"[WIP] uploaded to temp file `{temp_fname}` successfully. "
         f"uploading complete marker..."
     )
     if delete:
@@ -193,7 +193,7 @@ def scp_upload_file(
     )
 
     if scp.returncode == 0:
-        logger.info("Uploader ran successfuly.")
+        logger.info("Uploader ran successfully.")
     else:
         logger.warning(
             f"scp failed to transfer upload marker "
@@ -304,7 +304,7 @@ def sftp_upload_file(
         final_fname = src_path.name
         sftp_uri = upload_uri
 
-    put_cmd = "put"  # default to overwritting
+    put_cmd = "put"  # default to overwriting
     if resume:
         # check if there's already a matching file on the remte
         existing_size = sftp_remote_file_exists(private_key, sftp_uri, final_fname)
@@ -337,7 +337,7 @@ def sftp_upload_file(
     ended_on = now()
 
     if sftp.returncode == 0:
-        logger.info("Uploader ran successfuly.")
+        logger.info("Uploader ran successfully.")
         display_stats(filesize, started_on, ended_on)
         if delete:
             remove_source_file(src_path)
@@ -392,14 +392,14 @@ def s3_upload_file(
         logger.exception(exc)
         return 1
     ended_on = now()
-    logger.info("uploader ran successfuly.")
+    logger.info("uploader ran successfully.")
 
     # setting autodelete
     if delete_after is not None:
         try:
             # set expiration after bucket's min retention.
-            # bucket retention is 1d minumum.
-            # can be configured to loger value.
+            # bucket retention is 1d minimum.
+            # can be configured to lower value.
             # if expiration before bucket min retention, raises 400 Bad Request
             # on compliance
             expire_on = (

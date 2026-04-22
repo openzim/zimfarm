@@ -95,7 +95,7 @@ MAILGUN_API_URL = getenv("MAILGUN_API_URL", default="")
 
 # slack
 SLACK_URL = getenv("SLACK_URL", default="")
-# no defauts for branding so it falls back to what's configured in slack
+# no defaults for branding so it falls back to what's configured in slack
 SLACK_USERNAME = getenv("SLACK_USERNAME")
 SLACK_EMOJI = getenv("SLACK_EMOJI")
 SLACK_ICON = getenv("SLACK_ICON")
@@ -140,7 +140,7 @@ WASABI_MAX_WHITELIST_VERSIONS = int(
 INFORM_CMS = parse_bool(getenv("INFORM_CMS", default="false"))
 CMS_BASE_URL = getenv("CMS_BASE_URL", default="https://api.cms.openzim.org/v1")
 
-# [DEBUG] prevent scraper containers from running wit extended capabilities
+# [DEBUG] prevent scraper containers from running with extended capabilities
 DISALLOW_CAPABILITIES = parse_bool(
     getenv("ZIMFARM_DISALLOW_CAPABILITIES", default="false")
 )

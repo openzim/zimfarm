@@ -88,7 +88,7 @@ class SshTokenDecoder(TokenDecoder):
         )
         if getnow() > exp:
             raise ValueError(
-                "Difference betweeen message time and server time is "
+                "Difference between message time and server time is "
                 f"greater than {MESSAGE_VALIDITY_DURATION}s"
             )
 
@@ -409,7 +409,7 @@ class TokenDecoderChain:
         if exc_cls:
             raise exc_cls
 
-        raise ValueError("Inavlid token")
+        raise ValueError("Invalid token")
 
 
 token_decoder = TokenDecoderChain(

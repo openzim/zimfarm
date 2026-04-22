@@ -45,21 +45,21 @@ network intensively.
 
 # Run a worker
 
-If you are willing to run a Zimfarm worker, the first step is to understand wether you machine matches requirements below.
+If you are willing to run a Zimfarm worker, the first step is to understand whether your machine matches requirements below.
 
 ## Requirements
 
 - A reliable GNU/Linux host (works on macOS) with at least:
 - 2GB of RAM and 3 cores available.
 - [Docker CE server](https://docs.docker.com/engine/install/) running.
-- Fast and reliable internet connexion (both downstream and upstream, biggest Zimfarm recipes handles about 100G first in download then in upload ; the fastest, the best).
+- Fast and reliable internet connection (both downstream and upstream, biggest Zimfarm recipes handles about 100G first in download then in upload ; the fastest, the best).
 - A fixed public IP (we do not mind about NAT, this is what most of our workers are doing, it is transparent for us ; we do not mind about IPs changing few times per year ; more regular IP changes are going to be a problem).
 - The clock must be synchronized, e.g. using ntp.
 - The machine should be available for significant amount of time (at least 6 months)
 
 SSH access to your host for our developers is handy but not required. We do use bastion(s) to connect to our machines, so you could open SSH only to these few machines (only 2 ATM).
 
-Reliable internet means that we do expect your Internet connection to not drop every now and then. We do not mind about very small interuption of few seconds, but anything in the range of 1 minute or more will be cause most scrapers to fail, becoming an issue.
+Reliable internet means that we do expect your Internet connection to not drop every now and then. We do not mind about very small interruption of few seconds, but anything in the range of 1 minute or more will be cause most scrapers to fail, becoming an issue.
 
 Reliable machine means that we do expect your machine to be reasonably "always-on". We do not mind about regular scheduled downtime once a month or so, but we need you let ongoing tasks complete before doing such maintenance. We do understand that you need to bring the machine down for OS updates, and our system will allow to do this in a planned and organized manner.
 
@@ -138,7 +138,7 @@ Zimfarm Admin will create and configure your worker account.
 
 ### Management script
 
-> **Note:** TThere is also a legacy `workers/` folder (plural) in the repository that contains a symlink of the `zimfarm.sh` script for backwards compatibility because the folder name was changed from `workers` to `worker` and older versions of the script needed to fetch their updates from that folder.
+> **Note:** There is also a legacy `workers/` folder (plural) in the repository that contains a symlink of the `zimfarm.sh` script for backwards compatibility because the folder name was changed from `workers` to `worker` and older versions of the script needed to fetch their updates from that folder.
 
 A Zimfarm worker is just a Docker container spawning other containers.
 
@@ -210,8 +210,8 @@ If you feel like you want to meet these expectations, feel free to tell Zimfarm 
 
 --
 
-- **`zimfarm logs manager [n]`**: displays logs for the manager. `n` is an optionnal lines number (100 otherwise).
-- **`zimfarm logs <task-name> [n]`**: displays logs for that task worker. `n` is an optionnal lines number (100 otherwise).
+- **`zimfarm logs manager [n]`**: displays logs for the manager. `n` is an optional lines number (100 otherwise).
+- **`zimfarm logs <task-name> [n]`**: displays logs for that task worker. `n` is an optional lines number (100 otherwise).
 
 --
 

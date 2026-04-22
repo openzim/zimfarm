@@ -400,7 +400,7 @@ class WorkerManager(BaseWorker):
         return response.success
 
     def sync_tasks_and_containers(self):
-        # list of completed containers (successfuly ran)
+        # list of completed containers (successfully ran)
         completed_containers = list_containers(
             self.docker, all=True, filters={"label": ["zimtask=yes"], "exited": 0}
         )
@@ -421,7 +421,7 @@ class WorkerManager(BaseWorker):
 
         # remove completed containers
         for container in completed_containers:
-            logger.info(f"container {container.name} exited successfuly, removing.")
+            logger.info(f"container {container.name} exited successfully, removing.")
             remove_container(self.docker, container=container.name)
 
         # make sure we are tracking task for all running containers
@@ -442,7 +442,7 @@ class WorkerManager(BaseWorker):
 
         known_task_ids = {task_ident.id for task_ident in self.tasks.keys()}
 
-        # Clean up leftover containerr
+        # Clean up leftover container
         try:
             all_zimfarm_containers = list_containers(
                 self.docker, all=True, filters={"label": ["zimfarm"]}

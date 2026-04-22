@@ -169,7 +169,7 @@
           v-model="editRecipe.config.platform"
           :items="platformsOptions"
           label="Platform"
-          hint="The platform targetted by the offliner"
+          hint="The platform targeted by the offliner"
           clearable
           density="compact"
           variant="outlined"

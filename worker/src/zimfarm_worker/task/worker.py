@@ -790,7 +790,7 @@ class TaskWorker(BaseWorker):
                 self.start_zimcheck_uploader(zimcheck_file)
 
     def container_running(self, which: str) -> bool:
-        """whether refered container is still running or not"""
+        """whether referred container is still running or not"""
         container = getattr(self, which)
         if not container:
             return False
@@ -1329,7 +1329,7 @@ class TaskWorker(BaseWorker):
         # get task detail from URL
         self.get_task()
         if self.task is None:
-            logger.critical("Can't do much without task detail. exitting.")
+            logger.critical("Can't do much without task detail. exiting.")
             return 1
         self.mark_task_started()
 

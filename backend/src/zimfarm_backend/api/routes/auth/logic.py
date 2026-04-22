@@ -144,7 +144,7 @@ def authenticate_account_with_ssh_keys(
     # verify timestamp is less than MESSAGE_VALIDITY
     if (getnow() - timestamp).total_seconds() > constants.MESSAGE_VALIDITY_DURATION:
         raise UnauthorizedError(
-            "Difference betweeen message time and server time is "
+            "Difference between message time and server time is "
             f"greater than {constants.MESSAGE_VALIDITY_DURATION}s"
         )
 
