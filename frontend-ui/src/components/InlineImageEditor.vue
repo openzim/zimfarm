@@ -237,6 +237,7 @@
 import { ref, computed, watch } from 'vue'
 import { Cropper } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
+import { computeChecksumFromBase64 } from '@/utils/checksum'
 
 interface Props {
   modelValue?: string | null
@@ -247,7 +248,9 @@ interface Props {
   loading?: boolean
   disabled?: boolean
   errorMessage?: string
-  hasChanges?: boolean
+  originalChecksum?: string
+  originalComment?: string
+  originalUrl?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -258,7 +261,9 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   disabled: false,
   errorMessage: '',
-  hasChanges: false,
+  originalChecksum: undefined,
+  originalComment: '',
+  originalUrl: null,
 })
 
 const emit = defineEmits<{
@@ -268,6 +273,7 @@ const emit = defineEmits<{
   clear: []
   'file-selected': [file: File]
   'url-entered': [url: string]
+  'use-original-url': [url: string]
 }>()
 
 // Refs
@@ -281,10 +287,29 @@ const imageDimensions = ref<{ width: number; height: number } | null>(null)
 const croppedDimensions = ref<{ width: number; height: number } | null>(null)
 const detectedMimeType = ref('image/png')
 const hasUnsavedChanges = ref(false)
+const localChecksum = ref<string | undefined>(undefined)
 
 // Computed
 const errorMessage = computed(() => props.errorMessage || internalErrorMessage.value)
 const showPreview = computed(() => !!internalImageData.value || props.loading)
+
+const hasChanges = computed(() => {
+  // Check if comment has changed
+  if (props.comment !== props.originalComment) return true
+
+  // Check if checksum has changed
+  if (
+    localChecksum.value &&
+    props.originalChecksum &&
+    localChecksum.value !== props.originalChecksum
+  )
+    return true
+
+  // If there's new content but no original checksum, it's a new image
+  if (!props.originalChecksum && internalImageData.value) return true
+
+  return false
+})
 
 const dimensionsText = computed(() => {
   if (cropperActive.value && croppedDimensions.value) {
@@ -348,6 +373,7 @@ const resetState = () => {
   croppedDimensions.value = null
   hasUnsavedChanges.value = false
   internalErrorMessage.value = ''
+  localChecksum.value = undefined
 }
 
 const loadImage = (dataUrl: string) => {
@@ -377,6 +403,35 @@ watch(
       loadImage(newValue)
     } else if (!newValue) {
       resetState()
+    }
+  },
+  { immediate: true },
+)
+
+// Watch for changes in image data to compute checksum
+watch(
+  internalImageData,
+  async (newContent) => {
+    if (newContent) {
+      const base64Data = newContent.includes(',') ? newContent.split(',')[1] : newContent
+      if (base64Data) {
+        localChecksum.value = await computeChecksumFromBase64(base64Data)
+
+        // If checksum matches and comment is the same, emit to use original URL
+        if (
+          localChecksum.value &&
+          props.originalChecksum &&
+          localChecksum.value === props.originalChecksum &&
+          props.comment === props.originalComment &&
+          props.originalUrl
+        ) {
+          emit('use-original-url', props.originalUrl)
+        }
+      } else {
+        localChecksum.value = undefined
+      }
+    } else {
+      localChecksum.value = undefined
     }
   },
   { immediate: true },
