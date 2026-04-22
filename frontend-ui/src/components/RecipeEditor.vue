@@ -487,7 +487,7 @@
           <BlobEditor
             v-else-if="field.component === 'blob'"
             v-model="editFlags[field.dataKey]"
-            :label="field.label"
+            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
             :kind="field.kind"
             :required="field.required"
             :description="field.description ?? undefined"
