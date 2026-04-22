@@ -1,6 +1,6 @@
 from typing import Literal, Self
 
-from pydantic import AnyUrl, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from zimfarm_backend.common.schemas import BaseModel, CamelModel
 
@@ -26,8 +26,6 @@ class PreparedBlob(BaseModel):
     """Blob data prepared for upload but not yet uploaded"""
 
     kind: str
-    private_url: AnyUrl  # The URL to upload the file to
-    public_url: AnyUrl = Field(alias="url")
     flag_name: str
     checksum: str
     data: bytes

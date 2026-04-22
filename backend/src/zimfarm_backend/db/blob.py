@@ -1,7 +1,6 @@
 from typing import cast
 from uuid import UUID
 
-from pydantic import AnyUrl
 from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
@@ -30,6 +29,7 @@ def get_blobs(
             func.count().over().label("nb_records"),
             Blob,
         )
+        .join(Recipe, Blob.recipe_id == Recipe.id)
         .where(
             Recipe.name == recipe_name,
         )
@@ -42,20 +42,20 @@ def get_blobs(
     for nb_records, blob in session.execute(query).all():
         blob = cast(Blob, blob)
         results.nb_records = nb_records
-        results.blobs.append(_create_blob_schema(blob))
+        results.blobs.append(create_blob_schema(blob))
     return results
 
 
-def _create_blob_schema(blob: Blob) -> BlobSchema:
+def create_blob_schema(blob: Blob) -> BlobSchema:
     return BlobSchema(
         id=blob.id,
         checksum=blob.checksum,
-        url=AnyUrl(blob.url),
         kind=blob.kind,
         flag_name=blob.flag_name,
         created_at=blob.created_at,
         recipe_id=blob.recipe_id,
         comments=blob.comments,
+        content=blob.content,
     )
 
 
@@ -64,7 +64,7 @@ def get_blob_by_id_or_none(session: OrmSession, *, blob_id: UUID) -> BlobSchema 
     stmt = select(Blob).join(Recipe, Blob.recipe).where(Blob.id == blob_id)
     blob = session.scalars(stmt).one_or_none()
     if blob:
-        return _create_blob_schema(blob)
+        return create_blob_schema(blob)
     return None
 
 
@@ -89,7 +89,7 @@ def get_blob_or_none(
     )
     blob = session.scalars(stmt).one_or_none()
     if blob:
-        return _create_blob_schema(blob)
+        return create_blob_schema(blob)
     return None
 
 
@@ -112,7 +112,6 @@ def create_or_update_blob(
     """Create or update a recipe blob"""
     values = request.model_dump(
         exclude_unset=True,
-        mode="json",
     )
     values["recipe_id"] = recipe_id
     stmt = insert(Blob).values(**values)
@@ -122,7 +121,6 @@ def create_or_update_blob(
             **request.model_dump(
                 exclude_unset=True,
                 exclude={"flag_name", "checksum"},
-                mode="json",
             )
         },
     )

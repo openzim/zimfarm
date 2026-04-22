@@ -8,26 +8,19 @@ import re
 from typing import Literal
 
 import requests
-from pydantic import AnyUrl
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
 from zimfarm_backend.common.constants import (
-    BLOB_PRIVATE_STORAGE_URL,
-    BLOB_PUBLIC_STORAGE_URL,
-    BLOB_STORAGE_PASSWORD,
-    BLOB_STORAGE_USERNAME,
+    API_ENDPOINT,
     REQUESTS_TIMEOUT,
 )
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import RecipeConfigSchema
-from zimfarm_backend.common.schemas.offliners.transformers import (
-    generate_blob_name_uuid,
-)
 from zimfarm_backend.common.schemas.orms import CreateBlobSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.blob import create_or_update_blob
+from zimfarm_backend.db.blob import create_blob_schema, create_or_update_blob, get_blob
 from zimfarm_backend.db.models import Blob, Recipe
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
@@ -95,24 +88,9 @@ FLAG_MAPPINGS: dict[str, list[BlobFlag]] = {
 }
 
 
-def delete_blob(old_url: str) -> None:
-    """Delete a blob from storage."""
-    try:
-        response = requests.request(
-            "DELETE",
-            old_url,
-            timeout=REQUESTS_TIMEOUT,
-            auth=(BLOB_STORAGE_USERNAME, BLOB_STORAGE_PASSWORD),
-        )
-        response.raise_for_status()
-    except Exception as exc:
-        logger.warning(f"Failed to delete file at {old_url}, exc: {exc!s}")
-    logger.info(f"Deleted file at '{old_url}'")
-
-
-def upload_blob(url: str, flag_name: str, kind: str) -> CreateBlobSchema | None:
+def download_blob(url: str, flag_name: str, kind: str) -> CreateBlobSchema | None:
     """
-    Download blob from external url, compute blob checksum, and upload to blob storage
+    Download blob from external url and compute blob checksum
     """
     if "wikimedia.org" in url or "wikipedia.org" in url:
         headers = {
@@ -133,81 +111,18 @@ def upload_blob(url: str, flag_name: str, kind: str) -> CreateBlobSchema | None:
 
     checksum = hashlib.sha256(blob_data).hexdigest()
 
-    filename = generate_blob_name_uuid(kind)
-    new_private_url = f"{BLOB_PRIVATE_STORAGE_URL}/{filename}"
-    new_public_url = f"{BLOB_PUBLIC_STORAGE_URL}/{filename}"
-
-    # Upload blob to new destination
-    try:
-        upload_response = requests.put(
-            new_private_url,
-            data=blob_data,
-            timeout=REQUESTS_TIMEOUT,
-            auth=(BLOB_STORAGE_USERNAME, BLOB_STORAGE_PASSWORD),
-        )
-        upload_response.raise_for_status()
-    except Exception as exc:
-        logger.warning(f"Failed to upload to {new_private_url}, exc: {exc!s}")
-        raise
-
     return CreateBlobSchema(
         flag_name=flag_name,
         kind=kind,
-        url=AnyUrl(new_public_url),
         checksum=checksum,
         comments=f"Original URL: {url}",
-    )
-
-
-def copy_blob(old_url: str, flag_name: str, kind: str) -> CreateBlobSchema | None:
-    """Fetch blob from old_url, compute checksum, and copy to new location"""
-    try:
-        fetch_response = requests.get(
-            old_url,
-            timeout=REQUESTS_TIMEOUT,
-            auth=(BLOB_STORAGE_USERNAME, BLOB_STORAGE_PASSWORD),
-        )
-        fetch_response.raise_for_status()
-        blob_data = fetch_response.content
-    except Exception as exc:
-        logger.warning(f"Failed to fetch {old_url}, exc: {exc!s}")
-        raise
-
-    checksum = hashlib.sha256(blob_data).hexdigest()
-
-    filename = generate_blob_name_uuid(kind)
-    new_private_url = f"{BLOB_PRIVATE_STORAGE_URL}/{filename}"
-    new_public_url = f"{BLOB_PUBLIC_STORAGE_URL}/{filename}"
-
-    # Copy blob to new destination with overwrite set to F. This would raise an error
-    # if a file already exists at the location. While this shouldn't happen, it can
-    # be a safety net on the chance that it does happen. To overwrite, set to T.
-    headers = {"Destination": new_private_url, "Overwrite": "F"}
-
-    try:
-        copy_response = requests.request(
-            "COPY",
-            old_url,
-            headers=headers,
-            timeout=REQUESTS_TIMEOUT,
-            auth=(BLOB_STORAGE_USERNAME, BLOB_STORAGE_PASSWORD),
-        )
-        copy_response.raise_for_status()
-    except Exception as exc:
-        logger.warning(f"Failed to move {old_url} to {new_private_url}, exc: {exc!s}")
-        raise
-
-    return CreateBlobSchema(
-        flag_name=flag_name,
-        kind=kind,
-        url=AnyUrl(new_public_url),
-        checksum=checksum,
+        content=blob_data,
     )
 
 
 def is_blob_storage_url(url: str) -> bool:
     """Check if URL is blob storage (same domain but different path)"""
-    return url.startswith(BLOB_PRIVATE_STORAGE_URL.rsplit("/", 1)[0])
+    return url.startswith(API_ENDPOINT.rsplit("/", 1)[0])
 
 
 def generate_markdown_report(unavailable_assets: list[UnavailableAsset]) -> str:
@@ -241,7 +156,6 @@ def generate_markdown_report(unavailable_assets: list[UnavailableAsset]) -> str:
 
 def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None):
     # list of blob urls to delete after copying them to new locations
-    blobs_to_delete: set[str] = set()
     unavailable_assets: list[UnavailableAsset] = []
     total_assets_migrated = 0
     total_assets_skipped = 0
@@ -257,7 +171,7 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
     for offliner_id, flag_mappings in FLAG_MAPPINGS.items():
         logger.info(f"Processing offliner: {offliner_id}")
 
-        with Session.begin() as session:
+        with Session() as session:
             offliner = get_offliner(session, offliner_id)
 
             recipes = session.execute(
@@ -287,11 +201,14 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
                 )
 
                 for flag in flag_mappings:
-                    old_url = getattr(recipe_config.offliner, flag.flag_name)
-                    if not old_url:
+                    flag_url = getattr(recipe_config.offliner, flag.flag_name)
+                    if not flag_url:
+                        logger.info(
+                            f"{recipe.name} flag '{flag.flag_name}' has no URL."
+                        )
                         continue
 
-                    if not old_url.startswith("http"):
+                    if not flag_url.startswith("http"):
                         logger.warning(
                             f"Recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}' is not a valid URL, skipping"
@@ -307,78 +224,87 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
                         total_assets_filtered += 1
                         continue
 
-                    # Check if blob with URL for this recipe already exists
-                    existing_blob = session.scalars(
-                        select(Blob)
-                        .where(Blob.url == old_url, Blob.recipe_id == recipe.id)
-                        .limit(1)
+                    # Check if there is a blob with content whose URL matches the
+                    # same one as the flag value
+                    existing_blobs = session.scalars(
+                        select(Blob).where(
+                            Blob.flag_name == flag.flag_name,
+                            Blob.recipe_id == recipe.id,
+                            Blob.content.is_not(None),
+                        )
                     ).all()
 
-                    if existing_blob:
-                        logger.info(
-                            f"Recipe '{recipe.name}' flag '{flag.flag_name}' "
-                            "already has blob entry, skipping"
-                        )
-                        total_assets_skipped += 1
-                        continue
+                    if existing_blobs:
+                        should_skip = False
+                        for existing_blob in existing_blobs:
+                            existing_blob_schema = create_blob_schema(existing_blob)
+                            if flag_url == existing_blob_schema.url:
+                                should_skip = True
+                                break
+
+                        if should_skip:
+                            logger.info(
+                                f"Recipe '{recipe.name}' flag '{flag.flag_name}' "
+                                "already has blob entry, skipping"
+                            )
+                            total_assets_skipped += 1
+                            continue
 
                     if dry_run:
                         total_assets_migrated += 1
                         logger.info(
                             f"✅ Migrated recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}' to "
-                            f"'{BLOB_PUBLIC_STORAGE_URL}/{generate_blob_name_uuid(flag.kind)}'"
+                            f"'{API_ENDPOINT}"
                         )
                         continue
 
                     blob_schema = None
                     error_message = None
 
-                    if is_blob_storage_url(old_url):
-                        # Copy from old blob storage
-                        try:
-                            blob_schema = copy_blob(
-                                old_url,
-                                flag.flag_name,
-                                flag.kind,
-                            )
-                            blobs_to_delete.add(old_url)
-                        except Exception as exc:
-                            error_message = f"Copy failed: {exc!s}"
-                    else:
-                        # Download from external URL and upload to blob storage
-                        try:
-                            blob_schema = upload_blob(
-                                old_url,
-                                flag.flag_name,
-                                flag.kind,
-                            )
-                        except Exception as exc:
-                            error_message = f"Download/upload failed: {exc!s}"
+                    # Download from external URL and upload to blob storage
+                    try:
+                        blob_schema = download_blob(
+                            flag_url,
+                            flag.flag_name,
+                            flag.kind,
+                        )
+                    except Exception as exc:
+                        error_message = (
+                            f"Download failed with following reason: {exc!s}"
+                        )
 
                     if blob_schema:
                         create_or_update_blob(
                             session, recipe_id=recipe.id, request=blob_schema
                         )
+                        new_blob = get_blob(
+                            session,
+                            recipe_id=recipe.id,
+                            flag_name=flag.flag_name,
+                            checksum=blob_schema.checksum,
+                        )
                         setattr(
                             recipe_config.offliner,
                             flag.flag_name,
-                            str(blob_schema.url),
+                            str(new_blob.url),
                         )
                         recipe.config = recipe_config.model_dump(
                             mode="json", context={"show_secrets": True}
                         )
+                        session.add(recipe)
+                        session.commit()
                         total_assets_migrated += 1
                         logger.info(
                             f"✅ Migrated recipe '{recipe.name}' flag "
-                            f"'{flag.flag_name}' to '{blob_schema.url!s}'"
+                            f"'{flag.flag_name}' to '{new_blob.url!s}'"
                         )
                     else:
                         unavailable_assets.append(
                             UnavailableAsset(
                                 recipe=recipe.name,
                                 flag=flag.flag_name,
-                                url=old_url,
+                                url=flag_url,
                                 error=error_message or "Unknown error",
                             )
                         )
@@ -386,11 +312,6 @@ def main(*, dry_run: bool = False, filter_rules: list[FilterRule] | None = None)
                             f"❌ Could not migrate recipe '{recipe.name}' flag "
                             f"'{flag.flag_name}': {error_message}"
                         )
-
-    # Delete old blobs from storage
-    logger.info(f"Deleting {len(blobs_to_delete)} old blobs from storage...")
-    for blob_url in blobs_to_delete:
-        delete_blob(blob_url)
 
     # Generate and display markdown report
     print("\n" + "=" * 80)

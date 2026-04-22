@@ -1165,3 +1165,13 @@ def create_task(
 @pytest.fixture
 def task(create_task: Callable[..., Task]) -> Task:
     return create_task()
+
+
+@pytest.fixture
+def css_content() -> bytes:
+    return b"""
+a {
+  text-decoration: none !important;
+  color: rgb(var(--v-theme-primary));
+}
+"""

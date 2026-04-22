@@ -450,13 +450,14 @@ class Blob(Base):
     )
     flag_name: Mapped[str]
     kind: Mapped[str]
-    url: Mapped[str]
+    url: Mapped[str | None]
     created_at: Mapped[datetime] = mapped_column(
         init=False, server_default=text("CURRENT_TIMESTAMP")
     )
     checksum: Mapped[str]  # SHA-256 checksum of blob
 
     comments: Mapped[str | None] = mapped_column(default=None)
+    content: Mapped[bytes | None] = mapped_column(default=None)
 
     recipe: Mapped["Recipe | None"] = relationship(init=False, back_populates="blobs")
 

@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 import pytest
-from pydantic import AnyUrl
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
@@ -17,22 +16,19 @@ from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Blob, Recipe
 
 
-def test_create_recipe_blob(dbsession: OrmSession, recipe: Recipe):
+def test_create_recipe_blob(dbsession: OrmSession, recipe: Recipe, css_content: bytes):
     create_or_update_blob(
         dbsession,
         recipe_id=recipe.id,
         request=CreateBlobSchema(
-            kind="css",
-            url=AnyUrl("https://www.example.com/style.css"),
-            flag_name="custom-css",
-            checksum="1",
+            kind="css", flag_name="custom-css", checksum="1", content=css_content
         ),
     )
     dbsession.refresh(recipe)
     assert len(recipe.blobs) == 1
 
 
-def test_update_recipe_blob(dbsession: OrmSession, recipe: Recipe):
+def test_update_recipe_blob(dbsession: OrmSession, recipe: Recipe, css_content: bytes):
     recipe.blobs.append(
         Blob(
             kind="css",
@@ -48,15 +44,11 @@ def test_update_recipe_blob(dbsession: OrmSession, recipe: Recipe):
         dbsession,
         recipe_id=recipe.id,
         request=CreateBlobSchema(
-            kind="css",
-            url=AnyUrl("https://www.example.com/style2.css"),
-            flag_name="custom-css",
-            checksum="1",
+            kind="css", flag_name="custom-css", checksum="1", content=css_content
         ),
     )
     dbsession.refresh(recipe)
     assert len(recipe.blobs) == 1
-    assert recipe.blobs[0].url == "https://www.example.com/style2.css"
 
 
 def test_get_blob_or_none_found(dbsession: OrmSession, recipe: Recipe):
@@ -80,7 +72,8 @@ def test_get_blob_or_none_found(dbsession: OrmSession, recipe: Recipe):
     assert blob is not None
     assert blob.flag_name == "custom-css"
     assert blob.checksum == "1"
-    assert str(blob.url) == "https://www.example.com/style.css"
+    assert blob.url is not None
+    assert blob.url.endswith(f"{blob.id}.css")
 
 
 def test_get_blob_or_none_not_found(dbsession: OrmSession, recipe: Recipe):
