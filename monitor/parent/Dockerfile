@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.source=https://github.com/openzim/zimfarm
 RUN apt-get update && apt-get install -y wget cron procps psmisc && rm -rf /var/lib/apt/lists/*
 
 ENV DO_NOT_TRACK=1
-# CIDRs to allow regarless of whether in zimfarm API. Separate with spaces
+# CIDRs to allow regardless of whether in zimfarm API. Separate with spaces
 ENV STREAM_WHITELIST=""
 ENV NETDATA_HOSTNAME=monitoring.openzim.org
 ENV STREAM_KEY=7DC0DDB8-8EAA-4391-AF5D-BE017EECF0EE

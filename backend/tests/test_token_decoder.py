@@ -747,7 +747,7 @@ def test_oauth_session_token_decoder_can_decode_with_wrong_audience(
             .isoformat(timespec="seconds"),
             lambda w, t, s: f"{w}.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
             ValueError,
-            "Difference betweeen message time and server time is greater than",
+            "Difference between message time and server time is greater than",
             id="outdated-timestamp",
         ),
         pytest.param(

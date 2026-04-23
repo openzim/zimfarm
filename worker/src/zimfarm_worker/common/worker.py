@@ -161,5 +161,5 @@ class BaseWorker:
         )
 
     def exit_gracefully(self, *args: Any, **kwargs: Any):
-        # to be overriden
+        # to be overridden
         pass

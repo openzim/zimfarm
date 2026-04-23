@@ -148,7 +148,7 @@ def test_generate_similarity_data(
               "type": "string",
               "required": false,
               "title": "Seeds",
-              "description": "The seed URL(s) to start crawling from. Multile seed URL must be separated by a comma (usually not needed, these are just the crawl seeds). First seed URL is used as ZIM homepage"
+              "description": "The seed URL(s) to start crawling from. Multiple seed URL must be separated by a comma (usually not needed, these are just the crawl seeds). First seed URL is used as ZIM homepage"
             },
             "seed_file": {
               "type": "string",
@@ -227,7 +227,7 @@ def test_generate_similarity_data_value_missing(
               "type": "string",
               "required": false,
               "title": "Seeds",
-              "description": "The seed URL(s) to start crawling from. Multile seed URL must be separated by a comma (usually not needed, these are just the crawl seeds). First seed URL is used as ZIM homepage"
+              "description": "The seed URL(s) to start crawling from. Multiple seed URL must be separated by a comma (usually not needed, these are just the crawl seeds). First seed URL is used as ZIM homepage"
             },
             "seed_file": {
               "type": "string",

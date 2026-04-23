@@ -5,7 +5,7 @@
 Relaunch recipes which have failed since start_date and have not
 failed more than 1 time in a row.
 
-Typically used when a bug occured in production at start_date and all
+Typically used when a bug occurred in production at start_date and all
 recipes which are not known to be failing should be tried again.
 
 ./relaunch_failed_recipes.py

@@ -408,7 +408,7 @@ def update_recipe(
         raise BadRequestError(
             "No changes were made to the recipe because no fields being set"
         )
-    # track the defintion to be used for updating the recipe
+    # track the definition to be used for updating the recipe
     offliner_definition: OfflinerDefinitionSchema
 
     if (
@@ -488,7 +488,7 @@ def update_recipe(
                 request.version,
             )
         else:
-            # Reuse the existing defintion to validate
+            # Reuse the existing definition to validate
             offliner_definition = get_offliner_definition_by_id(
                 session, recipe.offliner_definition_id
             )
@@ -637,12 +637,12 @@ def get_recipe_image_names(
         if exc.response.status_code == HTTPStatus.NOT_FOUND:
             raise NotFoundError("Image tags not found for recipe") from exc
         raise ServerError(
-            "An unexpected error occured while fetching image tags: "
+            "An unexpected error occurred while fetching image tags: "
             f"{exc.response.reason}"
         ) from exc
     except requests.RequestException as exc:
         raise ServerError(
-            "An unexpected error occured while fetching image tags: "
+            "An unexpected error occurred while fetching image tags: "
         ) from exc
 
     return ListResponse(

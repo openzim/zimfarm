@@ -80,22 +80,22 @@ class Processor:
         )
 
         logger.info(
-            f"{len(self.overrides['do_not_create'])} recipes overriden for no create"
+            f"{len(self.overrides['do_not_create'])} recipes overridden for no create"
         )
         for recipe in self.overrides["do_not_create"]:
             logger.info(f"- {recipe}")
         logger.info(
-            f"{len(self.overrides['do_not_update'])} recipes overriden for no update"
+            f"{len(self.overrides['do_not_update'])} recipes overridden for no update"
         )
         for recipe in self.overrides["do_not_update"]:
             logger.info(f"- {recipe}")
         logger.info(
-            f"{len(self.overrides['do_not_delete'])} recipes overriden for no delete"
+            f"{len(self.overrides['do_not_delete'])} recipes overridden for no delete"
         )
         for recipe in self.overrides["do_not_delete"]:
             logger.info(f"- {recipe}")
         logger.info(
-            f"{len(self.overrides['overrides'])} recipes overriden for settings"
+            f"{len(self.overrides['overrides'])} recipes overridden for settings"
         )
         for recipe in self.overrides["overrides"]:
             logger.info(f"- {recipe['name']}")
@@ -174,7 +174,7 @@ class Processor:
     def _patch_dictionary(
         self, existing_dict: dict[str, Any], patch_dict: dict[str, Any]
     ):
-        """Small utility function to patch only leaf values of a dictionnary"""
+        """Small utility function to patch only leaf values of a dictionary"""
         for key, value in patch_dict.items():
             if key in existing_dict and isinstance(value, dict):
                 self._patch_dictionary(existing_dict[key], value)
@@ -182,7 +182,7 @@ class Processor:
                 existing_dict[key] = value
 
     def _get_recipe_overrides(self, recipe_name: str) -> dict[str, Any] | None:
-        """Get the overriden values for a given recipes"""
+        """Get the overridden values for a given recipes"""
         matches = [
             override
             for override in self.overrides["overrides"]

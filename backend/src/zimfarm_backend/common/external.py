@@ -30,7 +30,7 @@ def update_workers_whitelist(session: so.Session):
 
 
 def build_workers_whitelist(session: so.Session) -> list[str]:
-    """list of worker IP adresses and networks (text) to use as whitelist"""
+    """list of worker IP addresses and networks (text) to use as whitelist"""
     wl_networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
     wl_ips: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = []
     for item in WHITELISTED_IPS:
@@ -62,7 +62,7 @@ def build_workers_whitelist(session: so.Session) -> list[str]:
 
 
 def update_wasabi_whitelist(ip_addresses: list[str]):
-    """update Wasabi policy to change IP adresses whitelist"""
+    """update Wasabi policy to change IP addresses whitelist"""
     logger.info("Updating Wasabi whitelist")
 
     def get_statement() -> dict[str, Any]:

@@ -1,6 +1,6 @@
 This is a tentative docker-compose configuration to be used **only** for development purpose.
 
-It is recommended to use it in combination with Mutagen to effeciently sync data from your machine to the Docker containers.
+It is recommended to use it in combination with Mutagen to efficiently sync data from your machine to the Docker containers.
 
 It is still incomplete (not all Zimfarm components are available).
 
@@ -13,7 +13,7 @@ This container is a backend web server, linked to its database.
 ### backend-tests
 
 This container is simply a Python stack with all backend requirements but no web server. Context is
-setup with appropriate environment variables for tests (i.e. it uses the test DB). Usefull to run
+setup with appropriate environment variables for tests (i.e. it uses the test DB). Useful to run
 tests locally.
 
 ### postgresqldb
@@ -104,7 +104,7 @@ docker exec -it zf_backend-tests pytest -v tests/routes/test_user.py -k test_lis
 In order to create recipes and request tasks, you need to seed the database with offliners and offliner definitions
 
 A helper script to pull the latest offliner definitions from their respective repositories is at `contrib/create-offliners.sh`; call it once to authorize with the backend,
-fetch the latest offliner defintions, create the offliners and their respective definitions accordingly. Once this is done, you can start creating recipes either via the API based on the offliner definition.
+fetch the latest offliner definitions, create the offliners and their respective definitions accordingly. Once this is done, you can start creating recipes either via the API based on the offliner definition.
 
 ```sh
 cd dev/contrib
@@ -163,7 +163,7 @@ python3 /app/import_recipes.py /tmp/all_recipes.json
 
 Through the UI, it is easy to create a requested task for your test worker. However, if you do not want to run the worker manager because you do not want the task to really proceed, it gets complicated to fake the start this requested task, i.e mark the fact that the test worker manager has reserved this requested task.
 
-A usefull script is at `contrib/start_first_req_task.sh`: this will mark the first task in the pipe (oldest one) as reserved for the test worker, and hence transform the requested task into a task. You can obviously call it many times to reserve many tasks. The script displays the whole task, including its id.
+A useful script is at `contrib/start_first_req_task.sh`: this will mark the first task in the pipe (oldest one) as reserved for the test worker, and hence transform the requested task into a task. You can obviously call it many times to reserve many tasks. The script displays the whole task, including its id.
 
 ### tweak receiver configuration
 
@@ -171,7 +171,7 @@ Receiver is responsible to receive ZIMs, logs and artifacts created by the task 
 
 In order to use it with a task manager, you have to create one directory per warehouse path (or at least create the ones for the tasks you will run).
 
-A usefull script has been added to the dev stack to create these directories:
+A useful script has been added to the dev stack to create these directories:
 
 ```
 

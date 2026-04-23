@@ -54,7 +54,7 @@ Data retention can be set in `netdata.conf`. It is set in MiB .
 [global]
  page size cache = 64  # uses 64MiB of RAM for cache
  # uses 4GiB of storage space.
- # ths is used as default for each stream receiver
+ # this is used as default for each stream receiver
  # if not customized in stream.conf
  dbengine disk space = 4096
  # uses 4GiB os storage for all hosts

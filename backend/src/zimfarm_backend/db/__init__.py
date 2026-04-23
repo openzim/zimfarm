@@ -23,7 +23,7 @@ def zimfarm_loads(s: str, *args: Any, **kwargs: Any) -> Any:
 
 # custom overload of bson serializer to convert datetime objects to milliseconds
 # This is needed as the Pymongo version has changed since the codebase was upgraded
-# and the DEFAULT_JSON_OPTIONS converts datetime ojbects to isoformat which breaks
+# and the DEFAULT_JSON_OPTIONS converts datetime objects to isoformat which breaks
 # the format stored in the database.
 def zimfarm_dumps(obj: Any, *args: Any, **kwargs: Any):
     return dumps(obj, *args, json_options=LEGACY_JSON_OPTIONS, **kwargs)

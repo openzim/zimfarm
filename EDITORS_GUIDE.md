@@ -61,7 +61,7 @@ to the execution. Tasks go through several states:
 2. **Started**: Worker has started executing the task. This does not mean the scraper is running as the scraper image needs to be pulled and environment needs to be setup.
 3. **Scraper Started**: The scraper container has started.
 4. **Scraper Running**: The scraper container is running.
-5. **Scraper Completed**: The scraper container has stopped running. This does not mean tha the scraper run was successful.
+5. **Scraper Completed**: The scraper container has stopped running. This does not mean that the scraper run was successful.
 6. **Succeeded/Failed**: For a task to be successful, the scraper run must be successful and all ZIM files produced must have been uploaded.
 7. **Canceled**: Task was manually stopped either through a cancellation request or worker machine received signal to stop. Sometimes, stale tasks (tasks whose workers fail to respond over a period of time) are requested to be canceled by an automated script.
 
@@ -145,6 +145,6 @@ of the Zimfarm UI.
 
 - No worker with sufficient resources available
 - No worker supports the required offliner
-- Context requirement not met or IP restriction of the context is not satisified
+- Context requirement not met or IP restriction of the context is not satisfied
 - Higher priority tasks consuming all workers
 - All workers cordoned or disabled

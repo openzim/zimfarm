@@ -225,7 +225,7 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "type": "string",
       "required": false,
       "title": "Filename prefix",
-      "description": "Custome filename up to the formats and date parts."
+      "description": "Custom filename up to the formats and date parts."
     },
     "formats": {
       "type": "list-of-string-enum",
@@ -268,7 +268,7 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "type": "string",
       "required": false,
       "title": "Add Namespaces",
-      "description": "Include addional namespaces (comma separated numbers)"
+      "description": "Include additional namespaces (comma separated numbers)"
     },
     "getCategories": {
       "type": "boolean",
@@ -341,7 +341,7 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "type": "string",
       "required": false,
       "title": "OS Temp Dir",
-      "description": "Override default operating system temporary directory path environnement variable"
+      "description": "Override default operating system temporary directory path environment variable"
     },
     "outputDirectory": {
       "type": "string",
@@ -599,7 +599,7 @@ def ted_flags() -> OfflinerSpecSchema:
       "type": "string",
       "required": false,
       "title": "Temp folder",
-      "description": "Where to create temporay build folder. Leave it as `/output`",
+      "description": "Where to create temporary build folder. Leave it as `/output`",
       "pattern": "^/output$"
     },
     "zim_file": {

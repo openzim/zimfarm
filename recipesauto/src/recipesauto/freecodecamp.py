@@ -48,7 +48,7 @@ class SpokenLanguage(Enum):
     KOREAN = 8
     PORTUGUESE = 9
     SWAHILI = 10
-    UKRANIAN = 11
+    UKRAINIAN = 11
 
 
 static_data = {
@@ -434,7 +434,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 elif match.group(1) == "Portuguese":
                     current_language = SpokenLanguage.PORTUGUESE
                 elif match.group(1) == "Ukrainian":
-                    current_language = SpokenLanguage.UKRANIAN
+                    current_language = SpokenLanguage.UKRAINIAN
                 elif match.group(1) == "Japanese":
                     current_language = SpokenLanguage.JAPANESE
                 elif match.group(1) == "German":
@@ -605,7 +605,7 @@ def _get_zf_language(language: SpokenLanguage) -> str:
         return "por"
     elif language == SpokenLanguage.SWAHILI:
         return "swa"
-    elif language == SpokenLanguage.UKRANIAN:
+    elif language == SpokenLanguage.UKRAINIAN:
         return "ukr"
 
 
@@ -707,7 +707,7 @@ def _get_zim_name_lang(language: SpokenLanguage) -> str:
         return "pt"
     elif language == SpokenLanguage.SWAHILI:
         return "sw"
-    elif language == SpokenLanguage.UKRANIAN:
+    elif language == SpokenLanguage.UKRAINIAN:
         return "ua"
     else:
         raise UndefinedMetadataError
@@ -734,7 +734,7 @@ def _get_language_setting(language: SpokenLanguage) -> str:
         return "por"
     elif language == SpokenLanguage.SWAHILI:
         return "swa"
-    elif language == SpokenLanguage.UKRANIAN:
+    elif language == SpokenLanguage.UKRAINIAN:
         return "ukr"
     else:
         raise UndefinedMetadataError
@@ -747,11 +747,11 @@ def _is_needed(curriculum: Curriculum, language: SpokenLanguage) -> bool:
         "rosetta-code",
         "coding-interview-prep",
     ] and language not in [
-        SpokenLanguage.KOREAN,  # not yet officialy supported on website
+        SpokenLanguage.KOREAN,  # not yet officially supported on website
     ]
 
 
 def _is_lang_needed(language: SpokenLanguage) -> bool:
     return language not in [
-        SpokenLanguage.KOREAN,  # not yet officialy supported on website
+        SpokenLanguage.KOREAN,  # not yet officially supported on website
     ]

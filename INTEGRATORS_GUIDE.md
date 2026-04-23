@@ -15,7 +15,7 @@ For inspiration and practical examples on how to wire all these components toget
 we highly recommend looking at the `dev/` folder. It contains a complete
 `docker-compose.yml` stack used for local development, which demonstrates exactly how
 the containers interact, how volumes are mounted, and how environment variables are
-passed. It also contains shell scripts to set up worker accounts, retreive offliner
+passed. It also contains shell scripts to set up worker accounts, retrieve offliner
 definitions, create SSH keys for authentication and more.
 
 ## Table of Contents
@@ -476,7 +476,7 @@ The Backend API and background tasks require a PostgreSQL database for persisten
 storage of all platform data including users, recipes, tasks, workers, and files.
 
 The `uuid-ossp` extension must be enabled on the database as UUID primary keys are
-genereted on the database side.
+generated on the database side.
 
 ### Storage Backends for Uploads
 

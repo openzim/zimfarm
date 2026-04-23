@@ -36,7 +36,7 @@ def get_transformer_function(
 
 
 def transform_data(data: list[str], transformers: list[TransformerSchema]) -> list[str]:
-    """Generate the output by applying each tranformer to data"""
+    """Generate the output by applying each transformer to data"""
     if not transformers:
         return data
     head, *tail = transformers

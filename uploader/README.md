@@ -29,7 +29,7 @@ docker run \
 
 * `--username`: if your URI has no username, you can specify it here.
 * `--move`: upload to a temporary filename (`<fname>.tmp`) and rename it upon completion. Note that SCP is not able to do it so it uploads an `<fname>.complete` file upon completion instead.
-* `--delete`: delete source file once uploaded successfuly.
+* `--delete`: delete source file once uploaded successfully.
 * `--compress`: enable transfer compression.
 * `--bandwidth`: enable bandwidth limit. Set it in Kbps.
 * `--cipher`: change default cipher (`aes128-ctr`).
