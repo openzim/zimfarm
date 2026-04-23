@@ -174,11 +174,15 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
 def get_openzimcms_payload(
     *, file: TaskFileSchema, zimcheck_base_url: str | None, warehouse_path: str
 ) -> dict[str, Any]:
+    # remove leading "/" in warehouse path since CMS expects relative paths
+    folder_name = (
+        warehouse_path[1:] if warehouse_path.startswith("/") else warehouse_path
+    )
     payload = {
         "id": file.info["id"],
         "counter": file.info.get("counter"),
         "article_count": file.info.get("article_count"),
-        "folder_name": warehouse_path,
+        "folder_name": folder_name,
         "filename": file.name,
         "media_count": file.info.get("media_count"),
         "size": file.info.get("size"),
