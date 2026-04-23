@@ -1,52 +1,75 @@
 <template>
   <div>
-    <InlineImageEditor
-      v-if="isImageKind"
-      :model-value="blobEditorContent"
-      :label="label"
-      :required="required"
-      :description="description"
-      v-model:comment="blobComment"
-      :loading="loadingBlobContent || isUploading || isLoadingBlob"
-      :error-message="errorMessage"
-      :original-checksum="currentBlobChecksum"
-      :original-comment="originalBlobComment"
-      :original-url="originalUrl"
-      @save="handleImageSave"
-      @clear="handleRemove"
-      @file-selected="handleFileSelected"
-      @url-entered="handleUrlEntered"
-      @use-original-url="handleUseOriginalUrl"
-    />
+    <v-radio-group v-model="contentMode" inline hide-details class="mb-2">
+      <v-radio label="Custom Content" value="manual"></v-radio>
+      <v-radio label="External URL" value="dynamic"></v-radio>
+    </v-radio-group>
 
-    <InlineTextEditor
-      v-else
-      :model-value="blobEditorContent"
-      :label="label"
-      :required="required"
-      :description="description"
-      :file-type="textFileType"
-      v-model:comment="blobComment"
-      :loading="loadingBlobContent || isUploading || isLoadingBlob"
-      :error-message="errorMessage"
-      :original-checksum="currentBlobChecksum"
-      :original-comment="originalBlobComment"
-      :original-url="originalUrl"
-      @save="handleTextSave"
-      @clear="handleRemove"
-      @file-selected="handleFileSelected"
-      @url-entered="handleUrlEntered"
-      @use-original-url="handleUseOriginalUrl"
-    />
+    <div v-if="contentMode === 'manual'">
+      <InlineImageEditor
+        v-if="isImageKind"
+        :model-value="blobEditorContent"
+        :label="label"
+        :required="required"
+        :description="description"
+        v-model:comment="blobComment"
+        :loading="loadingBlobContent || isUploading || isLoadingBlob"
+        :error-message="errorMessage"
+        :original-checksum="currentBlobChecksum"
+        :original-comment="originalBlobComment"
+        :original-url="originalUrl"
+        @save="handleImageSave"
+        @clear="handleRemove"
+        @file-selected="handleFileSelected"
+        @url-entered="handleUrlEntered"
+        @use-original-url="handleUseOriginalUrl"
+      />
 
-    <!-- Hidden file input -->
-    <input
-      ref="fileInputRef"
-      type="file"
-      :accept="acceptedTypes"
-      style="display: none"
-      @change="handleFileChange"
-    />
+      <InlineTextEditor
+        v-else
+        :model-value="blobEditorContent"
+        :label="label"
+        :required="required"
+        :description="description"
+        :file-type="textFileType"
+        v-model:comment="blobComment"
+        :loading="loadingBlobContent || isUploading || isLoadingBlob"
+        :error-message="errorMessage"
+        :original-checksum="currentBlobChecksum"
+        :original-comment="originalBlobComment"
+        :original-url="originalUrl"
+        @save="handleTextSave"
+        @clear="handleRemove"
+        @file-selected="handleFileSelected"
+        @url-entered="handleUrlEntered"
+        @use-original-url="handleUseOriginalUrl"
+      />
+
+      <!-- Hidden file input -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        :accept="acceptedTypes"
+        style="display: none"
+        @change="handleFileChange"
+      />
+    </div>
+
+    <div v-else>
+      <v-text-field
+        v-model.trim="dynamicUrl"
+        :label="label"
+        :required="required"
+        :rules="urlRules"
+        :hint="description || ''"
+        variant="outlined"
+        density="compact"
+        type="url"
+        persistent-hint
+        placeholder="Enter external URL"
+        @update:model-value="handleDynamicUrlUpdate"
+      />
+    </div>
   </div>
 </template>
 
@@ -104,6 +127,58 @@ const currentBlobChecksum = ref<string | undefined>(undefined)
 const isUploading = ref(false)
 const isLoadingBlob = ref(false)
 const originalUrl = ref<string | null>(props.modelValue || null)
+
+const contentMode = ref<'manual' | 'dynamic'>('manual')
+const dynamicUrl = ref<string>('')
+
+const urlRules = [
+  (value: unknown) => {
+    if (props.required && (!value || value == '')) {
+      return 'This field is required.'
+    }
+    if (value && typeof value === 'string' && value !== '') {
+      try {
+        new URL(value)
+        return true
+      } catch {
+        return 'Please enter a valid URL.'
+      }
+    }
+    return true
+  },
+]
+
+const handleDynamicUrlUpdate = (value: string) => {
+  emit('update:modelValue', value)
+}
+
+watch(contentMode, async (newMode) => {
+  if (newMode === 'dynamic') {
+    if (!dynamicUrl.value && props.modelValue) {
+      dynamicUrl.value = props.modelValue
+    }
+    emit('update:modelValue', dynamicUrl.value)
+  } else {
+    emit('update:modelValue', originalUrl.value)
+
+    const newValue = originalUrl.value
+    if (!newValue) {
+      userInput.value = ''
+      errorMessage.value = ''
+      hasError.value = false
+      blobEditorContent.value = ''
+    } else {
+      if (newValue.startsWith('http://') || newValue.startsWith('https://')) {
+        userInput.value = newValue
+      }
+      if (isImageKind.value) {
+        await loadImageFromUrl(newValue)
+      } else if (isTextKind.value) {
+        await loadTextFromUrl(newValue)
+      }
+    }
+  }
+})
 
 const isTextKind = computed(() => TEXT_KINDS.includes(props.kind as (typeof TEXT_KINDS)[number]))
 const isImageKind = computed(() => IMAGE_KINDS.includes(props.kind as (typeof IMAGE_KINDS)[number]))
@@ -488,6 +563,17 @@ async function fetchBlobByUrl(url: string, isText = false): Promise<Blob | strin
 watch(
   () => props.modelValue,
   async (newValue, oldValue) => {
+    if (newValue !== dynamicUrl.value) {
+      dynamicUrl.value = newValue || ''
+    }
+    if (newValue !== originalUrl.value) {
+      originalUrl.value = newValue || null
+    }
+
+    if (contentMode.value === 'dynamic') {
+      return
+    }
+
     if (!newValue && oldValue) {
       userInput.value = ''
       errorMessage.value = ''
@@ -496,7 +582,6 @@ watch(
     } else if (newValue && newValue !== oldValue) {
       if (newValue.startsWith('http://') || newValue.startsWith('https://')) {
         userInput.value = newValue
-        originalUrl.value = newValue
       }
       if (isImageKind.value) {
         await loadImageFromUrl(newValue)
