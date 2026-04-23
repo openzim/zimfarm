@@ -66,8 +66,6 @@ FLAG_MAPPINGS: dict[str, list[BlobFlag]] = {
     "mindtouch": [BlobFlag(flag_name="illustration_url", kind="image")],
     "mwoffliner": [
         BlobFlag(flag_name="customZimFavicon", kind="image"),
-        BlobFlag(flag_name="articleList", kind="txt"),
-        BlobFlag(flag_name="articleListToIgnore", kind="txt"),
     ],
     "nautilus": [
         BlobFlag(flag_name="main_logo", kind="image"),
