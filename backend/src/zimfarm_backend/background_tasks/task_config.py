@@ -24,7 +24,10 @@ class TaskConfig:
 
     def should_run(self, now: datetime.datetime) -> bool:
         """Check if this task should run based on its interval."""
-        return now - self._last_run >= self.interval
+        return (
+            self.interval > datetime.timedelta()
+            and now - self._last_run >= self.interval
+        )
 
     def execute(self, session: OrmSession) -> None:
         """Execute the task and update the last run timestamp."""
