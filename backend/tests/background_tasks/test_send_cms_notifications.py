@@ -106,6 +106,7 @@ def test_send_cms_notifications_retry_failed(
             check_filename="check_report.json",
             check_timestamp=getnow(),
             created_timestamp=getnow(),
+            uploaded_timestamp=getnow(),
         ),
     )
     dbsession.flush()
@@ -138,6 +139,7 @@ def test_send_cms_notifications_retry_never_notified(
             check_filename="check_report.json",
             check_timestamp=getnow(),
             created_timestamp=getnow(),
+            uploaded_timestamp=getnow(),
         ),
     )
     dbsession.flush()
@@ -154,7 +156,7 @@ def test_send_cms_notifications_with_check_result_only(
     create_task: Callable[..., Task],
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Test that files with only check_result (no check_filename) are notified"""
+    """Test that files with only check_result (no check_filename) are not notified"""
     monkeypatch.setattr(send_cms_notifications_module, "INFORM_CMS", True)
     monkeypatch.setattr(
         send_cms_notifications_module, "CMS_MAXIMUM_RETRY_INTERVAL", 24 * 60 * 60
@@ -181,7 +183,7 @@ def test_send_cms_notifications_with_check_result_only(
         "zimfarm_backend.background_tasks.send_cms_notifications.advertise_book_to_cms"
     ) as mock_advertise:
         notify_cms_for_checked_files(dbsession)
-        mock_advertise.assert_called_once()
+        mock_advertise.assert_not_called()
 
 
 def test_send_cms_notifications_with_check_filename_only(
@@ -189,7 +191,7 @@ def test_send_cms_notifications_with_check_filename_only(
     create_task: Callable[..., Task],
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Test that files with only check_filename (no check_result) are notified"""
+    """Test that files with only check_filename (no check_result) are not notified"""
     monkeypatch.setattr(send_cms_notifications_module, "INFORM_CMS", True)
     monkeypatch.setattr(
         send_cms_notifications_module, "CMS_MAXIMUM_RETRY_INTERVAL", 24 * 60 * 60
@@ -216,7 +218,7 @@ def test_send_cms_notifications_with_check_filename_only(
         "zimfarm_backend.background_tasks.send_cms_notifications.advertise_book_to_cms"
     ) as mock_advertise:
         notify_cms_for_checked_files(dbsession)
-        mock_advertise.assert_called_once()
+        mock_advertise.assert_not_called()
 
 
 def test_send_cms_notifications_with_both_check_fields(
@@ -243,6 +245,7 @@ def test_send_cms_notifications_with_both_check_fields(
             check_filename="check_report.json",
             check_timestamp=getnow() - timedelta(hours=1),
             created_timestamp=getnow() - timedelta(hours=1),
+            uploaded_timestamp=getnow() - timedelta(hours=1),
         ),
     )
     dbsession.flush()
@@ -349,9 +352,10 @@ def test_send_cms_notifications_coalesce_uses_created_timestamp(
             status="uploaded",
             cms_notified=None,
             check_result=1,  # Has check field
-            check_filename=None,
+            check_filename="zimcheck.json",
             check_timestamp=None,  # NULL
             created_timestamp=recent_created,  # Should use this
+            uploaded_timestamp=recent_created,
         ),
     )
     dbsession.flush()

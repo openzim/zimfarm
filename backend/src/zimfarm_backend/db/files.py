@@ -1,7 +1,7 @@
 import datetime
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.schemas import BaseModel
@@ -37,12 +37,17 @@ def get_files_to_notify(
         .where(
             # We should send notifications for files that meet the following criteria:
             # - have not been successfully notified
-            # - have  check_result or check_filename
+            # - ZIM files have been successfully uploaded
+            # - have  check_result and check_filename
             # - are not older than retry_interval (if set) since check_timestamp
             #   so we don't discard notifying CMS about a file because the zimcheck
             #   results were not uploaded due to another issue.
             or_(File.cms_notified.is_(None), File.cms_notified.is_(False)),
-            or_(File.check_result.is_not(None), File.check_filename.is_not(None)),
+            and_(
+                File.check_result.is_not(None),
+                File.check_filename.is_not(None),
+                File.uploaded_timestamp.is_not(None),
+            ),
             (
                 func.extract(
                     "epoch",
