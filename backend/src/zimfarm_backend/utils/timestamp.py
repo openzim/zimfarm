@@ -32,9 +32,7 @@ def get_status_timestamp_expr(
     return cast(
         # select the second element and then the date
         select(
-            literal_column(
-                "elem->1->>'$date'"
-            )  # pyright: ignore[reportUnknownArgumentType]
+            literal_column("elem->1->>'$date'")  # pyright: ignore[reportUnknownArgumentType]
         )
         .select_from(elem)
         .where(literal_column("elem->>0") == status)

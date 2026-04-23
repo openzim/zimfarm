@@ -412,9 +412,7 @@ def update_recipe(
     offliner_definition: OfflinerDefinitionSchema
 
     if (
-        request.offliner
-        and request.offliner
-        != recipe_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+        request.offliner and request.offliner != recipe_config.offliner.offliner_id  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
     ):
         # Case 1: Attempting to change the offliner
         if not request.flags:

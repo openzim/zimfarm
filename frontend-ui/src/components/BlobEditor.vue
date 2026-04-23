@@ -1,54 +1,77 @@
 <template>
   <div>
-    <InlineImageEditor
-      v-if="isImageKind"
-      :model-value="blobEditorContent"
-      :label="label"
-      :required="required"
-      :description="description"
-      v-model:comment="blobComment"
-      :loading="loadingBlobContent || isUploading || isLoadingBlob"
-      :error-message="errorMessage"
-      :preview-error-message="previewErrorMessage"
-      :original-checksum="currentBlobChecksum"
-      :original-comment="originalBlobComment"
-      :original-url="originalUrl"
-      @save="handleImageSave"
-      @clear="handleRemove"
-      @file-selected="handleFileSelected"
-      @url-entered="handleUrlEntered"
-      @use-original-url="handleUseOriginalUrl"
-    />
+    <v-radio-group v-if="allowRemoteUrl" v-model="contentMode" inline hide-details class="mb-2">
+      <v-radio label="Local" value="local"></v-radio>
+      <v-radio label="Remote" value="remote"></v-radio>
+    </v-radio-group>
 
-    <InlineTextEditor
-      v-else
-      :model-value="blobEditorContent"
-      :label="label"
-      :required="required"
-      :description="description"
-      :file-type="textFileType"
-      v-model:comment="blobComment"
-      :loading="loadingBlobContent || isUploading || isLoadingBlob"
-      :error-message="errorMessage"
-      :preview-error-message="previewErrorMessage"
-      :original-checksum="currentBlobChecksum"
-      :original-comment="originalBlobComment"
-      :original-url="originalUrl"
-      @save="handleTextSave"
-      @clear="handleRemove"
-      @file-selected="handleFileSelected"
-      @url-entered="handleUrlEntered"
-      @use-original-url="handleUseOriginalUrl"
-    />
+    <div v-if="contentMode === 'local'">
+      <InlineImageEditor
+        v-if="isImageKind"
+        :model-value="blobEditorContent"
+        :label="label"
+        :required="required"
+        :description="description"
+        v-model:comment="blobComment"
+        :loading="loadingBlobContent || isUploading || isLoadingBlob"
+        :error-message="errorMessage"
+        :preview-error-message="previewErrorMessage"
+        :original-checksum="currentBlobChecksum"
+        :original-comment="originalBlobComment"
+        :original-url="originalUrl"
+        @save="handleImageSave"
+        @clear="handleRemove"
+        @file-selected="handleFileSelected"
+        @url-entered="handleUrlEntered"
+        @use-original-url="handleUseOriginalUrl"
+      />
 
-    <!-- Hidden file input -->
-    <input
-      ref="fileInputRef"
-      type="file"
-      :accept="acceptedTypes"
-      style="display: none"
-      @change="handleFileChange"
-    />
+      <InlineTextEditor
+        v-else
+        :model-value="blobEditorContent"
+        :label="label"
+        :required="required"
+        :description="description"
+        :file-type="textFileType"
+        v-model:comment="blobComment"
+        :loading="loadingBlobContent || isUploading || isLoadingBlob"
+        :error-message="errorMessage"
+        :preview-error-message="previewErrorMessage"
+        :original-checksum="currentBlobChecksum"
+        :original-comment="originalBlobComment"
+        :original-url="originalUrl"
+        @save="handleTextSave"
+        @clear="handleRemove"
+        @file-selected="handleFileSelected"
+        @url-entered="handleUrlEntered"
+        @use-original-url="handleUseOriginalUrl"
+      />
+
+      <!-- Hidden file input -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        :accept="acceptedTypes"
+        style="display: none"
+        @change="handleFileChange"
+      />
+    </div>
+
+    <div v-else>
+      <v-text-field
+        v-model.trim="remoteUrl"
+        :label="label"
+        :required="required"
+        :rules="urlRules"
+        :hint="description || ''"
+        variant="outlined"
+        density="compact"
+        type="url"
+        persistent-hint
+        placeholder="Enter external URL"
+        @update:model-value="handleRemoteUrlUpdate"
+      />
+    </div>
   </div>
 </template>
 
@@ -74,7 +97,8 @@ const IMAGE_KINDS = ['illustration', 'image'] as const
 interface Props {
   modelValue: string | null | undefined
   label?: string
-  kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
+  kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt' | string
+  allowRemoteUrl: boolean
   required?: boolean
   description?: string | null
   recipeName: string
@@ -108,6 +132,58 @@ const currentBlobChecksum = ref<string | undefined>(undefined)
 const isUploading = ref(false)
 const isLoadingBlob = ref(false)
 const originalUrl = ref<string | null>(props.modelValue || null)
+
+const contentMode = ref<'local' | 'remote'>('local')
+const remoteUrl = ref<string>('')
+
+const urlRules = [
+  (value: unknown) => {
+    if (props.required && (!value || value == '')) {
+      return 'This field is required.'
+    }
+    if (value && typeof value === 'string' && value !== '') {
+      try {
+        new URL(value)
+        return true
+      } catch {
+        return 'Please enter a valid URL.'
+      }
+    }
+    return true
+  },
+]
+
+const handleRemoteUrlUpdate = (value: string) => {
+  emit('update:modelValue', value)
+}
+
+watch(contentMode, async (newMode) => {
+  if (newMode === 'remote') {
+    if (!remoteUrl.value && props.modelValue) {
+      remoteUrl.value = props.modelValue
+    }
+    emit('update:modelValue', remoteUrl.value)
+  } else {
+    emit('update:modelValue', originalUrl.value)
+
+    const newValue = originalUrl.value
+    if (!newValue) {
+      userInput.value = ''
+      errorMessage.value = ''
+      hasError.value = false
+      blobEditorContent.value = ''
+    } else {
+      if (newValue.startsWith('http://') || newValue.startsWith('https://')) {
+        userInput.value = newValue
+      }
+      if (isImageKind.value) {
+        await loadImageFromUrl(newValue)
+      } else if (isTextKind.value) {
+        await loadTextFromUrl(newValue)
+      }
+    }
+  }
+})
 
 const isTextKind = computed(() => TEXT_KINDS.includes(props.kind as (typeof TEXT_KINDS)[number]))
 const isImageKind = computed(() => IMAGE_KINDS.includes(props.kind as (typeof IMAGE_KINDS)[number]))
@@ -309,6 +385,8 @@ const loadImageFromUrl = async (url: string) => {
     console.error('Failed to load image content:', error)
     previewErrorMessage.value = `Failed to load ${props.kind} for editing (URL: ${url})`
     hasError.value = true
+    // if we cannot load the blob and it supports remote input, force remote input mode
+    if (props.allowRemoteUrl) contentMode.value = 'remote'
   } finally {
     loadingBlobContent.value = false
   }
@@ -338,6 +416,8 @@ const loadTextFromUrl = async (url: string) => {
     console.error('Failed to load text content:', error)
     previewErrorMessage.value = `Failed to load text file for editing (URL: ${url})`
     hasError.value = true
+    // if we cannot load the blob and it supports remote input, force remote input mode
+    if (props.allowRemoteUrl) contentMode.value = 'remote'
   } finally {
     loadingBlobContent.value = false
   }
@@ -493,6 +573,17 @@ async function fetchBlobByUrl(url: string, isText = false): Promise<Blob | strin
 watch(
   () => props.modelValue,
   async (newValue, oldValue) => {
+    if (newValue !== remoteUrl.value) {
+      remoteUrl.value = newValue || ''
+    }
+    if (newValue !== originalUrl.value) {
+      originalUrl.value = newValue || null
+    }
+
+    if (contentMode.value === 'remote') {
+      return
+    }
+
     if (!newValue && oldValue) {
       userInput.value = ''
       errorMessage.value = ''
@@ -502,7 +593,6 @@ watch(
     } else if (newValue && newValue !== oldValue) {
       if (newValue.startsWith('http://') || newValue.startsWith('https://')) {
         userInput.value = newValue
-        originalUrl.value = newValue
       }
       if (isImageKind.value) {
         await loadImageFromUrl(newValue)

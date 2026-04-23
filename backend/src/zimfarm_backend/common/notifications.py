@@ -40,11 +40,9 @@ jinja_env = Environment(
     autoescape=select_autoescape(["html", "xml", "txt"]),
 )
 jinja_env.filters["short_id"] = lambda value: str(value)[:5]
-jinja_env.filters["format_size"] = (
-    lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
-        value,  # pyright: ignore[reportArgumentType]
-        binary=True,
-    )
+jinja_env.filters["format_size"] = lambda value: humanfriendly.format_size(  # pyright: ignore[reportUnknownMemberType]
+    value,  # pyright: ignore[reportArgumentType]
+    binary=True,
 )
 
 

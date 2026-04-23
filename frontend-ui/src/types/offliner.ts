@@ -18,6 +18,7 @@ export interface OfflinerDefinition {
   max_graphemes: number | null
   pattern: string | null
   kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
+  allow_remote_url: boolean
 }
 
 export interface OfflinerDefinitionResponse {

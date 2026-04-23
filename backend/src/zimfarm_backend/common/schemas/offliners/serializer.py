@@ -183,6 +183,7 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
             kind=json_schema_extra["kind"],
             min_graphemes=json_schema_extra.get("minGraphemes"),
             max_graphemes=json_schema_extra.get("maxGraphemes"),
+            allow_remote_url=json_schema_extra["allowRemoteUrl"],
         )
 
         # Add choices if available
