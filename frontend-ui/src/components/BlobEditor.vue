@@ -376,6 +376,7 @@ const loadImageFromUrl = async (url: string) => {
     console.error('Failed to load image content:', error)
     errorMessage.value = 'Failed to load image/illustration for editing'
     hasError.value = true
+    contentMode.value = 'dynamic'
   } finally {
     loadingBlobContent.value = false
   }
@@ -404,6 +405,7 @@ const loadTextFromUrl = async (url: string) => {
     console.error('Failed to load text content:', error)
     errorMessage.value = 'Failed to load text file for editing'
     hasError.value = true
+    contentMode.value = 'dynamic'
   } finally {
     loadingBlobContent.value = false
   }
