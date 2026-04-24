@@ -132,9 +132,7 @@ class TaskFileSchema(BaseModel):
     check_filename: str | None = None
     check_upload_timestamp: datetime.datetime | None = None
     info: dict[str, Any] = Field(default_factory=dict)
-    zim_urls: list[ZimUrlSchema] = Field(  # pyright: ignore[reportUnknownVariableType]
-        default_factory=list
-    )
+    zim_urls: list[ZimUrlSchema] | None = None
 
 
 class TaskContainerProgressSchema(BaseModel):

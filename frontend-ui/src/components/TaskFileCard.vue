@@ -126,7 +126,7 @@
 
       <template v-if="file.uploaded_timestamp">
         <ZimUrlButtons v-if="file.zim_urls && file.zim_urls.length > 0" :urls="file.zim_urls" />
-        <v-tooltip v-else location="top">
+        <v-tooltip v-else-if="file.zim_urls == null" location="top">
           <template #activator="{ props: tooltipProps }">
             <v-btn
               v-bind="tooltipProps"
