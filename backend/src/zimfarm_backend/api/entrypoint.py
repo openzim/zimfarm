@@ -21,7 +21,6 @@ from zimfarm_backend.api.routes.languages.logic import router as languages_route
 from zimfarm_backend.api.routes.offliners.logic import router as offliners_router
 from zimfarm_backend.api.routes.platforms.logic import router as platforms_router
 from zimfarm_backend.api.routes.recipes.logic import router as recipes_router
-from zimfarm_backend.api.routes.recipes.logic import schedules_router
 from zimfarm_backend.api.routes.requested_tasks.logic import (
     router as requested_tasks_router,
 )
@@ -100,7 +99,6 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=tags_router)
     main_router.include_router(router=status_router)
     main_router.include_router(router=recipes_router)
-    main_router.include_router(router=schedules_router)
     main_router.include_router(router=files_router)
 
     app.include_router(router=main_router)

@@ -99,11 +99,9 @@ from zimfarm_backend.utils.offliners import (
 )
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
-schedules_router = APIRouter(prefix="/schedules", tags=["schedules"])
 
 
 @router.get("")
-@schedules_router.get("")
 def get_recipes(
     params: Annotated[RecipesGetSchema, Query()],
     current_account: Account | None = Depends(get_current_account_or_none),
@@ -140,9 +138,6 @@ def get_recipes(
 
 
 @router.post(
-    "", dependencies=[Depends(require_permission(namespace="recipes", name="create"))]
-)
-@schedules_router.post(
     "", dependencies=[Depends(require_permission(namespace="recipes", name="create"))]
 )
 def create_recipe(
@@ -222,7 +217,6 @@ def create_recipe(
 
 
 @router.get("/backup")
-@schedules_router.get("/backup")
 def get_recipes_backup(
     session: OrmSession = Depends(gen_dbsession),
     current_account: Account | None = Depends(get_current_account_or_none),
@@ -271,10 +265,6 @@ def get_recipes_backup(
     "/restore",
     dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
 )
-@schedules_router.post(
-    "/restore",
-    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
-)
 def restore_archived_recipes(
     request: RestoreRecipesSchema,
     session: OrmSession = Depends(gen_dbsession),
@@ -290,7 +280,6 @@ def restore_archived_recipes(
 
 
 @router.get("/{recipe_name}")
-@schedules_router.get("/{recipe_name}")
 def get_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
@@ -354,7 +343,6 @@ def get_recipe(
 
 
 @router.get("/{recipe_name}/similar")
-@schedules_router.get("/{recipe_name}/similar")
 def get_similar_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     params: Annotated[RecipesGetSchema, Query()],
@@ -384,10 +372,6 @@ def get_similar_recipe(
 
 
 @router.patch(
-    "/{recipe_name}",
-    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
-)
-@schedules_router.patch(
     "/{recipe_name}",
     dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
@@ -610,10 +594,6 @@ def update_recipe(
     "/{recipe_name}",
     dependencies=[Depends(require_permission(namespace="recipes", name="delete"))],
 )
-@schedules_router.delete(
-    "/{recipe_name}",
-    dependencies=[Depends(require_permission(namespace="recipes", name="delete"))],
-)
 def delete_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
@@ -624,7 +604,6 @@ def delete_recipe(
 
 
 @router.get("/{recipe_name}/image-names")
-@schedules_router.get("/{recipe_name}/image-names")
 def get_recipe_image_names(
     recipe_name: Annotated[NotEmptyString, Path()],
     hub_name: Annotated[str, Query()],
@@ -654,10 +633,6 @@ def get_recipe_image_names(
 
 
 @router.post(
-    "/{recipe_name}/clone",
-    dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
-)
-@schedules_router.post(
     "/{recipe_name}/clone",
     dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
 )
@@ -740,10 +715,6 @@ def clone_recipe(
     "/{recipe_name}/archive",
     dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
 )
-@schedules_router.patch(
-    "/{recipe_name}/archive",
-    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
-)
 def archive_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
@@ -765,10 +736,6 @@ def archive_recipe(
 
 
 @router.patch(
-    "/{recipe_name}/restore",
-    dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
-)
-@schedules_router.patch(
     "/{recipe_name}/restore",
     dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
 )
@@ -796,10 +763,6 @@ def restore_archived_recipe(
     "/{recipe_name}/validate",
     dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
-@schedules_router.get(
-    "/{recipe_name}/validate",
-    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
-)
 def validate_recipe(
     recipe_name: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
@@ -816,10 +779,6 @@ def validate_recipe(
 
 
 @router.get(
-    "/{recipe_name}/history",
-    dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
-)
-@schedules_router.get(
     "/{recipe_name}/history",
     dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
 )
@@ -849,10 +808,6 @@ def get_recipe_history(
     "/{recipe_name}/history/{history_id}",
     dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
 )
-@schedules_router.get(
-    "/{recipe_name}/history/{history_id}",
-    dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
-)
 def get_recipe_history_entry(
     recipe_name: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
@@ -865,10 +820,6 @@ def get_recipe_history_entry(
 
 
 @router.patch(
-    "/{recipe_name}/revert/{history_id}",
-    dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
-)
-@schedules_router.patch(
     "/{recipe_name}/revert/{history_id}",
     dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
