@@ -9,6 +9,7 @@
       v-model:comment="blobComment"
       :loading="loadingBlobContent || isUploading || isLoadingBlob"
       :error-message="errorMessage"
+      :preview-error-message="previewErrorMessage"
       :original-checksum="currentBlobChecksum"
       :original-comment="originalBlobComment"
       :original-url="originalUrl"
@@ -29,6 +30,7 @@
       v-model:comment="blobComment"
       :loading="loadingBlobContent || isUploading || isLoadingBlob"
       :error-message="errorMessage"
+      :preview-error-message="previewErrorMessage"
       :original-checksum="currentBlobChecksum"
       :original-comment="originalBlobComment"
       :original-url="originalUrl"
@@ -97,6 +99,7 @@ const userInput = ref<string>('')
 const showBlobEditor = ref(false)
 const blobEditorContent = ref('')
 const loadingBlobContent = ref(false)
+const previewErrorMessage = ref('')
 const blobComment = ref<string>('')
 const originalBlobComment = ref<string>('')
 const currentBlobId = ref<string | undefined>(undefined)
@@ -143,6 +146,7 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 
 const processText = async (text: string) => {
   errorMessage.value = ''
+  previewErrorMessage.value = ''
   hasError.value = false
 
   try {
@@ -165,6 +169,7 @@ const processText = async (text: string) => {
 
 const processFile = async (file: File) => {
   errorMessage.value = ''
+  previewErrorMessage.value = ''
   hasError.value = false
 
   // Validate file size
@@ -248,6 +253,7 @@ const handleRemove = () => {
   userInput.value = ''
   blobEditorContent.value = ''
   errorMessage.value = ''
+  previewErrorMessage.value = ''
   hasError.value = false
 
   if (fileInputRef.value) {
@@ -276,6 +282,7 @@ const handleUseOriginalUrl = (url: string) => {
 const loadImageFromUrl = async (url: string) => {
   loadingBlobContent.value = true
   errorMessage.value = ''
+  previewErrorMessage.value = ''
   hasError.value = false
 
   try {
@@ -299,7 +306,7 @@ const loadImageFromUrl = async (url: string) => {
     showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to load image content:', error)
-    errorMessage.value = 'Failed to load image/illustration for editing'
+    previewErrorMessage.value = `Failed to load ${props.kind} for editing (URL: ${url})`
     hasError.value = true
   } finally {
     loadingBlobContent.value = false
@@ -309,6 +316,7 @@ const loadImageFromUrl = async (url: string) => {
 const loadTextFromUrl = async (url: string) => {
   loadingBlobContent.value = true
   errorMessage.value = ''
+  previewErrorMessage.value = ''
   hasError.value = false
 
   try {
@@ -327,7 +335,7 @@ const loadTextFromUrl = async (url: string) => {
     showBlobEditor.value = true
   } catch (error) {
     console.error('Failed to load text content:', error)
-    errorMessage.value = 'Failed to load text file for editing'
+    previewErrorMessage.value = `Failed to load text file for editing (URL: ${url})`
     hasError.value = true
   } finally {
     loadingBlobContent.value = false
@@ -491,6 +499,7 @@ watch(
     if (!newValue && oldValue) {
       userInput.value = ''
       errorMessage.value = ''
+      previewErrorMessage.value = ''
       hasError.value = false
       blobEditorContent.value = ''
     } else if (newValue && newValue !== oldValue) {

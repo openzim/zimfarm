@@ -57,6 +57,14 @@
             <p class="text-body-2 mt-3">Loading image...</p>
           </div>
 
+          <div
+            v-else-if="previewErrorMessage"
+            class="w-100 h-100 d-flex align-center justify-center pa-4 text-error text-caption"
+          >
+            <v-icon size="small" class="mr-1">mdi-alert-circle</v-icon>
+            {{ previewErrorMessage }}
+          </div>
+
           <!-- Image/Cropper -->
           <div v-else class="w-100 h-100 d-flex align-center justify-center">
             <Cropper
@@ -99,30 +107,38 @@
             class="position-absolute d-flex flex-column"
             style="top: 8px; right: 8px; z-index: 100; gap: 8px"
           >
-            <v-btn
-              v-if="!cropperActive && (hasUnsavedChanges || hasChanges)"
-              icon
-              size="small"
-              color="success"
-              @click.stop="handleSave"
-              :loading="loading"
-            >
-              <v-icon>mdi-content-save</v-icon>
-              <v-tooltip activator="parent" location="left">Save image</v-tooltip>
-            </v-btn>
-            <v-btn v-if="!cropperActive" icon size="small" color="primary" @click.stop="startCrop">
-              <v-icon>mdi-crop</v-icon>
-              <v-tooltip activator="parent" location="left">Crop image</v-tooltip>
-            </v-btn>
-            <template v-if="cropperActive">
-              <v-btn icon size="small" color="success" @click.stop="applyCrop">
-                <v-icon>mdi-check</v-icon>
-                <v-tooltip activator="parent" location="left">Apply Crop</v-tooltip>
+            <template v-if="!previewErrorMessage">
+              <v-btn
+                v-if="!cropperActive && (hasUnsavedChanges || hasChanges)"
+                icon
+                size="small"
+                color="success"
+                @click.stop="handleSave"
+                :loading="loading"
+              >
+                <v-icon>mdi-content-save</v-icon>
+                <v-tooltip activator="parent" location="left">Save image</v-tooltip>
               </v-btn>
-              <v-btn icon size="small" color="warning" @click.stop="cancelCrop">
-                <v-icon>mdi-close</v-icon>
-                <v-tooltip activator="parent" location="left">Cancel Crop</v-tooltip>
+              <v-btn
+                v-if="!cropperActive"
+                icon
+                size="small"
+                color="primary"
+                @click.stop="startCrop"
+              >
+                <v-icon>mdi-crop</v-icon>
+                <v-tooltip activator="parent" location="left">Crop image</v-tooltip>
               </v-btn>
+              <template v-if="cropperActive">
+                <v-btn icon size="small" color="success" @click.stop="applyCrop">
+                  <v-icon>mdi-check</v-icon>
+                  <v-tooltip activator="parent" location="left">Apply Crop</v-tooltip>
+                </v-btn>
+                <v-btn icon size="small" color="warning" @click.stop="cancelCrop">
+                  <v-icon>mdi-close</v-icon>
+                  <v-tooltip activator="parent" location="left">Cancel Crop</v-tooltip>
+                </v-btn>
+              </template>
             </template>
             <v-btn icon size="small" color="error" @click.stop="handleClear">
               <v-icon>mdi-delete</v-icon>
@@ -132,7 +148,7 @@
 
           <!-- Cropper Controls Overlay -->
           <div
-            v-if="cropperActive && !loading"
+            v-if="cropperActive && !loading && !previewErrorMessage"
             class="position-absolute d-flex flex-column pa-1 rounded bg-surface"
             style="top: 8px; left: 8px; z-index: 100; gap: 4px; opacity: 0.9"
           >
@@ -199,7 +215,7 @@
     </v-sheet>
 
     <!-- Comment Field -->
-    <div v-if="showPreview && !cropperActive" class="mt-2">
+    <div v-if="showPreview && !cropperActive && !previewErrorMessage" class="mt-2">
       <v-textarea
         :model-value="comment"
         @update:model-value="$emit('update:comment', $event)"
@@ -248,6 +264,7 @@ interface Props {
   loading?: boolean
   disabled?: boolean
   errorMessage?: string
+  previewErrorMessage?: string
   originalChecksum?: string
   originalComment?: string
   originalUrl?: string | null
@@ -261,6 +278,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   disabled: false,
   errorMessage: '',
+  previewErrorMessage: '',
   originalChecksum: undefined,
   originalComment: '',
   originalUrl: null,
@@ -291,7 +309,9 @@ const localChecksum = ref<string | undefined>(undefined)
 
 // Computed
 const errorMessage = computed(() => props.errorMessage || internalErrorMessage.value)
-const showPreview = computed(() => !!internalImageData.value || props.loading)
+const showPreview = computed(
+  () => !!internalImageData.value || props.loading || !!props.previewErrorMessage,
+)
 
 const hasChanges = computed(() => {
   // Check if comment has changed

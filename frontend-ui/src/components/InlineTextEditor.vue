@@ -33,7 +33,7 @@
     >
       <!-- Empty State: Drop Zone -->
       <div
-        v-if="!isEditing"
+        v-if="!showEditor"
         class="d-flex flex-column align-center justify-center pa-8 h-100"
         style="pointer-events: none"
       >
@@ -57,7 +57,7 @@
       </div>
 
       <!-- Editor State -->
-      <div v-if="isEditing" class="d-flex flex-column h-100 w-100 position-relative">
+      <div v-if="showEditor" class="d-flex flex-column h-100 w-100 position-relative">
         <!-- Loading Overlay -->
         <div
           v-if="loading"
@@ -68,30 +68,44 @@
           <p class="text-body-2 mt-3">Loading file...</p>
         </div>
 
+        <div
+          v-else-if="previewErrorMessage"
+          class="w-100 h-100 d-flex align-center justify-center pa-4 text-error text-caption"
+        >
+          <v-icon size="small" class="mr-1">mdi-alert-circle</v-icon>
+          {{ previewErrorMessage }}
+        </div>
+
         <!-- Action Buttons -->
         <div
           v-if="!loading"
           class="position-absolute d-flex flex-column"
           style="top: 8px; right: 24px; z-index: 100; gap: 8px"
         >
-          <v-btn
-            v-if="hasChanges"
-            icon
-            size="small"
-            color="success"
-            @click.stop="handleSave"
-            :loading="loading"
-          >
-            <v-icon>mdi-content-save</v-icon>
-            <v-tooltip activator="parent" location="left">Save file</v-tooltip>
-          </v-btn>
+          <template v-if="!previewErrorMessage">
+            <v-btn
+              v-if="hasChanges"
+              icon
+              size="small"
+              color="success"
+              @click.stop="handleSave"
+              :loading="loading"
+            >
+              <v-icon>mdi-content-save</v-icon>
+              <v-tooltip activator="parent" location="left">Save file</v-tooltip>
+            </v-btn>
+          </template>
           <v-btn icon size="small" color="error" @click.stop="handleClear">
             <v-icon>mdi-delete</v-icon>
             <v-tooltip activator="parent" location="left">Delete file</v-tooltip>
           </v-btn>
         </div>
 
-        <div class="w-100 h-100" style="border: 1px solid rgb(var(--v-border-color))">
+        <div
+          v-if="!previewErrorMessage"
+          class="w-100 h-100"
+          style="border: 1px solid rgb(var(--v-border-color))"
+        >
           <CodeEditor
             v-model="internalTextData"
             :file-type="fileType"
@@ -104,7 +118,7 @@
     </v-sheet>
 
     <!-- Comment Field -->
-    <div v-if="isEditing" class="mt-2">
+    <div v-if="!previewErrorMessage" class="mt-2">
       <v-textarea
         :model-value="comment"
         @update:model-value="$emit('update:comment', $event)"
@@ -152,6 +166,7 @@ interface Props {
   loading?: boolean
   disabled?: boolean
   errorMessage?: string
+  previewErrorMessage?: string
   originalChecksum?: string
   originalComment?: string
   originalUrl?: string | null
@@ -166,6 +181,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   disabled: false,
   errorMessage: '',
+  previewErrorMessage: '',
   originalChecksum: undefined,
   originalComment: '',
   originalUrl: null,
@@ -193,6 +209,8 @@ const localChecksum = ref<string | undefined>(undefined)
 // Computed
 const errorMessage = computed(() => props.errorMessage || internalErrorMessage.value)
 const isEditing = computed(() => !!internalTextData.value || forceEditing.value || props.loading)
+
+const showEditor = computed(() => isEditing.value || !!props.previewErrorMessage)
 
 const hasChanges = computed(() => {
   // Check if comment has changed
