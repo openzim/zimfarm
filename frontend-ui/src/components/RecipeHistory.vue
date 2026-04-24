@@ -1,6 +1,12 @@
 <template>
   <v-container fluid>
-    <template v-if="history.length > 0">
+    <template v-if="loading && history.length === 0">
+      <div class="d-flex flex-column justify-center align-center pa-8">
+        <v-progress-circular indeterminate color="primary" size="64" />
+        <span class="mt-4">Loading Recipe history...</span>
+      </div>
+    </template>
+    <template v-else-if="history.length > 0">
       <template v-if="!showDiffViewer">
         <v-alert type="info" variant="tonal" :icon="false">
           <template v-slot:prepend>

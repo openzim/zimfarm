@@ -289,12 +289,16 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token)
       return httpRequest({
         baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
 
     return httpRequest({
       baseURL: `${config.ZIMFARM_WEBAPI}/${baseURL}`,
       headers: {
         Authorization: `Bearer ${token.access_token}`,
+        'Content-Type': 'application/json',
       },
     })
   }

@@ -84,6 +84,7 @@ import 'diff2html/bundles/css/diff2html.min.css'
 import { useNotificationStore } from '@/stores/notification'
 import { isTextKind, isImageKind, type BlobKind } from '@/utils/blob'
 import { ColorSchemeType } from 'diff2html/lib/types'
+import httpRequest from '@/utils/httpRequest'
 
 interface Props {
   oldBlobUrl: string | null
@@ -109,11 +110,8 @@ const isText = computed(() => isTextKind(props.kind))
 const isImage = computed(() => isImageKind(props.kind))
 
 const fetchBlobByUrl = async (url: string): Promise<Blob | null> => {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-  return await response.blob()
+  const service = httpRequest({})
+  return await service.get<unknown, Blob>(url, { responseType: 'blob' })
 }
 
 const fetchImageBlob = async (url: string): Promise<string> => {

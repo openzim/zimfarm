@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import httpRequest from '@/utils/httpRequest'
 import { formattedBytesSize } from '@/utils/format'
 import constants from '@/constants'
 import type { Config } from '@/config'
@@ -459,12 +460,8 @@ async function fetchBlobByUrl(url: string, isText = false): Promise<Blob | strin
   errorMessage.value = ''
 
   try {
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch file: ${response.statusText}`)
-    }
-
-    const blob = await response.blob()
+    const service = httpRequest({})
+    const blob = await service.get<unknown, Blob>(url, { responseType: 'blob' })
     const file = new File([blob], 'downloaded-file', { type: blob.type })
     const localChecksum = await computeChecksumFromFile(file)
 
