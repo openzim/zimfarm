@@ -38,7 +38,7 @@ export interface TaskFile {
   check_filename?: string
   check_upload_timestamp?: string
   info?: TaskFileInfo
-  zim_urls: ZimUrl[]
+  zim_urls: ZimUrl[] | null
 }
 
 export interface TaskResourceUsage {
