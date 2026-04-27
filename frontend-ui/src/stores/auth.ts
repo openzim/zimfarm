@@ -68,6 +68,10 @@ export const useAuthStore = defineStore('auth', () => {
     return new Date() >= tokenExpiryDate.value
   })
 
+  const tokenType = computed(() => {
+    return token.value?.token_type || null
+  })
+
   const getAuthProvider = (providerType: AuthProviderType): AuthProvider => {
     switch (providerType) {
       case 'oauth':
@@ -335,6 +339,7 @@ export const useAuthStore = defineStore('auth', () => {
     errors,
     isRefreshFailed,
     refreshPromise,
+    tokenType,
 
     // Computed
     isLoggedIn,

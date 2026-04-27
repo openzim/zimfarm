@@ -48,6 +48,7 @@
         :is-logged-in="isLoggedIn"
         :access-token="accessToken"
         :has-password="hasPassword"
+        :token-type="tokenType"
         @sign-out="$emit('sign-out')"
       />
     </div>
@@ -81,6 +82,7 @@
 <script setup lang="ts">
 import Loading from '@/components/Loading.vue'
 import UserButton from '@/components/UserButton.vue'
+import type { AuthProviderType } from '@/types/auth'
 import { computed, ref } from 'vue'
 
 // Props
@@ -97,6 +99,7 @@ const props = defineProps<{
   navigationItems: NavigationItem[]
   displayName: string | null
   isLoggedIn: boolean
+  tokenType: AuthProviderType | null
   accessToken: string | null
   hasPassword: boolean
   isLoading: boolean
