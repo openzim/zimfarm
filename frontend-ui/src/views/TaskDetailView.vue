@@ -68,7 +68,7 @@
         <v-window-item value="details">
           <v-card flat>
             <v-card-text class="pa-0">
-              <div>
+              <div class="ml-4 mr-4 mt-2 mb-2">
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
                     <div class="text-subtitle-2">ID</div>
@@ -234,7 +234,7 @@
         <v-window-item value="debug">
           <v-card flat>
             <v-card-text class="pa-0">
-              <div>
+              <div class="ml-4 mr-4 mt-2 mb-2">
                 <v-row v-if="task.config" no-gutters class="py-2">
                   <v-col cols="12" md="3">
                     <div class="text-subtitle-2">Offliner</div>
@@ -855,7 +855,7 @@ onBeforeUnmount(() => {
 .stdout,
 .stderr {
   max-height: 9rem;
-  overflow: scroll;
+  overflow-y: auto;
   background-color: rgb(var(--v-theme-surface));
   padding: 1rem;
   border-radius: 4px;
