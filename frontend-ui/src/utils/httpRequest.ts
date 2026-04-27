@@ -9,7 +9,6 @@ export default function httpRequest(
     timeout: 30000, // timeout of 30 seconds
     headers: {
       ...headers,
-      'Content-Type': 'application/json',
     },
     withCredentials,
     paramsSerializer: {

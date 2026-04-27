@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import httpRequest from '@/utils/httpRequest'
 import { computed, ref } from 'vue'
 import { useNotificationStore } from '@/stores/notification'
 import { isTextKind, type BlobKind, type TextKind } from '@/utils/blob'
@@ -85,11 +86,8 @@ const loadingBlobContent = ref(false)
 const isText = computed(() => isTextKind(props.kind))
 
 const fetchBlobByUrl = async (url: string): Promise<Blob | null> => {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-  return await response.blob()
+  const service = httpRequest({})
+  return await service.get<unknown, Blob>(url, { responseType: 'blob' })
 }
 
 const handleViewImage = async () => {
