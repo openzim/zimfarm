@@ -390,7 +390,7 @@ def test_get_task_populate_zim_urls_disabled(
     data = response.json()
     assert "files" in data
     assert "test.zim" in data["files"]
-    assert data["files"]["test.zim"]["zim_urls"] == []
+    assert data["files"]["test.zim"]["zim_urls"] is None
 
 
 @patch("zimfarm_backend.common.upload.requests.get")
@@ -507,7 +507,7 @@ def test_get_task_populate_zim_urls_enabled(
 
     # File 3 should not have URLs (no zim_id)
     assert "file3.zim" in data["files"]
-    assert data["files"]["file3.zim"]["zim_urls"] == []
+    assert data["files"]["file3.zim"]["zim_urls"] is None
 
 
 @patch("zimfarm_backend.common.upload.requests.get")
@@ -546,4 +546,4 @@ def test_get_task_populate_zim_urls_cms_api_error(
     assert "files" in data
     assert "test.zim" in data["files"]
     # When there's an error, zim_urls should remain empty
-    assert data["files"]["test.zim"]["zim_urls"] == []
+    assert data["files"]["test.zim"]["zim_urls"] is None
