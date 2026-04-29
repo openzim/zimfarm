@@ -308,15 +308,17 @@
 
                 <v-row v-if="taskContainer?.command" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">
-                      Command
+                    <div
+                      class="text-subtitle-2 d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
+                    >
+                      <span> Command </span>
                       <v-btn
                         size="small"
                         variant="outlined"
-                        class="ml-2"
+                        class="align-self-start"
                         @click="copyCommand(command)"
                       >
-                        <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
+                        <v-icon size="small">mdi-content-copy</v-icon>
                         Copy
                       </v-btn>
                     </div>
@@ -411,21 +413,25 @@
 
                 <v-row v-if="taskContainer?.stdout" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">
-                      Scraper stdout
-                      <v-progress-circular
-                        v-if="debugRefreshInProgress"
-                        indeterminate
-                        size="small"
-                        class="ml-1"
-                      />
+                    <div
+                      class="text-subtitle-2 d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
+                    >
+                      <span>
+                        Scraper stdout
+                        <v-progress-circular
+                          v-if="debugRefreshInProgress"
+                          indeterminate
+                          size="small"
+                          class="ml-1"
+                        />
+                      </span>
                       <v-btn
                         size="small"
                         variant="outlined"
-                        class="ml-2"
+                        class="align-self-start"
                         @click="copyOutput(taskContainer.stdout, 'stdout')"
                       >
-                        <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
+                        <v-icon size="small">mdi-content-copy</v-icon>
                         Copy
                       </v-btn>
                     </div>
@@ -438,15 +444,17 @@
 
                 <v-row v-if="taskContainer?.stderr" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">
-                      Scraper stderr
+                    <div
+                      class="text-subtitle-2 d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
+                    >
+                      <span> Scraper stderr </span>
                       <v-btn
                         size="small"
                         variant="outlined"
-                        class="ml-2"
+                        class="align-self-start"
                         @click="copyOutput(taskContainer.stderr, 'stderr')"
                       >
-                        <v-icon size="small" class="mr-1">mdi-content-copy</v-icon>
+                        <v-icon size="small">mdi-content-copy</v-icon>
                         Copy
                       </v-btn>
                     </div>
@@ -458,13 +466,19 @@
                 <v-divider v-if="taskContainer?.stderr" class="my-2"></v-divider>
 
                 <v-row v-if="taskContainer?.log" no-gutters class="py-2">
-                  <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Scraper Log</div>
-                  </v-col>
-                  <v-col cols="12" md="9">
-                    <v-btn variant="outlined" size="small" target="_blank" :href="zimfarmLogsUrl">
-                      Download log
-                    </v-btn>
+                  <v-col cols="12">
+                    <div class="text-subtitle-2 d-flex flex-row ga-2 pa-2 align-center">
+                      <span> Scraper Log </span>
+                      <v-btn
+                        variant="outlined"
+                        size="small"
+                        class="align-self-start"
+                        target="_blank"
+                        :href="zimfarmLogsUrl"
+                      >
+                        Download log
+                      </v-btn>
+                    </div>
                   </v-col>
                 </v-row>
                 <v-divider v-if="taskContainer?.log" class="my-2"></v-divider>
