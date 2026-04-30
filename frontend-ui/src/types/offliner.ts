@@ -14,8 +14,8 @@ export interface OfflinerDefinition {
   type: string
   min: number | null
   max: number | null
-  min_length: number | null
-  max_length: number | null
+  min_graphemes: number | null
+  max_graphemes: number | null
   pattern: string | null
   kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
 }

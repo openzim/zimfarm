@@ -17,8 +17,8 @@ class BaseFlagSchema(BaseModel):
     secret: bool = False
     min: int | None = None
     max: int | None = None
-    min_length: int | None = Field(validation_alias="minLength", default=None)
-    max_length: int | None = Field(validation_alias="maxLength", default=None)
+    min_graphemes: int | None = Field(validation_alias="minGraphemes", default=None)
+    max_graphemes: int | None = Field(validation_alias="maxGraphemes", default=None)
     pattern: str | None = None
 
 
@@ -55,11 +55,11 @@ class FlagSchema(BaseFlagSchema):
     relaxed_pattern: str | None = Field(validation_alias="relaxedPattern", default=None)
     relaxed_min: int | None = Field(validation_alias="relaxedMin", default=None)
     relaxed_max: int | None = Field(validation_alias="relaxedMax", default=None)
-    relaxed_min_length: int | None = Field(
-        validation_alias="relaxedMinLength", default=None
+    relaxed_min_graphemes: int | None = Field(
+        validation_alias="relaxedMinGraphemes", default=None
     )
-    relaxed_max_length: int | None = Field(
-        validation_alias="relaxedMaxLength", default=None
+    relaxed_max_graphemes: int | None = Field(
+        validation_alias="relaxedMaxGraphemes", default=None
     )
     custom_validator: str | None = Field(
         validation_alias="customValidator", default=None

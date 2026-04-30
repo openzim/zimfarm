@@ -2,7 +2,7 @@ from enum import Enum
 from types import UnionType
 from typing import Annotated, Any, Union, cast, get_args, get_origin
 
-from annotated_types import Ge, Le, MaxLen, MinLen
+from annotated_types import Ge, Le
 from pydantic import BaseModel, SecretStr
 from pydantic.fields import FieldInfo
 
@@ -181,22 +181,20 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
             type=json_schema_extra["type"],
             secret=is_secret(field_type),
             kind=json_schema_extra["kind"],
+            min_graphemes=json_schema_extra.get("minGraphemes"),
+            max_graphemes=json_schema_extra.get("maxGraphemes"),
         )
 
         # Add choices if available
         if choices:
             flag_obj.choices = choices
 
-        # retrieve minlength, maxlength, pattern, ge, le, etc from metadata
+        # retrieve minGraphmes, maxGraphemes, pattern, ge, le, etc from metadata
         for metadata in get_field_metadata(field_info):
             if isinstance(metadata, Ge):
                 flag_obj.min = cast(int, metadata.ge)
             if isinstance(metadata, Le):
                 flag_obj.max = cast(int, metadata.le)
-            if isinstance(metadata, MinLen):
-                flag_obj.min_length = metadata.min_length
-            if isinstance(metadata, MaxLen):
-                flag_obj.max_length = metadata.max_length
             # the underlying type that holds the regex for the pattern is an internal
             # pydantic type which is not exported but it exists for a field that sets it
             if hasattr(metadata, "pattern"):
