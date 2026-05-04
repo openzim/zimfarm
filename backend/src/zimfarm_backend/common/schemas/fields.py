@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
 from typing import Annotated, Any
 
@@ -22,14 +23,26 @@ from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.enums import Platform, WarehousePath
 
 
-class GraphemeStr(str):
-    def __len__(self) -> int:
-        # Count the number of grapheme clusters
-        return len(regex.findall(r"\X", self))
+@dataclass(frozen=True)
+class GraphemeLength:
+    min: int | None = None
+    max: int | None = None
 
+    def __call__(self, v: str, info: ValidationInfo) -> str:
+        context = info.context
+        if context and context.get("skip_validation"):
+            return v
 
-def to_grapheme_str(value: str):
-    return GraphemeStr(value)
+        n = len(regex.findall(r"\X", v))
+        if self.min is not None and n < self.min:
+            raise ValueError(
+                f"String should have at least {self.min} grapheme clusters (got {n})"
+            )
+        if self.max is not None and n > self.max:
+            raise ValueError(
+                f"String should have at most {self.max} grapheme clusters (got {n})"
+            )
+        return v
 
 
 def no_null_char(value: str) -> str:
@@ -46,11 +59,9 @@ def OptionalField(**kwargs: Any) -> Any:  # noqa N802
 
 
 NoNullCharString = Annotated[
-    str, AfterValidator(no_null_char), AfterValidator(to_grapheme_str)
+    str,
+    AfterValidator(no_null_char),
 ]
-
-
-OptionalNoNullCharString = NoNullCharString | None
 
 
 def not_empty(value: str) -> str:
@@ -58,6 +69,8 @@ def not_empty(value: str) -> str:
     if not value.strip():
         raise ValueError("String value cannot be empty")
 
+    # cast value to str else Field validators will use the str len method for
+    # length validation
     return value.strip()
 
 
@@ -109,15 +122,6 @@ def enum_member(
 
 NotEmptyString = Annotated[NoNullCharString, AfterValidator(not_empty)]
 
-OptionalNotEmptyString = NotEmptyString | None
-
-ZIMMetadataString = Annotated[
-    str,
-    AfterValidator(no_null_char),
-    AfterValidator(not_empty),
-    AfterValidator(to_grapheme_str),
-]
-
 
 def show_secrets(value: Any, _: Any, info: SerializationInfo) -> Any:
     """Show secret values in serialization"""
@@ -142,12 +146,8 @@ def skip_validation(
 
 ZIMSecretStr = Annotated[SecretStr, WrapSerializer(show_secrets)]
 
-OptionalZIMSecretStr = ZIMSecretStr | None
 
 Percentage = Annotated[int, Field(ge=1, le=100), WrapValidator(skip_validation)]
-
-
-OptionalPercentage = Percentage | None
 
 
 def validate_secret_url(v: ZIMSecretStr | str, info: ValidationInfo) -> ZIMSecretStr:
@@ -165,72 +165,14 @@ def validate_secret_url(v: ZIMSecretStr | str, info: ValidationInfo) -> ZIMSecre
 
 SecretUrl = Annotated[ZIMSecretStr, AfterValidator(validate_secret_url)]
 
-OptionalSecretUrl = SecretUrl | None
 
 SkipableUrl = Annotated[AnyUrl, WrapValidator(skip_validation)]
-OptionalSkipableUrl = SkipableUrl | None
 
-ZIMLongDescription = Annotated[
-    ZIMMetadataString,
-    Field(min_length=1, max_length=4000),
-    WrapValidator(skip_validation),
-]
-
-OptionalZIMLongDescription = ZIMLongDescription | None
-
-ZIMTitle = Annotated[
-    ZIMMetadataString,
-    Field(min_length=1, max_length=30),
-    WrapValidator(skip_validation),
-]
-
-OptionalZIMTitle = ZIMTitle | None
-
-ZIMDescription = Annotated[
-    ZIMMetadataString,
-    Field(min_length=1, max_length=80),
-    WrapValidator(skip_validation),
-]
-
-OptionalZIMDescription = ZIMDescription | None
-
-ZIMFileName = Annotated[
-    str,
-    Field(
-        pattern=r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+_)([a-z0-9\-\.]+_|)([\d]{4}-[\d]{2}|\{period\}).zim$"
-    ),
-    WrapValidator(skip_validation),
-]
-
-OptionalZIMFileName = ZIMFileName | None
-
-SlugString = Annotated[
-    str,
-    Field(
-        pattern=r"^[A-Za-z0-9._-]+$",
-    ),
-    WrapValidator(skip_validation),
-]
-
-OptionalSlugString = SlugString | None
-
-ZIMName = Annotated[
-    str,
-    Field(pattern=r"^([a-z0-9\-\.]+_)([a-z\-]+_)([a-z0-9\-\.]+)$"),
-    WrapValidator(skip_validation),
-]
-
-OptionalZIMName = ZIMName | None
 
 SlackTarget = Annotated[
     str, Field(pattern=r"^[#|@].+$"), WrapValidator(skip_validation)
 ]
 
-OptionalSlackTarget = SlackTarget | None
-
-ZIMPlatformValue = Annotated[int, Field(ge=1), WrapValidator(skip_validation)]
-
-OptionalZIMPlatformValue = ZIMPlatformValue | None
 
 ZIMLangCode = Annotated[
     str,
@@ -239,23 +181,8 @@ ZIMLangCode = Annotated[
     AfterValidator(validate_language_code),
 ]
 
-CommaSeparatedZIMLangCode = Annotated[
-    str,
-    Field(pattern=r"^[a-z]{3}(,[a-z]{3})*$"),
-    AfterValidator(validate_comma_separated_zim_lang_code),
-    WrapValidator(skip_validation),
-]
-
-OptionalCommaSeparatedZIMLangCode = CommaSeparatedZIMLangCode | None
-
-OptionalZIMLangCode = ZIMLangCode | None
-
-ZIMOutputFolder = Annotated[
-    str, Field(pattern=r"^/output$"), WrapValidator(skip_validation)
-]
 
 SkipableBool = Annotated[bool, WrapValidator(skip_validation)]
-OptionalSkipableBool = SkipableBool | None
 
 
 def serialize_color_to_hex(value: Any, _: SerializerFunctionWrapHandler) -> str:
@@ -269,49 +196,31 @@ SkipableColor = Annotated[
     Color, WrapValidator(skip_validation), WrapSerializer(serialize_color_to_hex)
 ]
 
-OptionalZIMOutputFolder = ZIMOutputFolder | None
-
-ZIMProgressFile = Annotated[
-    NotEmptyString,
-    Field(pattern=r"^/output/task_progress\.json$"),
-    WrapValidator(skip_validation),
-]
-
-OptionalZIMProgressFile = ZIMProgressFile | None
 
 ZIMCPU = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
-OptionalZIMCPU = ZIMCPU | None
 
 ZIMMemory = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
-OptionalZIMMemory = ZIMMemory | None
 
 ZIMDisk = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
-OptionalZIMDisk = ZIMDisk | None
 
 SkipField = Annotated[int, Field(ge=0), WrapValidator(skip_validation)]
 
-OptionalSkipField = SkipField | None
 
 LimitFieldMax500 = Annotated[int, Field(ge=1, le=500), WrapValidator(skip_validation)]
 
-OptionalLimitFieldMax500 = LimitFieldMax500 | None
 
 LimitFieldMax200 = Annotated[int, Field(ge=1, le=200), WrapValidator(skip_validation)]
 
-OptionalLimitFieldMax200 = LimitFieldMax200 | None
 
 PriorityField = Annotated[int, Field(ge=1, le=10), WrapValidator(skip_validation)]
 
-OptionalPriorityField = PriorityField | None
 
 WorkerField = Annotated[
     NotEmptyString, Field(min_length=3), WrapValidator(skip_validation)
 ]
-
-OptionalWorkerField = WorkerField | None
 
 
 def validate_recipe_name(name: str, info: ValidationInfo) -> str:
@@ -333,8 +242,6 @@ def validate_recipe_name(name: str, info: ValidationInfo) -> str:
 
 
 RecipeNameField = Annotated[NotEmptyString, AfterValidator(validate_recipe_name)]
-
-OptionalRecipeNameField = RecipeNameField | None
 
 
 def validate_warehouse_path(warehouse_path: str, info: ValidationInfo) -> str:
@@ -360,5 +267,3 @@ def validate_platform_value(platform: str, info: ValidationInfo) -> str:
 
 
 PlatformField = Annotated[str, AfterValidator(validate_platform_value)]
-
-OptionalPlatformField = PlatformField | None

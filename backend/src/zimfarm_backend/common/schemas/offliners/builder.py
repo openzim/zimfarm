@@ -5,6 +5,7 @@ from itertools import chain
 from typing import Annotated, Any, Literal, Optional, cast
 
 from pydantic import (
+    AfterValidator,
     ConfigDict,
     EmailStr,
     Field,
@@ -18,6 +19,7 @@ from zimfarm_backend import logger
 from zimfarm_backend.common.constants import getenv, parse_bool
 from zimfarm_backend.common.schemas import CamelModel, DashModel
 from zimfarm_backend.common.schemas.fields import (
+    GraphemeLength,
     NotEmptyString,
     OptionalField,
     SecretUrl,
@@ -89,36 +91,21 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
     use_relaxed_schema = parse_bool(
         getenv(f"{offliner.upper()}_USE_RELAXED_SCHEMA", default="false")
     )
-    pydantic_field_cls = Field if flag.required else OptionalField
-    pydantic_field = pydantic_field_cls(
-        title=flag.title,
-        description=flag.description,
-        alias=flag.alias,
-        ge=(flag.relaxed_min if flag.relaxed_min and use_relaxed_schema else flag.min),
-        le=(flag.relaxed_max if flag.relaxed_max and use_relaxed_schema else flag.max),
-        pattern=(
-            flag.relaxed_pattern
-            if flag.relaxed_pattern and use_relaxed_schema
-            else flag.pattern
-        ),
-        min_length=(
-            flag.relaxed_min_length
-            if flag.relaxed_min_length and use_relaxed_schema
-            else flag.min_length
-        ),
-        max_length=(
-            flag.relaxed_max_length
-            if flag.relaxed_max_length and use_relaxed_schema
-            else flag.max_length
-        ),
-        # if a field is required and no default is specified, use ellipsis ...
-        # otherwise, it invalidates the required validation
-        default=... if flag.required and flag.default is None else flag.default,
-        frozen=parse_bool(flag.frozen),
-        # Add additional information to the pydantic field to be used while determining
-        # flag details.
-        json_schema_extra={"kind": flag.kind, "type": flag.type},
+    resolved_min_graphemes = (
+        flag.relaxed_min_graphemes
+        if flag.relaxed_min_graphemes and use_relaxed_schema
+        else flag.min_graphemes
     )
+    resolved_max_graphemes = (
+        flag.relaxed_max_graphemes
+        if flag.relaxed_max_graphemes and use_relaxed_schema
+        else flag.max_graphemes
+    )
+    # Additional information to the pydantic field to be used while determining
+    # flag details.
+    json_schema_extra: dict[str, Any] = {"kind": flag.kind, "type": flag.type}
+
+    # Determine the python type to represent the flag
     match flag.type:
         case "string-enum" | "list-of-string-enum":
             # We don't have a type map for string enum types as we don't
@@ -156,6 +143,22 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
                 py_type = base_type if flag.required else Optional[base_type]
         case "string" | "list-of-string":
             base_type = ZIMSecretStr if flag.secret else NotEmptyString
+
+            # Apply the min/max graphemes restraint to the string type
+            if resolved_min_graphemes is not None or resolved_max_graphemes is not None:
+                base_type = Annotated[
+                    base_type,
+                    AfterValidator(
+                        GraphemeLength(
+                            min=resolved_min_graphemes, max=resolved_max_graphemes
+                        )
+                    ),
+                ]
+                if resolved_min_graphemes is not None:
+                    json_schema_extra["minGraphemes"] = resolved_min_graphemes
+                if resolved_max_graphemes is not None:
+                    json_schema_extra["maxGraphemes"] = resolved_max_graphemes
+
             if flag.type == "list-of-string":
                 py_type = (
                     list[base_type] if flag.required else Optional[list[base_type]]
@@ -168,6 +171,25 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
             py_type = (
                 TYPE_MAP[flag.type] if flag.required else Optional[TYPE_MAP[flag.type]]
             )
+
+    pydantic_field_cls = Field if flag.required else OptionalField
+    pydantic_field = pydantic_field_cls(
+        title=flag.title,
+        description=flag.description,
+        alias=flag.alias,
+        ge=(flag.relaxed_min if flag.relaxed_min and use_relaxed_schema else flag.min),
+        le=(flag.relaxed_max if flag.relaxed_max and use_relaxed_schema else flag.max),
+        pattern=(
+            flag.relaxed_pattern
+            if flag.relaxed_pattern and use_relaxed_schema
+            else flag.pattern
+        ),
+        # if a field is required and no default is specified, use ellipsis ...
+        # otherwise, it invalidates the required validation
+        default=... if flag.required and flag.default is None else flag.default,
+        frozen=parse_bool(flag.frozen),
+        json_schema_extra=json_schema_extra,
+    )
 
     # For secret fields, we use the already defined ZIMSecretStr type
     # and it's variants since it supports secret values and masking based on context
@@ -223,14 +245,12 @@ def build_offliner_model(
         for flag, flag_schema in schema.flags.items()
         if flag_schema.custom_validator
     }
-    model_validators: dict[str, Callable[..., Any]] = (
-        {  # pyright: ignore[reportAssignmentType]
-            f"{validator.name}_validator": model_validator(mode="after")(
-                get_model_validator(validator.name)(validator.fields)
-            )
-            for validator in schema.model_validators
-        }
-    )
+    model_validators: dict[str, Callable[..., Any]] = {  # pyright: ignore[reportAssignmentType]
+        f"{validator.name}_validator": model_validator(mode="after")(
+            get_model_validator(validator.name)(validator.fields)
+        )
+        for validator in schema.model_validators
+    }
     return create_model(
         f"{offliner.id}FlagsSchema",
         offliner_id=(Literal[offliner.id], Field(alias="offliner_id")),

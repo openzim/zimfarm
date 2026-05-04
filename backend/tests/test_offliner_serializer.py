@@ -1,22 +1,11 @@
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel
 
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.common.schemas.fields import (
-    OptionalNotEmptyString,
-    OptionalSecretUrl,
-    OptionalZIMDescription,
-    OptionalZIMLongDescription,
-    OptionalZIMOutputFolder,
-    OptionalZIMSecretStr,
-    OptionalZIMTitle,
-    SecretUrl,
-)
 from zimfarm_backend.common.schemas.offliners.serializer import (
     get_enum_choices,
-    is_secret,
     schema_to_flags,
 )
 
@@ -33,27 +22,6 @@ def test_get_enum_choices(field_type: Any, expected_choices: list[str]):
     assert len(choices) == len(expected_choices)
     for choice in choices:
         assert choice in expected_choices
-
-
-@pytest.mark.parametrize(
-    "field,is_secret_field",
-    (
-        pytest.param(TaskStatus, False, id="TaskStatus"),
-        pytest.param(SecretStr, True, id="SecretStr"),
-        pytest.param(OptionalZIMOutputFolder, False, id="OptionalZIMOutputFolder"),
-        pytest.param(OptionalZIMSecretStr, True, id="OptionalZIMSecretStr"),
-        pytest.param(OptionalNotEmptyString, False, id="OptionalNotEmptyString"),
-        pytest.param(OptionalZIMDescription, False, id="OptionalZIMDescription"),
-        pytest.param(
-            OptionalZIMLongDescription, False, id="OptionalZIMLongDescription"
-        ),
-        pytest.param(OptionalZIMTitle, False, id="OptionalZIMTitle"),
-        pytest.param(OptionalSecretUrl, True, id="OptionalSecretUrl"),
-        pytest.param(SecretUrl, True, id="SecretUrl"),
-    ),
-)
-def test_is_secret(field: Any, *, is_secret_field: bool):
-    assert is_secret(field) == is_secret_field
 
 
 def test_mw_offliner_schema_to_flags(mwoffliner_schema_cls: type[BaseModel]):
@@ -110,13 +78,13 @@ def test_mw_offliner_schema_to_flags(mwoffliner_schema_cls: type[BaseModel]):
 
         # Validat that restrictions are correctly inferred
         if key in ("customZIMTitle",):
-            assert flag.min_length == 1
-            assert flag.min_length == 30
+            assert flag.min_graphemes == 1
+            assert flag.max_graphemes == 30
         elif key in ("customZIMDescription",):
-            assert flag.min_length == 1
-            assert flag.min_length == 80
+            assert flag.min_graphemes == 1
+            assert flag.max_graphemes == 80
         elif key in ("customZIMLongDescription",):
-            assert flag.min_length == 1
-            assert flag.min_length == 4000
+            assert flag.min_graphemes == 1
+            assert flag.max_graphemes == 4000
         elif key in ("outputDirectory",):
             assert flag.pattern is not None

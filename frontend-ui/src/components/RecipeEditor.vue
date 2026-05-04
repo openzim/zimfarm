@@ -480,8 +480,8 @@
             :hint="field.description ?? undefined"
             persistent-hint
           >
-            <template v-if="field.max_length" #counter>
-              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
+            <template v-if="field.max_graphemes" #counter>
+              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_graphemes }}
             </template>
           </v-textarea>
           <BlobEditor
@@ -509,8 +509,8 @@
             :hint="field.description ?? undefined"
             persistent-hint
           >
-            <template v-if="field.max_length" #counter>
-              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_length }}
+            <template v-if="field.max_graphemes" #counter>
+              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_graphemes }}
             </template>
           </v-text-field>
           <div v-if="showYoutubeLinks && isIdentField(field)" class="mt-1">
@@ -682,8 +682,8 @@ interface FlagField {
   step?: number | null
   min: number | null
   max: number | null
-  min_length: number | null
-  max_length: number | null
+  min_graphemes: number | null
+  max_graphemes: number | null
   pattern: string | null
   kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
 }
@@ -1120,8 +1120,8 @@ const flagsFields = computed(() => {
       description: field.description,
       min: field.min,
       max: field.max,
-      min_length: field.min_length,
-      max_length: field.max_length,
+      min_graphemes: field.min_graphemes,
+      max_graphemes: field.max_graphemes,
       pattern: field.pattern,
       placeholder: 'Not set',
       component,
@@ -1246,17 +1246,17 @@ const getFieldRules = (field: FlagField) => {
     })
   }
 
-  // Add validation for min, max, min_length, and pattern constraints
+  // Add validation for min, max, min_graphemes, and pattern constraints
   const shouldValidate = (value: unknown) => {
     return value !== null && value !== undefined && value !== ''
   }
 
   // Min length validation
-  if (field.min_length !== null) {
+  if (field.min_graphemes !== null) {
     rules.push((value: unknown) => {
       if (shouldValidate(value) && typeof value === 'string') {
-        if (value.split(byGrapheme).length < field.min_length!) {
-          return `Minimum length is ${field.min_length} characters`
+        if (value.split(byGrapheme).length < field.min_graphemes!) {
+          return `Minimum length is ${field.min_graphemes} characters`
         }
       }
       return true
@@ -1264,11 +1264,11 @@ const getFieldRules = (field: FlagField) => {
   }
 
   // Max length validation
-  if (field.max_length !== null) {
+  if (field.max_graphemes !== null) {
     rules.push((value: unknown) => {
       if (shouldValidate(value) && typeof value === 'string') {
-        if (value.split(byGrapheme).length > field.max_length!) {
-          return `Maximum length is ${field.max_length} characters`
+        if (value.split(byGrapheme).length > field.max_graphemes!) {
+          return `Maximum length is ${field.max_graphemes} characters`
         }
       }
       return true
@@ -1340,8 +1340,8 @@ const truncateToMaxGraphemes = (value: string, maxLength: number): string => {
 
 const handleInputWithGraphemeLimit = (field: FlagField, value: string) => {
   const trimmedValue = value?.trim() || value
-  if (field.max_length && typeof trimmedValue === 'string') {
-    const truncatedValue = truncateToMaxGraphemes(trimmedValue, field.max_length)
+  if (field.max_graphemes && typeof trimmedValue === 'string') {
+    const truncatedValue = truncateToMaxGraphemes(trimmedValue, field.max_graphemes)
     editFlags.value[field.dataKey] = truncatedValue
   } else {
     editFlags.value[field.dataKey] = trimmedValue

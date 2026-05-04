@@ -176,24 +176,24 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "required": false,
       "title": "ZIM Title",
       "description": "Custom ZIM title. Wiki name otherwise.",
-      "minLength": 1,
-      "maxLength": 30
+      "minGraphemes": 1,
+      "maxGraphemes": 30
     },
     "customZimDescription": {
       "type": "string",
       "required": false,
       "title": "ZIM Description",
       "description": "Max length is 80 chars",
-      "minLength": 1,
-      "maxLength": 80
+      "minGraphemes": 1,
+      "maxGraphemes": 80
     },
     "customZimLongDescription": {
       "type": "string",
       "required": false,
       "title": "ZIM Long Description",
       "description": "Max length is 4000 chars",
-      "minLength": 1,
-      "maxLength": 4000
+      "minGraphemes": 1,
+      "maxGraphemes": 4000
     },
     "customZimFavicon": {
       "type": "url",
@@ -537,24 +537,24 @@ def ted_flags() -> OfflinerSpecSchema:
       "required": false,
       "title": "Title",
       "description": "Custom title for your ZIM. Based on selection otherwise",
-      "minLength": 1,
-      "maxLength": 30
+      "minGraphemes": 1,
+      "maxGraphemes": 30
     },
     "description": {
       "type": "string",
       "required": false,
       "title": "Description",
       "description": "Custom description for your ZIM. Based on selection otherwise",
-      "minLength": 1,
-      "maxLength": 80
+      "minGraphemes": 1,
+      "maxGraphemes": 80
     },
     "long_description": {
       "type": "string",
       "required": false,
       "title": "Long description",
       "description": "Custom long description for your ZIM. Based on selection otherwise",
-      "minLength": 1,
-      "maxLength": 4000
+      "minGraphemes": 1,
+      "maxGraphemes": 4000
     },
     "creator": {
       "type": "string",

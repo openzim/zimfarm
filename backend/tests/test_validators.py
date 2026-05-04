@@ -6,41 +6,17 @@ from typing import Any
 import pydantic
 import pytest
 from _pytest.python_api import RaisesContext
-from pydantic import ValidationError
+from pydantic import ValidationError, create_model
 
 from zimfarm_backend.common.constants import parse_bool
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import BaseModel, CamelModel
 from zimfarm_backend.common.schemas.fields import (
-    CommaSeparatedZIMLangCode,
-    GraphemeStr,
     SecretUrl,
     SkipableBool,
     SkipableUrl,
-    ZIMFileName,
-    ZIMLangCode,
-    ZIMName,
-    ZIMTitle,
 )
-
-
-class ZIMFileNameModel(BaseModel):
-    value: ZIMFileName
-
-
-class ZIMNameModel(BaseModel):
-    value: ZIMName
-
-
-class ZIMLanguageCodeModel(BaseModel):
-    value: ZIMLangCode
-
-
-class ZIMTitleModel(BaseModel):
-    value: ZIMTitle
-
-
-class CommaSeparatedZIMLanguageCodeModel(BaseModel):
-    value: CommaSeparatedZIMLangCode
+from zimfarm_backend.common.schemas.offliners.builder import generate_field_type
+from zimfarm_backend.common.schemas.offliners.models import FlagSchema
 
 
 class SkipableBoolModel(BaseModel):
@@ -53,182 +29,6 @@ class SecretUrlModel(BaseModel):
 
 class SkipableUrlModel(BaseModel):
     value: SkipableUrl
-
-
-@pytest.mark.parametrize(
-    "filename,expected",
-    [
-        ("wikipedia_en_all_2024-01.zim", does_not_raise()),
-        ("ted-talks_eng_all_2024-03.zim", does_not_raise()),
-        ("wikipedia_eng_all_{period}.zim", does_not_raise()),
-        ("ted-talks_eng_football_{period}.zim", does_not_raise()),
-        ("wikipedia_en_all_nopic_2024-01.zim", does_not_raise()),  # selection + flavor
-        # Invalid filenames
-        (
-            "wikipedia_eng_all_2024-01",
-            pytest.raises(ValidationError),
-        ),  # Missing .zim extension
-        (
-            "WIKIPEDIA_EN_ALL_2024-01.zim",
-            pytest.raises(ValidationError),
-        ),  # Uppercase letters
-        (
-            "wikipedia_eng_all_2024_01.zim",
-            pytest.raises(ValidationError),
-        ),  # Wrong date format (underscore instead of dash)
-        ("_en_all_2024-01.zim", pytest.raises(ValidationError)),  # Empty first part
-        (
-            "wikipedia__all_2024-01.zim",
-            pytest.raises(ValidationError),
-        ),  # Empty language part
-        ("wikipedia_en_all_.zim", pytest.raises(ValidationError)),  # Empty date part
-        (
-            "wikipedia_en_all_2024-01_.zim",
-            pytest.raises(ValidationError),
-        ),  # Trailing underscore after period
-        (
-            "_wikipedia_en_all_2024-01.zim",
-            pytest.raises(ValidationError),
-        ),  # Leading underscore
-        (
-            "wikipedia en_all_2024-01.zim",
-            pytest.raises(ValidationError),
-        ),  # Space in first part
-        (
-            "wikipedia_en_all 2024-01.zim",
-            pytest.raises(ValidationError),
-        ),  # Space in date part
-    ],
-)
-def test_zimfilename_pattern(filename: str, expected: RaisesContext[Exception]):
-    """Test ZIMFileName pattern validation with various inputs."""
-    with expected:
-        ZIMFileNameModel.model_validate({"value": filename})
-
-
-def test_zimfilename_skips_validation_when_context_set():
-    """Test that ZIMFileName validation is skipped when context is set."""
-    with does_not_raise():
-        ZIMFileNameModel.model_validate(
-            {"value": "invalid_filename"}, context={"skip_validation": True}
-        )
-
-
-@pytest.mark.parametrize(
-    "name,expected",
-    [
-        # Zim name is made of three parts {domain}_{lang}_{selection} with _ as
-        # the separator
-        # Valid ZIM names
-        pytest.param(
-            "android.stackexchange.com_eng_all",
-            does_not_raise(),
-            id="first_part_domain_name",
-        ),
-        pytest.param(
-            "ted-talks_eng_football", does_not_raise(), id="hypen_in_first_part"
-        ),
-        pytest.param(
-            "wikipedia_nds-nl_top", does_not_raise(), id="hypen_in_second_part"
-        ),
-        # Invalid ZIM names
-        pytest.param(
-            "wikipedia_en_all_2024-01", pytest.raises(ValidationError), id="four_parts"
-        ),  # Too many parts (4 instead of 3)
-        pytest.param(
-            "wikipedia_en", pytest.raises(ValidationError), id="two_parts"
-        ),  # Too few parts (2 instead of 3)
-        pytest.param(
-            "WIKIPEDIA_EN_ALL", pytest.raises(ValidationError), id="upper_case_letters"
-        ),  # Uppercase letters
-        pytest.param(
-            "wikipedia EN all",
-            pytest.raises(ValidationError),
-            id="space_separator",
-        ),  # Spaces instead of underscores
-        pytest.param(
-            "wikipedia_en_all_",
-            pytest.raises(ValidationError),
-            id="trailing_underscore",
-        ),  # Trailing underscore
-        pytest.param(
-            "_wikipedia_en_all",
-            pytest.raises(ValidationError),
-            id="leading_underscore",
-        ),  # Leading underscore
-        pytest.param(
-            "wikipedia__all", pytest.raises(ValidationError), id="missing_middle_part"
-        ),  # Empty middle part
-        pytest.param(
-            "wikipedia_en_", pytest.raises(ValidationError), id="empty_last_part"
-        ),  # Empty last part
-        pytest.param(
-            "_en_all",
-            pytest.raises(ValidationError),
-        ),  # Empty first part
-        pytest.param(
-            "wikipedia_en_all.zim",
-            does_not_raise(),
-            id="file_extension_in_name",
-        ),  # File extension not allowed (not sure yet??)
-        pytest.param(
-            "wikipedia@en_all", pytest.raises(ValidationError), id="special_char_at"
-        ),  # Special character @
-        pytest.param(
-            "wikipedia&en_all",
-            pytest.raises(ValidationError),
-            id="special_char_ampersand",
-        ),  # Special character &
-        pytest.param(
-            "wikipedia*en_all",
-            pytest.raises(ValidationError),
-            id="special_char_astersik",
-        ),  # Special character *
-        pytest.param(
-            "", pytest.raises(ValidationError), id="empty_string"
-        ),  # Empty string
-    ],
-)
-def test_zimname_pattern(name: str, expected: RaisesContext[Exception]):
-    """Test ZIMName pattern validation with various inputs."""
-    with expected:
-        ZIMNameModel.model_validate({"value": name})
-
-
-def test_zimname_skips_validation_when_context_set():
-    """Test that ZIMName validation is skipped when context is set."""
-    with does_not_raise():
-        ZIMNameModel.model_validate(
-            {"value": "invalid_name"}, context={"skip_validation": True}
-        )
-
-
-@pytest.mark.parametrize(
-    "language_code,expected",
-    [
-        ("eng", does_not_raise()),
-        ("fra", does_not_raise()),
-        ("jpn", does_not_raise()),
-        ("jp", pytest.raises(ValidationError)),
-        ("en", pytest.raises(ValidationError)),
-        ("invalid", pytest.raises(ValidationError)),
-    ],
-)
-def test_language_code_validator(
-    language_code: str,
-    expected: RaisesContext[Exception],
-):
-    """Test language code validator with various inputs."""
-    with expected:
-        ZIMLanguageCodeModel.model_validate({"value": language_code})
-
-
-def test_language_code_validator_skips_validation_when_context_set():
-    """Test that language code validator is skipped when context is set."""
-    with does_not_raise():
-        ZIMLanguageCodeModel.model_validate(
-            {"value": "invalid"}, context={"skip_validation": True}
-        )
 
 
 @pytest.mark.parametrize(
@@ -409,144 +209,6 @@ def test_ted_flags_schema_links(
 def test_parse_bool(value: Any, *, expected: bool):
     """Test parse_bool function with various inputs."""
     assert parse_bool(value) == expected
-
-
-@pytest.mark.parametrize(
-    "string,expected_length",
-    [
-        ("hello", 5),
-        ("世界", 2),
-        ("🌍", 1),
-        ("👨‍👩‍👧‍👦", 1),
-        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦", 2),
-        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", 3),
-    ],
-)
-def test_grapheme_str(string: str, expected_length: int):
-    assert len(GraphemeStr(string)) == expected_length
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [
-        ("hello", does_not_raise()),
-        ("世界", does_not_raise()),
-        ("🌍" * 30, does_not_raise()),
-        ("👨‍👩‍👧‍👦" * 30, does_not_raise()),
-        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", does_not_raise()),
-        # Test strings longer than 30 characters that should fail
-        ("This is a very long title that should fail", pytest.raises(ValidationError)),
-        ("ThisIsALongTitleWithoutSpacesThatShouldFail", pytest.raises(ValidationError)),
-        ("A string with exactly 31 characters!", pytest.raises(ValidationError)),
-        (
-            "Another string that is way too long to be a valid ZIM title",
-            pytest.raises(ValidationError),
-        ),
-        ("👨‍👩‍👧‍👦" * 31, pytest.raises(ValidationError)),  # Long string of emojis
-        (
-            "世界" * 20,
-            pytest.raises(ValidationError),
-        ),  # Long string of Chinese characters
-    ],
-)
-def test_zimtitle_string(string: str, expected: RaisesContext[Exception]):
-    with expected:
-        ZIMTitleModel.model_validate({"value": string})
-
-
-@pytest.mark.parametrize(
-    "string",
-    [
-        ("hello"),
-        ("世界"),
-        ("🌍"),
-        ("👨‍👩‍👧‍👦"),
-        ("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"),
-        ("This is a very long title that should fail"),
-        ("ThisIsALongTitleWithoutSpacesThatShouldFail"),
-        ("A string with exactly 31 characters!"),
-        ("Another string that is way too long to be a valid ZIM title",),
-        ("👨‍👩‍👧‍👦" * 31),
-        ("世界" * 20,),
-    ],
-)
-def test_zimtitle_string_does_not_raise(string: str):
-    with does_not_raise():
-        ZIMTitleModel.model_validate(
-            {"value": string}, context={"skip_validation": True}
-        )
-
-
-@pytest.mark.parametrize(
-    "languages,expected",
-    [
-        pytest.param("eng", does_not_raise(), id="single-valid-language-code"),
-        pytest.param("eng,fra,jpn", does_not_raise(), id="multiple-valid-languages"),
-        pytest.param(
-            "en,fr,jp",
-            pytest.raises(ValidationError),
-            id="multiple-invalid-language-codes",
-        ),
-        pytest.param(
-            "en",
-            pytest.raises(ValidationError),
-            id="single-invalid-language-code",
-        ),
-        pytest.param(
-            "eng,",
-            pytest.raises(ValidationError),
-            id="valid-language-code-with-trailing-comma",
-        ),
-        pytest.param(
-            "eng,,",
-            pytest.raises(ValidationError),
-            id="valid-language-code-with-double-trailing-comma",
-        ),
-        pytest.param(
-            "eng,fr,jpn",
-            pytest.raises(ValidationError),
-            id="multiple-valid-languages-with-one-invalid",
-        ),
-    ],
-)
-def test_comma_separated_zim_language_code_validator(
-    languages: str, expected: RaisesContext[Exception]
-):
-    with expected:
-        CommaSeparatedZIMLanguageCodeModel.model_validate({"value": languages})
-
-
-@pytest.mark.parametrize(
-    "languages,expected",
-    [
-        pytest.param("eng", does_not_raise(), id="single-valid-language-code"),
-        pytest.param("eng,fra,jpn", does_not_raise(), id="multiple-valid-languages"),
-        pytest.param(
-            "en,fr,jp", does_not_raise(), id="multiple-invalid-language-codes"
-        ),
-        pytest.param("en", does_not_raise(), id="single-invalid-language-code"),
-        pytest.param(
-            "eng,", does_not_raise(), id="valid-language-code-with-trailing-comma"
-        ),
-        pytest.param(
-            "eng,,",
-            does_not_raise(),
-            id="valid-language-code-with-double-trailing-comma",
-        ),
-        pytest.param(
-            "eng,fr,jpn",
-            does_not_raise(),
-            id="multiple-valid-languages-with-one-invalid",
-        ),
-    ],
-)
-def test_comma_separated_zim_language_code_validator_skips_validation_when_context_set(
-    languages: str, expected: RaisesContext[Exception]
-):
-    with expected:
-        CommaSeparatedZIMLanguageCodeModel.model_validate(
-            {"value": languages}, context={"skip_validation": True}
-        )
 
 
 @pytest.mark.parametrize(
@@ -732,4 +394,64 @@ def test_skipable_url_model_skip_validation(
     with expected:
         SecretUrlModel.model_validate(
             {"value": value}, context={"skip_validation": True}
+        )
+
+
+@pytest.mark.parametrize(
+    "grapheme,skip_validation,expected",
+    [
+        pytest.param("é" * 30, False, does_not_raise()),
+        pytest.param("é" * 40, False, pytest.raises(ValidationError)),
+        pytest.param("é" * 40, True, does_not_raise()),
+    ],
+)
+def test_grapheme_length_validation_on_strings(
+    *, grapheme: str, skip_validation: bool, expected: RaisesContext[Exception]
+):
+    """Test that grapheme validation is applied to string flags."""
+    field = generate_field_type(
+        "mwoffliner",
+        FlagSchema(
+            type="string",
+            label="ZIM Title",
+            description="Custom ZIM title. Wiki name otherwise.",
+            min_graphemes=1,
+            max_graphemes=30,
+        ),
+        label="title",
+    )
+    model = create_model("mwofflinerFlagsSchema", __base__=CamelModel, title=field)
+    with expected:
+        model.model_validate(
+            {"title": grapheme}, context={"skip_validation": skip_validation}
+        )
+
+
+@pytest.mark.parametrize(
+    "grapheme,skip_validation,expected",
+    [
+        pytest.param(["é" * 30, "é" * 25], False, pytest.raises(ValidationError)),
+        pytest.param(["é" * 40, "é" * 25], False, pytest.raises(ValidationError)),
+        pytest.param(["é" * 40, "é" * 25], True, does_not_raise()),
+    ],
+)
+def test_grapheme_length_validation_on_list_of_strings(
+    *, grapheme: str, skip_validation: bool, expected: RaisesContext[Exception]
+):
+    """Test that grapheme validation is applied to the inner string in list of string flag"""
+    field = generate_field_type(
+        "mwoffliner",
+        FlagSchema(
+            type="string",
+            label="ZIM Title",
+            description="Custom ZIM title. Wiki name otherwise.",
+            min_graphemes=1,
+            max_graphemes=30,
+        ),
+        label="title",
+    )
+    model = create_model("mwofflinerFlagsSchema", __base__=CamelModel, title=field)
+    with expected:
+        model.model_validate(
+            {"title": grapheme}, context={"skip_validation": skip_validation}
         )
