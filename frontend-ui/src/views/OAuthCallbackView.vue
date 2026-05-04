@@ -26,7 +26,18 @@
               <v-alert type="error" variant="tonal" class="mb-4 text-left">
                 {{ error }}
               </v-alert>
-              <v-btn color="primary" :to="{ name: 'sign-in' }"> Back to Sign In </v-btn>
+              <v-btn v-if="!is2FAError" color="primary" :to="{ name: 'sign-in' }">
+                Back to Sign In
+              </v-btn>
+              <v-btn
+                v-else
+                color="primary"
+                :href="settingsUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Configure 2FA
+              </v-btn>
             </div>
           </v-card-text>
         </v-card>
@@ -37,14 +48,28 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import type { Config } from '@/config'
+import constants from '@/constants'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const config = inject<Config>(constants.config)
+if (!config) {
+  throw new Error('Config is not defined')
+}
 
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+const is2FAError = computed(() => {
+  return error.value?.startsWith('2FA authentication is mandatory on Zimfarm') ?? false
+})
+
+const settingsUrl = computed(() => {
+  return `${config.OAUTH_BASE_URL}/settings`
+})
 
 onMounted(async () => {
   try {
