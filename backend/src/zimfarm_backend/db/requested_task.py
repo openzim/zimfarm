@@ -99,8 +99,7 @@ def _resource_mismatch_message(
     mismatched_message: list[str] = []
     if worker.resources.available.cpu < resource.cpu:
         mismatched_message.append(
-            f"cpu: required={format_size(resource.cpu, binary=True)}, "
-            f"available={format_size(worker.resources.available.cpu, binary=True)}"
+            f"cpu: required={resource.cpu}, available={worker.resources.available.cpu}"
         )
 
     if worker.resources.available.disk < resource.disk:
@@ -406,9 +405,7 @@ def get_requested_tasks(
                 | (matching_offliners is None)
             ),
             (Worker.name == worker_name)
-            | (
-                RequestedTask.worker is None
-            )  # pyright: ignore[reportUnnecessaryComparison]
+            | (RequestedTask.worker is None)  # pyright: ignore[reportUnnecessaryComparison]
             | (worker_name is None),
         )
         .order_by(
