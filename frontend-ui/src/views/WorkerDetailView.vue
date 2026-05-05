@@ -57,6 +57,7 @@
         <v-tab
           :to="{ name: 'worker-detail-tab', params: { workerName, selectedTab: 'edit' } }"
           value="edit"
+          v-if="canUpdateWorkers || canManageSshKeys"
           >Edit</v-tab
         >
       </v-tabs>
