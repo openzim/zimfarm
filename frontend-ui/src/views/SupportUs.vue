@@ -37,7 +37,7 @@
                 It is <strong>entirely and only supported by donations</strong>. A few dollars may
                 not mean much for you but will certainly help us a lot: if you can,
                 <a
-                  href="https://support.kiwix.org/"
+                  href="https://donate.kiwix.org/"
                   target="_blank"
                   class="text-primary text-decoration-none"
                 >
