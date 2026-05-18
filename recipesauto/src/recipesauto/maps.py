@@ -101,6 +101,22 @@ def get_expected_recipes() -> list[dict[str, Any]]:
 
     config_data = json.loads((Path(__file__).parent / "maps.json").read_text())
 
+    # # Add missing countries in data file
+    # for area in areas:
+    #     if get_name(area.name) in config_data:
+    #         continue
+    #     title = f"Map of {area.name}"
+    #     if len(title) > 30:
+    #         logger.warning(f"Too long title: {title}")
+    #     config_data[get_name(area.name)] = {
+    #         "title": title,
+    #         "description": "Entire country, including roads and landmarks",
+    #     }
+
+    # (Path(__file__).parent / "maps.json").write_text(
+    #     json.dumps(config_data, indent=True)
+    # )
+
     return [
         {
             "category": "maps",
@@ -129,7 +145,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "name": "ghcr.io/openzim/maps",
                     "tag": get_scraper_version(get_name(area.name)),
                 },
-                "resources": config_data[get_name(area.name)]["resources"],
+                "resources": config_data[get_name(area.name)].get("resources")
+                or {"cpu": 3, "disk": 214748364800, "memory": 17179869184},
                 "warehouse_path": "",
             },
             "enabled": True,
