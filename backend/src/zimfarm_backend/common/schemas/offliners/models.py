@@ -20,6 +20,7 @@ class BaseFlagSchema(BaseModel):
     min_graphemes: int | None = Field(validation_alias="minGraphemes", default=None)
     max_graphemes: int | None = Field(validation_alias="maxGraphemes", default=None)
     pattern: str | None = None
+    allow_remote_url: bool = Field(default=False, validation_alias="allowRemoteUrl")
 
 
 class PreparedBlob(BaseModel):
@@ -84,6 +85,9 @@ class FlagSchema(BaseFlagSchema):
 
         if self.type != "blob" and self.kind:
             raise ValueError("Only blob types should specify a kind")
+
+        if self.allow_remote_url and self.type != "blob":
+            raise ValueError("Only blob types should specify allow_remote_url")
 
         return self
 

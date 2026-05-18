@@ -103,7 +103,11 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
     )
     # Additional information to the pydantic field to be used while determining
     # flag details.
-    json_schema_extra: dict[str, Any] = {"kind": flag.kind, "type": flag.type}
+    json_schema_extra: dict[str, Any] = {
+        "kind": flag.kind,
+        "type": flag.type,
+        "allowRemoteUrl": flag.allow_remote_url,
+    }
 
     # Determine the python type to represent the flag
     match flag.type:

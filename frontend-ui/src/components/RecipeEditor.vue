@@ -490,6 +490,7 @@
             :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
             :kind="field.kind"
             :required="field.required"
+            :allow-remote-url="field.allowRemoteUrl"
             :description="field.description ?? undefined"
             :recipe-name="recipe.name"
             :flag-key="field.key"
@@ -686,6 +687,7 @@ interface FlagField {
   max_graphemes: number | null
   pattern: string | null
   kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
+  allowRemoteUrl: boolean
 }
 
 export interface Props {
@@ -1128,6 +1130,7 @@ const flagsFields = computed(() => {
       options,
       step,
       kind: field.kind,
+      allowRemoteUrl: field.allow_remote_url,
     }
   })
 })

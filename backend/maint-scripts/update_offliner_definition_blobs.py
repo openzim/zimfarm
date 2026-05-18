@@ -12,14 +12,18 @@ from zimfarm_backend.db.models import OfflinerDefinition
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
 
 FLAG_MAPPINGS: dict[
-    str, list[dict[str, Literal["image", "css", "html", "illustration"]]]
+    str, list[dict[str, Literal["image", "css", "html", "illustration", "txt"]]]
 ] = {
     "devdocs": [{"logo_format": "image"}],
     "freecodecamp": [{"illustration": "illustration"}],
     "ifixit": [{"icon": "illustration"}],
     "kolibri": [{"favicon": "illustration"}, {"css": "css"}, {"about": "html"}],
     "mindtouch": [{"illustration_url": "illustration"}],
-    "mwoffliner": [{"customZimFavicon": "illustration"}],
+    "mwoffliner": [
+        {"customZimFavicon": "illustration"},
+        {"articleList": "txt"},
+        {"articleListToIgnore": "txt"},
+    ],
     "nautilus": [
         {"main_logo": "image"},
         {"secondary_logo": "image"},
@@ -36,7 +40,9 @@ FLAG_MAPPINGS: dict[
 def update_offliner_definition_flags(
     offliner_id: str,
     spec: OfflinerSpecSchema,
-    flag_mappings: list[dict[str, Literal["image", "css", "html", "illustration"]]],
+    flag_mappings: list[
+        dict[str, Literal["image", "css", "html", "illustration", "txt"]]
+    ],
 ) -> bool:
     """
     Update flags in an offliner definition spec to use blob type with kind.
