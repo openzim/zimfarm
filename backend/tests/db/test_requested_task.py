@@ -599,8 +599,7 @@ def test_get_requested_tasks(
         assert task.status == requested_task.status
         assert task.requested_by == requested_task.requested_by.username
         assert (
-            task.worker_name
-            == requested_task.worker.name  # pyright: ignore[reportOptionalMemberAccess]
+            task.worker_name == requested_task.worker.name  # pyright: ignore[reportOptionalMemberAccess]
         )
 
 
@@ -848,6 +847,7 @@ def test_get_tasks_doable_by_worker(
     worker_resource: ResourcesSchema,
     recipe_resource: ResourcesSchema,
     recipe_context: str,
+    recipe: Recipe,
     found: bool,
 ):
     worker = create_worker(
@@ -885,6 +885,7 @@ def test_get_tasks_doable_by_worker(
     )
     task.requested_by = worker.account
     task.offliner_definition_id = mwoffliner_definition.id
+    task.recipe = recipe
     dbsession.add(task)
     dbsession.flush()
 

@@ -114,7 +114,7 @@ def map_duration(duration: RecipeDuration) -> RecipeDurationSchema:
     )
 
 
-def _get_duration_for_recipe(recipe: Recipe, worker_name: str) -> RecipeDurationSchema:
+def get_duration_for_recipe(recipe: Recipe, worker_name: str) -> RecipeDurationSchema:
     """get duration"""
     for duration in recipe.durations:
         if duration.worker and duration.worker.name == worker_name:
@@ -134,7 +134,7 @@ def get_recipe_duration(
     recipe = get_recipe_or_none(session, recipe_name=recipe_name)
     if recipe is None:
         return DEFAULT_RECIPE_DURATION
-    return _get_duration_for_recipe(recipe, worker_name)
+    return get_duration_for_recipe(recipe, worker_name)
 
 
 def update_recipe_duration(
