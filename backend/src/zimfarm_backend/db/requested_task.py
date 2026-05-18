@@ -49,7 +49,11 @@ from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
     get_offliner_definition_by_id,
 )
-from zimfarm_backend.db.recipe import get_recipe_duration, get_recipe_or_none
+from zimfarm_backend.db.recipe import (
+    get_duration_for_recipe,
+    get_recipe_duration,
+    get_recipe_or_none,
+)
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
 from zimfarm_backend.db.worker import create_worker_schema, get_worker_or_none
 from zimfarm_backend.utils.offliners import expanded_config
@@ -531,11 +535,24 @@ def get_tasks_doable_by_worker(
             or worker.contexts[task.context] == worker.last_ip
         )
 
+    def filter_req_task_with_no_recipe_duration(task: RequestedTask):
+        """Filter out tasks that have no recipe duration"""
+        # For tasks whose recipe have been deleted, we leave them as they default to
+        # the DEFAULT_RECIPE_DURATION
+        if task.recipe is None:
+            return True
+        try:
+            get_duration_for_recipe(task.recipe, worker_name=worker.name)
+        except RecordDoesNotExistError:
+            return False
+        return True
+
     query = (
         select(RequestedTask)
         .options(
             selectinload(RequestedTask.offliner_definition),
             selectinload(RequestedTask.requested_by),
+            selectinload(RequestedTask.recipe),
         )
         .where(
             RequestedTask.config["resources"]["cpu"].astext.cast(BigInteger)
@@ -570,7 +587,11 @@ def get_tasks_doable_by_worker(
     return sorted(
         [
             create_requested_task_with_duration(session, task=task, worker=worker)
-            for task in filter(filter_req_task_for_ip_issues, session.scalars(query))
+            for task in filter(
+                lambda task: filter_req_task_for_ip_issues(task)
+                and filter_req_task_with_no_recipe_duration(task),
+                session.scalars(query),
+            )
         ],
         key=lambda x: (-x.priority, -x.duration.value, x.updated_at),
     )
