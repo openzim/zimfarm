@@ -60,6 +60,8 @@ class Processor:
             import recipesauto.gutenberg as setmodule
         elif context.kind == "stackexchange":
             import recipesauto.stackexchange as setmodule
+        elif context.kind == "maps":
+            import recipesauto.maps as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 

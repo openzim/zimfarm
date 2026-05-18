@@ -1,0 +1,121 @@
+{
+ "maps_en_all": {
+  "resources": {
+   "cpu": 3,
+   "disk": 322122547200,
+   "memory": 68719476736
+  },
+  "title": "World maps",
+  "description": "Maps of the entire world, including roads and landmarks"
+ },
+ "maps_en_africa": {
+  "resources": {
+   "cpu": 3,
+   "disk": 241591910400,
+   "memory": 17179869184
+  },
+  "title": "Africa maps",
+  "description": "All African countries, including roads, and landmarks",
+  "default_view": "1,18"
+ },
+ "maps_en_antarctica": {
+  "resources": {
+   "cpu": 3,
+   "disk": 214748364800,
+   "memory": 17179869184
+  },
+  "title": "Antarctica maps",
+  "description": "Maps for all roads and landmarks"
+ },
+ "maps_en_asia": {
+  "resources": {
+   "cpu": 3,
+   "disk": 241591910400,
+   "memory": 17179869184
+  },
+  "title": "Asian maps",
+  "description": "Maps for all Asian countries, including roads, and landmarks",
+  "default_view": "1,18"
+ },
+ "maps_en_australia-and-oceania": {
+  "name": "maps_en_australia-oceania",
+  "resources": {
+   "cpu": 3,
+   "disk": 214748364800,
+   "memory": 17179869184
+  },
+  "title": "Oceania maps",
+  "description": "All of Australia and Oceania, including roads and landmarks",
+  "default_view": "-30,140"
+ },
+ "maps_en_central-america": {
+  "resources": {
+   "cpu": 3,
+   "disk": 214748364800,
+   "memory": 17179869184
+  },
+  "title": "Maps of Central America",
+  "description": "Maps of all Central American countries, including roads, and landmarks"
+ },
+ "maps_en_europe": {
+  "resources": {
+   "cpu": 3,
+   "disk": 268435456000,
+   "memory": 17179869184
+  },
+  "title": "Maps of Europe",
+  "description": "All European countries, including roads and landmarks",
+  "default_view": "56.9,11.0"
+ },
+ "maps_en_india": {
+  "resources": {
+   "cpu": 3,
+   "disk": 214748364800,
+   "memory": 17179869184
+  },
+  "title": "Map of India",
+  "description": "All of India, including roads and landmarks"
+ },
+ "maps_en_north-america": {
+  "resources": {
+   "cpu": 3,
+   "disk": 241591910400,
+   "memory": 17179869184
+  },
+  "title": "North America Maps",
+  "description": "USA, Canada and Mexico, including roads, and landmarks",
+  "default_view": "27,-110"
+ },
+ "maps_en_russian-federation": {
+  "name": "maps_en_russia",
+  "resources": {
+   "cpu": 3,
+   "disk": 241591910400,
+   "memory": 17179869184
+  },
+  "title": "Map of the Russian Federation",
+  "description": "Covers the entire country, including roads and landmarks",
+  "default_view": "0,108"
+ },
+ "maps_en_south-america": {
+  "resources": {
+   "cpu": 3,
+   "disk": 241591910400,
+   "memory": 17179869184
+  },
+  "title": "Maps of South America",
+  "description": "Covers the entire continent, including roads, and landmarks",
+  "default_view": "-28,-60"
+ },
+ "maps_en_ukraine-with-crimea": {
+  "name": "maps_en_ukraine",
+  "resources": {
+   "cpu": 3,
+   "disk": 214748364800,
+   "memory": 17179869184
+  },
+  "title": "Map of Ukraine",
+  "description": "Entire country, including roads and landmarks",
+  "default_view": "51,31.5"
+ }
+}
