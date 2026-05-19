@@ -42,7 +42,6 @@ from zimfarm_backend.db.exceptions import RecordAlreadyExistsError
 from zimfarm_backend.db.models import Account
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
-users_router = APIRouter(prefix="/users", tags=["users"])
 
 
 def require_permission_if_not_self(namespace: str, name: str):
@@ -73,9 +72,6 @@ def require_permission_if_not_self(namespace: str, name: str):
 @router.get(
     "", dependencies=[Depends(require_permission(namespace="accounts", name="read"))]
 )
-@users_router.get(
-    "", dependencies=[Depends(require_permission(namespace="accounts", name="read"))]
-)
 def get_accounts(
     db_session: Annotated[Session, Depends(gen_dbsession)],
     params: Annotated[AccountsGetSchema, Query()],
@@ -101,9 +97,6 @@ def get_accounts(
 
 
 @router.post(
-    "", dependencies=[Depends(require_permission(namespace="accounts", name="create"))]
-)
-@users_router.post(
     "", dependencies=[Depends(require_permission(namespace="accounts", name="create"))]
 )
 def create_account(
@@ -136,12 +129,6 @@ def create_account(
         Depends(require_permission_if_not_self(namespace="accounts", name="read"))
     ],
 )
-@users_router.get(
-    "/{account_identifier}",
-    dependencies=[
-        Depends(require_permission_if_not_self(namespace="accounts", name="read"))
-    ],
-)
 def get_account(
     account_identifier: Annotated[str, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
@@ -154,10 +141,6 @@ def get_account(
 
 
 @router.patch(
-    "/{account_identifier}",
-    dependencies=[Depends(require_permission(namespace="accounts", name="update"))],
-)
-@users_router.patch(
     "/{account_identifier}",
     dependencies=[Depends(require_permission(namespace="accounts", name="update"))],
 )
@@ -179,10 +162,6 @@ def update_account(
     "/{account_identifier}",
     dependencies=[Depends(require_permission(namespace="accounts", name="delete"))],
 )
-@users_router.delete(
-    "/{account_identifier}",
-    dependencies=[Depends(require_permission(namespace="accounts", name="delete"))],
-)
 def delete_account(
     account_identifier: Annotated[str, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
@@ -196,14 +175,6 @@ def delete_account(
 
 
 @router.patch(
-    "/{account_identifier}/password",
-    dependencies=[
-        Depends(
-            require_permission_if_not_self(namespace="accounts", name="change_password")
-        )
-    ],
-)
-@users_router.patch(
     "/{account_identifier}/password",
     dependencies=[
         Depends(
