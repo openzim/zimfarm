@@ -1,4 +1,4 @@
-# ruff: noqa: UP007
+# ruff: noqa: UP045
 from collections.abc import Callable
 from enum import Enum, StrEnum
 from itertools import chain

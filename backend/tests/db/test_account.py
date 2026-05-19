@@ -215,7 +215,7 @@ def test_update_account_partial(dbsession: OrmSession, account: Account):
 
 
 def test_update_account_no_display_name(dbsession: OrmSession, account: Account):
-    with pytest.raises(ValueError, match="Account must have a display name."):
+    with pytest.raises(ValueError, match=r"Account must have a display name."):
         update_account(
             dbsession,
             account_id=account.id,

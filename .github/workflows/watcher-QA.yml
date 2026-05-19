@@ -27,16 +27,16 @@ jobs:
         run: |
           pip install -U pip
           pip install -r requirements.txt
-          pip install black ruff pyright
+          pip install ruff pyright
 
-      - name: Check black formatting
+      - name: Check Formatting
         working-directory: watcher
-        run: black --check --diff .
+        run: ruff format --check .
 
-      - name: Check ruff
+      - name: Check Linting
         working-directory: watcher
         run: ruff check .
 
-      - name: Check pyright
+      - name: Check Type
         working-directory: watcher
         run: pyright

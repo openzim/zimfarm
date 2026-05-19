@@ -98,9 +98,7 @@ def pull_image(client: DockerClient, repository: str, tag: str | None = None):
 
 @retry
 def run_container(client: DockerClient, image: Image, **kwargs: Any) -> Container:
-    return client.containers.run(
-        image, **kwargs
-    )  # pyright: ignore[reportGeneralTypeIssues, reportReturnType, reportUnknownVariableType]
+    return client.containers.run(image, **kwargs)  # pyright: ignore[reportGeneralTypeIssues, reportReturnType, reportUnknownVariableType]
 
 
 @retry
@@ -121,9 +119,7 @@ def list_containers(client: DockerClient, **kwargs: Any):
 @retry
 def remove_container(client: DockerClient, **kwargs: Any):
     """container="", v=False, link=False, force=False"""
-    return client.api.remove_container(
-        **kwargs
-    )  # pyright: ignore[reportGeneralTypeIssues, reportReturnType]
+    return client.api.remove_container(**kwargs)  # pyright: ignore[reportGeneralTypeIssues, reportReturnType]
 
 
 @retry
@@ -151,9 +147,7 @@ def inspect_image(client: DockerClient, image: str) -> dict[str, Any]:
 @retry
 def stop_container(client: DockerClient, container: str, **kwargs: Any):
     """container="", timeout=None"""
-    return client.api.stop(
-        container, **kwargs
-    )  # pyright: ignore[reportGeneralTypeIssues, reportReturnType]
+    return client.api.stop(container, **kwargs)  # pyright: ignore[reportGeneralTypeIssues, reportReturnType]
 
 
 @retry
@@ -166,9 +160,7 @@ def wait_container(client: DockerClient, **kwargs: Any):
 def container_logs(client: DockerClient, **kwargs: Any):
     """container, stdout=True, stderr=True, stream=False, timestamps=False,
     tail='all', since=None, follow=None, until=None"""
-    return client.api.logs(
-        **kwargs
-    )  # pyright: ignore[reportGeneralTypeIssues, reportReturnType, reportUnknownVariableType]
+    return client.api.logs(**kwargs)  # pyright: ignore[reportGeneralTypeIssues, reportReturnType, reportUnknownVariableType]
 
 
 @retry
@@ -176,13 +168,9 @@ def get_or_pull_image(client: DockerClient, name: str):
     """attempt to get locally or pull and return. Name is repo:tag"""
     if ":" not in name:
         # consider missing :tag info as a local image for tests
-        return client.images.get(
-            name
-        )  # pyright: ignore[reportGeneralTypeIssues,reportReturnType]
+        return client.images.get(name)  # pyright: ignore[reportGeneralTypeIssues,reportReturnType]
 
-    return client.images.pull(
-        name
-    )  # pyright: ignore[reportGeneralTypeIssues,reportReturnType]
+    return client.images.pull(name)  # pyright: ignore[reportGeneralTypeIssues,reportReturnType]
 
 
 @dataclass(kw_only=True)

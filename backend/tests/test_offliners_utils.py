@@ -227,6 +227,7 @@ def test_command_for_is_publisher_unset(
     ],
 )
 def test_command_for_std_output(
+    *,
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
     recipe_config: RecipeConfigSchema,
@@ -268,6 +269,7 @@ def test_command_for_std_output_unset(
     ],
 )
 def test_command_for_std_stats(
+    *,
     mwoffliner_definition: OfflinerDefinitionSchema,
     mwoffliner: OfflinerSchema,
     recipe_config: RecipeConfigSchema,

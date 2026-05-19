@@ -1,3 +1,5 @@
+# ruff: noqa: PLC0415
+
 import copy
 from http import HTTPStatus
 from typing import Any

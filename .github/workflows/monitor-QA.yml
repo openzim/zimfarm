@@ -26,16 +26,16 @@ jobs:
         working-directory: monitor/parent
         run: |
           pip install -U pip
-          pip install black ruff pyright
+          pip install ruff pyright
 
-      - name: Check black formatting
+      - name: Check Formatting
         working-directory: monitor/parent
-        run: black --check --diff .
+        run: ruff format  --check .
 
-      - name: Check ruff
+      - name: Check Linting
         working-directory: monitor/parent
         run: ruff check .
 
-      - name: Check pyright
+      - name: Check Type
         working-directory: monitor/parent
         run: pyright

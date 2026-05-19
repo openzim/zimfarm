@@ -584,8 +584,10 @@ def get_tasks_doable_by_worker(
         [
             create_requested_task_with_duration(session, task=task, worker=worker)
             for task in filter(
-                lambda task: filter_req_task_for_ip_issues(task)
-                and filter_req_task_with_no_recipe_duration(task),
+                lambda task: (
+                    filter_req_task_for_ip_issues(task)
+                    and filter_req_task_with_no_recipe_duration(task)
+                ),
                 session.scalars(query),
             )
         ],

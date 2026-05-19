@@ -26,16 +26,16 @@ jobs:
         working-directory: healthcheck
         run: |
           pip install -U pip
-          pip install -e .[lint,scripts,test,check]
+          pip install -e .[qa,scripts,test]
 
-      - name: Check black formatting
+      - name: Check Linting
         working-directory: healthcheck
-        run: inv lint-black
+        run: inv check-lint
 
-      - name: Check ruff
+      - name: Check Formatting
         working-directory: healthcheck
-        run: inv lint-ruff
+        run: inv check-format
 
-      - name: Check pyright
+      - name: Check Type
         working-directory: healthcheck
-        run: inv check-pyright
+        run: inv check-type

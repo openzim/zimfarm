@@ -234,7 +234,7 @@ def test_parse_bool(value: Any, *, expected: bool):
     ],
 )
 def test_relaxed_boolean_model(
-    value: str | int | bool, expected: RaisesContext[Exception]
+    *, value: str | int | bool, expected: RaisesContext[Exception]
 ):
     with expected:
         SkipableBoolModel.model_validate({"value": value})
@@ -273,7 +273,7 @@ def test_relaxed_boolean_model(
     ],
 )
 def test_relaxed_boolean_skip_validation(
-    value: str | int | bool, expected: RaisesContext[Exception]
+    *, value: str | int | bool, expected: RaisesContext[Exception]
 ):
     with expected:
         SkipableBoolModel.model_validate(

@@ -7,7 +7,7 @@ Before contributing, make sure you mention you'll be working on it in the associ
 We have a very limited number of contributors so rules are quite limited:
 
 - Submit your changes over a Pull Request
-- Make sure all your python code is black formatted.
+- Make sure all your python code is formatted with ruff.
 - Make sure Codefactor reports no issue.
 - API code (backend) must be tested. Make sure your PR doesn't decrease code coverage.
 

@@ -831,6 +831,6 @@ def test_ssh_token_decoder_no_session(
 
     decoder = SshTokenDecoder()
     with pytest.raises(
-        ValueError, match="OrmSession is required to decode SSH bearer tokens."
+        ValueError, match=r"OrmSession is required to decode SSH bearer tokens."
     ):
         decoder.decode(token)
