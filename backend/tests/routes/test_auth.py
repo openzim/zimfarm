@@ -19,11 +19,13 @@ from zimfarm_backend.utils.cryptography import (
 )
 
 
-@pytest.mark.num_accounts(1)
-def test_auth_with_credentials(client: TestClient, accounts: list[Account]):
+def test_auth_with_credentials(
+    client: TestClient, create_account: Callable[..., Account]
+):
+    account = create_account()
     response = client.post(
         "/v2/auth/authorize",
-        json={"username": accounts[0].username, "password": "testpassword"},
+        json={"username": account.username, "password": "testpassword"},
     )
     assert response.status_code == HTTPStatus.OK
     data = response.json()
@@ -43,11 +45,11 @@ def test_auth_with_credentials_invalid_credentials(client: TestClient):
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.num_accounts(1)
 def test_refresh_access_token(
-    client: TestClient, accounts: list[Account], dbsession: OrmSession
+    client: TestClient, create_account: Callable[..., Account], dbsession: OrmSession
 ):
-    token = create_refresh_token(session=dbsession, account_id=accounts[0].id)
+    account = create_account()
+    token = create_refresh_token(session=dbsession, account_id=account.id)
     response = client.post(
         "/v2/auth/refresh",
         json={"refresh_token": str(token.token)},
@@ -70,11 +72,11 @@ def test_refresh_access_token_invalid_token(client: TestClient):
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.num_accounts(1)
 def test_refresh_access_token_expired_token(
-    client: TestClient, accounts: list[Account], dbsession: OrmSession
+    client: TestClient, create_account: Callable[..., Account], dbsession: OrmSession
 ):
-    token = create_refresh_token(session=dbsession, account_id=accounts[0].id)
+    account = create_account()
+    token = create_refresh_token(session=dbsession, account_id=account.id)
     expire_refresh_tokens(
         session=dbsession,
         expire_time=getnow() + datetime.timedelta(seconds=1),

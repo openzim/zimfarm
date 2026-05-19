@@ -1,7 +1,7 @@
 from contextlib import nullcontext as does_not_raise
 
 import pytest
-from _pytest.python_api import RaisesContext
+from _pytest.raises import RaisesExc
 
 from zimfarm_backend.common.schemas.offliners.builder import (
     get_base_model_cls,
@@ -17,7 +17,7 @@ from zimfarm_backend.common.schemas.offliners.builder import (
         ("invalid_validator", pytest.raises(ValueError)),
     ],
 )
-def test_get_model_validator(validator_name: str, exception: RaisesContext[Exception]):
+def test_get_model_validator(validator_name: str, exception: RaisesExc[Exception]):
     with exception:
         get_model_validator(validator_name)
 
@@ -30,7 +30,7 @@ def test_get_model_validator(validator_name: str, exception: RaisesContext[Excep
         ("invalid_validator", pytest.raises(ValueError)),
     ],
 )
-def test_get_field_validator(validator_name: str, exception: RaisesContext[Exception]):
+def test_get_field_validator(validator_name: str, exception: RaisesExc[Exception]):
     with exception:
         get_field_validator(validator_name)
 
@@ -43,6 +43,6 @@ def test_get_field_validator(validator_name: str, exception: RaisesContext[Excep
         ("BaseModel", pytest.raises(ValueError)),
     ],
 )
-def test_get_base_model_cls(model_name: str, exception: RaisesContext[Exception]):
+def test_get_base_model_cls(model_name: str, exception: RaisesExc[Exception]):
     with exception:
         get_base_model_cls(model_name)
