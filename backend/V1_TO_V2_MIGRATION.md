@@ -111,7 +111,6 @@ Zimfarm Backend v2 represents a significant modernization of the codebase, migra
 
 **v2 New Features:**
 
-- Black code formatter
 - Ruff linter
 - Pyright type checker
 - Pre-commit hooks

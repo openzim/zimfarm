@@ -109,9 +109,9 @@ class TaskWorker(BaseWorker):
         self.dns: list[str] | None = None  # list of DNS IPs or None
         self.monitor: Container | None = None  # monitor container
 
-        self.zim_files_actions_status: dict[str, dict[str, str]] = (
-            {}
-        )  # ZIM files registry
+        self.zim_files_actions_status: dict[
+            str, dict[str, str]
+        ] = {}  # ZIM files registry
         self.zim_upload_retries: defaultdict[str, int] = defaultdict(
             int
         )  # ZIM files with upload errors (registry)
@@ -1102,9 +1102,11 @@ class TaskWorker(BaseWorker):
         including DOING as those might fail and go back to PENDING"""
         return list(
             filter(
-                lambda x: x[1][ZIM_UPLOAD] in (PENDING, DOING)
-                or x[1][ZIM_CHECK] in (PENDING, DOING)
-                or x[1][CHK_UPLOAD] in (PENDING, DOING),
+                lambda x: (
+                    x[1][ZIM_UPLOAD] in (PENDING, DOING)
+                    or x[1][ZIM_CHECK] in (PENDING, DOING)
+                    or x[1][CHK_UPLOAD] in (PENDING, DOING)
+                ),
                 self.zim_files_actions_status.items(),
             )
         )
@@ -1165,12 +1167,11 @@ class TaskWorker(BaseWorker):
             ).strip()
 
             zim_info = get_zim_info(
-                self.task_workdir
-                / zim_file  # pyright: ignore[reportUnknownArgumentType]
+                self.task_workdir / zim_file  # pyright: ignore[reportUnknownArgumentType]
             )
 
             try:
-                zimcheck_result = ujson.loads(zimcheck_log)
+                zimcheck_result = ujson.loads(zimcheck_log)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
             except Exception as exc:
                 # Failed to parse JSON, send raw log
                 zimcheck_result = None

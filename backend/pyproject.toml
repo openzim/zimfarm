@@ -17,7 +17,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
 ]
 dependencies = [
-    "alembic == 1.15.2",
+    "alembic == 1.18.4",
     "pydantic[email] == 2.11.4",
     "pydantic-extra-types == 2.10.6",
     "SQLAlchemy == 2.0.41",

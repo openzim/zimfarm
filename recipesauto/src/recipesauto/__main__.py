@@ -1,3 +1,4 @@
+# ruff: noqa: PLC0415
 import sys
 
 from recipesauto.constants import logger
