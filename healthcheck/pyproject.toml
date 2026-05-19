@@ -31,12 +31,9 @@ dynamic = ["version"]
 scripts = [
     "invoke == 2.2.0",
 ]
-lint = [
-    "black == 25.1.0",
-    "ruff == 0.11.10",
-]
-check = [
-    "pyright == 1.1.400",
+qa = [
+    "ruff==0.15.12",
+    "pyright==1.1.409",
     "types-humanfriendly == 10.0.0"
 ]
 test = [
@@ -51,9 +48,8 @@ dev = [
     "pre-commit == 4.2.0",
     "ipykernel == 6.29.5",
     "healthcheck[scripts]",
-    "healthcheck[lint]",
+    "healthcheck[qa]",
     "healthcheck[test]",
-    "healthcheck[check]",
 ]
 
 [project.urls]
@@ -84,29 +80,19 @@ report-cov = "inv report-cov"
 coverage = "inv coverage --args '{args}'"
 html = "inv coverage --html --args '{args}'"
 
-[tool.hatch.envs.lint]
-template = "lint"
+[tool.hatch.envs.qa]
+template = "qa"
 skip-install = false
-features = ["scripts", "lint"]
+features = ["scripts", "qa", "test"]
 
-[tool.hatch.envs.lint.scripts]
-black = "inv lint-black --args '{args}'"
-ruff = "inv lint-ruff --args '{args}'"
-all = "inv lintall --args '{args}'"
-fix-black = "inv fix-black --args '{args}'"
-fix-ruff = "inv fix-ruff --args '{args}'"
-fixall = "inv fixall --args '{args}'"
-
-[tool.hatch.envs.check]
-features = ["scripts", "test", "check"]
-
-[tool.hatch.envs.check.scripts]
-pyright = "inv check-pyright --args '{args}'"
-all = "inv checkall --args '{args}'"
-
-[tool.black]
-line-length = 88
-target-version = ['py313']
+[tool.hatch.envs.qa.scripts]
+check-lint = "inv check-lint --args '{args}'"
+check-format = "inv check-format --args '{args}'"
+check-type = "inv check-type --args '{args}'"
+check-all = "inv check-all --args '{args}'"
+fix-format = "inv fix-format --args '{args}'"
+fix-lint = "inv fix-lint --args '{args}'"
+fix-all = "inv fix-all --args '{args}'"
 
 [tool.ruff]
 line-length = 88

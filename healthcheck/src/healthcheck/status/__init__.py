@@ -1,6 +1,6 @@
 import logging
 from http import HTTPStatus
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ status_logger.addHandler(handler)
 T = TypeVar("T")
 
 
-class Result(BaseModel, Generic[T]):
+class Result[T](BaseModel):
     status_code: HTTPStatus
     success: bool
     data: T | None = None
