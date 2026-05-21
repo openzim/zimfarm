@@ -5,8 +5,8 @@
    "disk": 322122547200,
    "memory": 68719476736
   },
-  "title": "World maps",
-  "description": "Maps of the entire world, including roads and landmarks"
+  "title": "World",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_africa": {
   "resources": {
@@ -14,8 +14,8 @@
    "disk": 241591910400,
    "memory": 17179869184
   },
-  "title": "Africa maps",
-  "description": "All African countries, including roads, and landmarks",
+  "title": "Africa",
+  "description": "Full map, including roads and landmarks",
   "default_view": "1,18"
  },
  "maps_en_antarctica": {
@@ -24,8 +24,8 @@
    "disk": 214748364800,
    "memory": 17179869184
   },
-  "title": "Antarctica maps",
-  "description": "Maps for all roads and landmarks"
+  "title": "Antarctica",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_asia": {
   "resources": {
@@ -33,8 +33,8 @@
    "disk": 241591910400,
    "memory": 17179869184
   },
-  "title": "Asian maps",
-  "description": "Maps for all Asian countries, including roads, and landmarks",
+  "title": "Asia",
+  "description": "Full map, including roads and landmarks",
   "default_view": "1,18"
  },
  "maps_en_australia-and-oceania": {
@@ -44,8 +44,8 @@
    "disk": 214748364800,
    "memory": 17179869184
   },
-  "title": "Oceania maps",
-  "description": "All of Australia and Oceania, including roads and landmarks",
+  "title": "Australia and Oceania",
+  "description": "Full map, including roads and landmarks",
   "default_view": "-30,140"
  },
  "maps_en_central-america": {
@@ -54,8 +54,8 @@
    "disk": 214748364800,
    "memory": 17179869184
   },
-  "title": "Maps of Central America",
-  "description": "Maps of all Central American countries, including roads, and landmarks"
+  "title": "Central America",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_europe": {
   "resources": {
@@ -63,8 +63,8 @@
    "disk": 268435456000,
    "memory": 17179869184
   },
-  "title": "Maps of Europe",
-  "description": "All European countries, including roads and landmarks",
+  "title": "Europe",
+  "description": "Full map, including roads and landmarks",
   "default_view": "56.9,11.0"
  },
  "maps_en_india": {
@@ -73,8 +73,8 @@
    "disk": 214748364800,
    "memory": 17179869184
   },
-  "title": "Map of India",
-  "description": "All of India, including roads and landmarks"
+  "title": "India",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_north-america": {
   "resources": {
@@ -82,8 +82,8 @@
    "disk": 241591910400,
    "memory": 17179869184
   },
-  "title": "North America Maps",
-  "description": "USA, Canada and Mexico, including roads, and landmarks",
+  "title": "North America",
+  "description": "Full map, including roads and landmarks",
   "default_view": "27,-110"
  },
  "maps_en_russian-federation": {
@@ -93,8 +93,8 @@
    "disk": 241591910400,
    "memory": 17179869184
   },
-  "title": "Map of the Russian Federation",
-  "description": "Covers the entire country, including roads and landmarks",
+  "title": "Russian Federation",
+  "description": "Full map, including roads and landmarks",
   "default_view": "0,108"
  },
  "maps_en_south-america": {
@@ -103,8 +103,8 @@
    "disk": 241591910400,
    "memory": 17179869184
   },
-  "title": "Maps of South America",
-  "description": "Covers the entire continent, including roads, and landmarks",
+  "title": "South America",
+  "description": "Full map, including roads and landmarks",
   "default_view": "-28,-60"
  },
  "maps_en_ukraine-with-crimea": {
@@ -114,769 +114,766 @@
    "disk": 214748364800,
    "memory": 17179869184
   },
-  "title": "Map of Ukraine",
-  "description": "Entire country, including roads and landmarks",
+  "title": "Ukraine (with Crimea)",
+  "description": "Full map, including roads and landmarks",
   "default_view": "51,31.5"
  },
  "maps_en_algeria": {
-  "title": "Map of Algeria",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Algeria",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_angola": {
-  "title": "Map of Angola",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Angola",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_benin": {
-  "title": "Map of Benin",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Benin",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_botswana": {
-  "title": "Map of Botswana",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Botswana",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_burkina-faso": {
-  "title": "Map of Burkina Faso",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Burkina Faso",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_burundi": {
-  "title": "Map of Burundi",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Burundi",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_cameroon": {
-  "title": "Map of Cameroon",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Cameroon",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_canary-islands": {
-  "title": "Map of Canary Islands",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Canary Islands",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_cape-verde": {
-  "title": "Map of Cape Verde",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Cape Verde",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_central-african-republic": {
-  "title": "Map of Central African Republic",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Central African Republic",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_chad": {
-  "title": "Map of Chad",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Chad",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_comores": {
-  "title": "Map of Comores",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Comores",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_congo-republic-brazzaville": {
   "title": "Congo (Republic/Brazzaville)",
-  "description": "Maps of entire country, including roads and landmarks"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_congo-democratic-republic-kinshasa": {
   "title": "Congo (Democratic Republic/Kinshasa)",
-  "description": "Maps of entire country, including roads and landmarks"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_djibouti": {
-  "title": "Map of Djibouti",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Djibouti",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_egypt": {
-  "title": "Map of Egypt",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Egypt",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_equatorial-guinea": {
-  "title": "Map of Equatorial Guinea",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Equatorial Guinea",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_eritrea": {
-  "title": "Map of Eritrea",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Eritrea",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_ethiopia": {
-  "title": "Map of Ethiopia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Ethiopia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_gabon": {
-  "title": "Map of Gabon",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Gabon",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_ghana": {
-  "title": "Map of Ghana",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Ghana",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_guinea": {
-  "title": "Map of Guinea",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Guinea",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_guinea-bissau": {
-  "title": "Map of Guinea-Bissau",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Guinea-Bissau",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_ivory-coast": {
-  "title": "Map of Ivory Coast",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Ivory Coast",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_kenya": {
-  "title": "Map of Kenya",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Kenya",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_lesotho": {
-  "title": "Map of Lesotho",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Lesotho",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_liberia": {
-  "title": "Map of Liberia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Liberia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_libya": {
-  "title": "Map of Libya",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Libya",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_madagascar": {
-  "title": "Map of Madagascar",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Madagascar",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_malawi": {
-  "title": "Map of Malawi",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Malawi",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_mali": {
-  "title": "Map of Mali",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Mali",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_mauritania": {
-  "title": "Map of Mauritania",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Mauritania",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_mauritius": {
-  "title": "Map of Mauritius",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Mauritius",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_morocco": {
-  "title": "Map of Morocco",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Morocco",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_mozambique": {
-  "title": "Map of Mozambique",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Mozambique",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_namibia": {
-  "title": "Map of Namibia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Namibia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_niger": {
-  "title": "Map of Niger",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Niger",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_nigeria": {
-  "title": "Map of Nigeria",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Nigeria",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_rwanda": {
-  "title": "Map of Rwanda",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Rwanda",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_sao-tome-and-principe": {
-  "title": "Map of Sao Tome and Principe",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Sao Tome and Principe",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_senegal-and-gambia": {
-  "title": "Map of Senegal and Gambia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Senegal and Gambia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_seychelles": {
-  "title": "Map of Seychelles",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Seychelles",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_sierra-leone": {
-  "title": "Map of Sierra Leone",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Sierra Leone",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_somalia": {
-  "title": "Map of Somalia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Somalia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_south-africa": {
-  "title": "Map of South Africa",
-  "description": "Entire country, including roads and landmarks"
+  "title": "South Africa",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_south-sudan": {
-  "title": "Map of South Sudan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "South Sudan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_sudan": {
-  "title": "Map of Sudan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Sudan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_swaziland": {
-  "title": "Map of Swaziland",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Swaziland",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_tanzania": {
-  "title": "Map of Tanzania",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Tanzania",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_togo": {
-  "title": "Map of Togo",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Togo",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_tunisia": {
-  "title": "Map of Tunisia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Tunisia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_uganda": {
-  "title": "Map of Uganda",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Uganda",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_zambia": {
-  "title": "Map of Zambia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Zambia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_zimbabwe": {
-  "title": "Map of Zimbabwe",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Zimbabwe",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_afghanistan": {
-  "title": "Map of Afghanistan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Afghanistan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_armenia": {
-  "title": "Map of Armenia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Armenia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_azerbaijan": {
-  "title": "Map of Azerbaijan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Azerbaijan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_bangladesh": {
-  "title": "Map of Bangladesh",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Bangladesh",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_bhutan": {
-  "title": "Map of Bhutan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Bhutan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_cambodia": {
-  "title": "Map of Cambodia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Cambodia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_china": {
-  "title": "Map of China",
-  "description": "Entire country, including roads and landmarks"
+  "title": "China",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_east-timor": {
-  "title": "Map of East Timor",
-  "description": "Entire country, including roads and landmarks"
+  "title": "East Timor",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_gcc-states": {
-  "title": "Map of GCC States",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Gulf States",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_indonesia-with-east-timor": {
-  "title": "Map of Indonesia",
-  "description": "Maps of Indonesia country (with East Timor), including roads and landmarks"
+  "title": "Indonesia and Timor Leste",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_iran": {
-  "title": "Map of Iran",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Iran",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_iraq": {
-  "title": "Map of Iraq",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Iraq",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_israel-and-palestine": {
-  "title": "Map of Israel and Palestine",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Israel and Palestine",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_japan": {
-  "title": "Map of Japan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Japan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_jordan": {
-  "title": "Map of Jordan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Jordan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_kazakhstan": {
-  "title": "Map of Kazakhstan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Kazakhstan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_kyrgyzstan": {
-  "title": "Map of Kyrgyzstan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Kyrgyzstan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_laos": {
-  "title": "Map of Laos",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Laos",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_lebanon": {
-  "title": "Map of Lebanon",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Lebanon",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_malaysia-singapore-and-brunei": {
   "title": "Malaysia, Singapore and Brunei",
-  "description": "Maps of Malaysia, Singapore and Brunei, including roads and landmarks"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_maldives": {
-  "title": "Map of Maldives",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Maldives",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_mongolia": {
-  "title": "Map of Mongolia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Mongolia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_myanmar-a.k.a.-burma": {
-  "title": "Map of Myanmar (a.k.a. Burma)",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Myanmar (a.k.a. Burma)",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_nepal": {
-  "title": "Map of Nepal",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Nepal",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_north-korea": {
-  "title": "Map of North Korea",
-  "description": "Entire country, including roads and landmarks"
+  "title": "North Korea",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_pakistan": {
-  "title": "Map of Pakistan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Pakistan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_philippines": {
-  "title": "Map of Philippines",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Philippines",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_south-korea": {
-  "title": "Map of South Korea",
-  "description": "Entire country, including roads and landmarks"
+  "title": "South Korea",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_sri-lanka": {
-  "title": "Map of Sri Lanka",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Sri Lanka",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_syria": {
-  "title": "Map of Syria",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Syria",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_taiwan": {
-  "title": "Map of Taiwan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Taiwan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_tajikistan": {
-  "title": "Map of Tajikistan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Tajikistan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_thailand": {
-  "title": "Map of Thailand",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Thailand",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_turkmenistan": {
-  "title": "Map of Turkmenistan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Turkmenistan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_uzbekistan": {
-  "title": "Map of Uzbekistan",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Uzbekistan",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_vietnam": {
-  "title": "Map of Vietnam",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Vietnam",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_yemen": {
-  "title": "Map of Yemen",
-  "description": "Entire country, including roads and landmarks"
- },
- "maps_en_american-oceania": {
-  "title": "Map of American Oceania",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Yemen",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_australia": {
-  "title": "Map of Australia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Australia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_cook-islands": {
-  "title": "Map of Cook Islands",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Cook Islands",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_fiji": {
-  "title": "Map of Fiji",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Fiji",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_le-de-clipperton": {
-  "title": "Map of \u00c3\u008ele de Clipperton",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Clipperton Island",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_kiribati": {
-  "title": "Map of Kiribati",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Kiribati",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_marshall-islands": {
-  "title": "Map of Marshall Islands",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Marshall Islands",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_micronesia": {
-  "title": "Map of Micronesia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Micronesia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_nauru": {
-  "title": "Map of Nauru",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Nauru",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_new-caledonia": {
-  "title": "Map of New Caledonia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "New Caledonia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_new-zealand": {
-  "title": "Map of New Zealand",
-  "description": "Entire country, including roads and landmarks"
+  "title": "New Zealand",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_niue": {
-  "title": "Map of Niue",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Niue",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_palau": {
-  "title": "Map of Palau",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Palau",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_papua-new-guinea": {
-  "title": "Map of Papua New Guinea",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Papua New Guinea",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_pitcairn-islands": {
-  "title": "Map of Pitcairn Islands",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Pitcairn Islands",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_polyn-sie-fran-aise-french-polynesia": {
   "name": "maps_en_french-polynesia",
-  "title": "Map of French Polynesia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "French Polynesia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_samoa": {
-  "title": "Map of Samoa",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Samoa",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_solomon-islands": {
-  "title": "Map of Solomon Islands",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Solomon Islands",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_tokelau": {
-  "title": "Map of Tokelau",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Tokelau",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_tonga": {
-  "title": "Map of Tonga",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Tonga",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_tuvalu": {
-  "title": "Map of Tuvalu",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Tuvalu",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_vanuatu": {
-  "title": "Map of Vanuatu",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Vanuatu",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_wallis-et-futuna": {
-  "title": "Map of Wallis et Futuna",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Wallis et Futuna",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_bahamas": {
-  "title": "Map of Bahamas",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Bahamas",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_belize": {
-  "title": "Map of Belize",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Belize",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_costa-rica": {
-  "title": "Map of Costa Rica",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Costa Rica",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_cuba": {
-  "title": "Map of Cuba",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Cuba",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_el-salvador": {
-  "title": "Map of El Salvador",
-  "description": "Entire country, including roads and landmarks"
+  "title": "El Salvador",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_guatemala": {
-  "title": "Map of Guatemala",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Guatemala",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_haiti-and-dominican-republic": {
   "title": "Haiti and Dominican Republic",
-  "description": "Maps of entire country, including roads and landmarks"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_honduras": {
-  "title": "Map of Honduras",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Honduras",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_jamaica": {
-  "title": "Map of Jamaica",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Jamaica",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_nicaragua": {
-  "title": "Map of Nicaragua",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Nicaragua",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_panama": {
-  "title": "Map of Panama",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Panama",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_albania": {
-  "title": "Map of Albania",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Albania",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_andorra": {
-  "title": "Map of Andorra",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Andorra",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_austria": {
-  "title": "Map of Austria",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Austria",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_azores": {
-  "title": "Map of Azores",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Azores",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_belarus": {
-  "title": "Map of Belarus",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Belarus",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_belgium": {
-  "title": "Map of Belgium",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Belgium",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_bosnia-herzegovina": {
-  "title": "Map of Bosnia-Herzegovina",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Bosnia-Herzegovina",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_bulgaria": {
-  "title": "Map of Bulgaria",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Bulgaria",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_croatia": {
-  "title": "Map of Croatia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Croatia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_cyprus": {
-  "title": "Map of Cyprus",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Cyprus",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_czech-republic": {
-  "title": "Map of Czech Republic",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Czech Republic",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_denmark": {
-  "title": "Map of Denmark",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Denmark",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_estonia": {
-  "title": "Map of Estonia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Estonia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_faroe-islands": {
-  "title": "Map of Faroe Islands",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Faroe Islands",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_finland": {
-  "title": "Map of Finland",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Finland",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_france": {
-  "title": "Map of France",
-  "description": "Entire country, including roads and landmarks"
+  "title": "France",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_georgia": {
-  "title": "Map of Georgia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Georgia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_germany": {
-  "title": "Map of Germany",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Germany",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_greece": {
-  "title": "Map of Greece",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Greece",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_guernsey-and-jersey": {
-  "title": "Map of Guernsey and Jersey",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Guernsey and Jersey",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_hungary": {
-  "title": "Map of Hungary",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Hungary",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_iceland": {
-  "title": "Map of Iceland",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Iceland",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_ireland-and-northern-ireland": {
   "title": "Ireland and Northern Ireland",
-  "description": "Maps of Ireland and Northern Ireland, including roads and landmarks"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_isle-of-man": {
-  "title": "Map of Isle of Man",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Isle of Man",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_italy": {
-  "title": "Map of Italy",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Italy",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_kosovo": {
-  "title": "Map of Kosovo",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Kosovo",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_latvia": {
-  "title": "Map of Latvia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Latvia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_liechtenstein": {
-  "title": "Map of Liechtenstein",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Liechtenstein",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_lithuania": {
-  "title": "Map of Lithuania",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Lithuania",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_luxembourg": {
-  "title": "Map of Luxembourg",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Luxembourg",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_macedonia": {
-  "title": "Map of Macedonia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Macedonia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_malta": {
-  "title": "Map of Malta",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Malta",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_moldova": {
-  "title": "Map of Moldova",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Moldova",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_monaco": {
-  "title": "Map of Monaco",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Monaco",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_montenegro": {
-  "title": "Map of Montenegro",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Montenegro",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_netherlands": {
-  "title": "Map of Netherlands",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Netherlands",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_norway": {
-  "title": "Map of Norway",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Norway",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_poland": {
-  "title": "Map of Poland",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Poland",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_portugal": {
-  "title": "Map of Portugal",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Portugal",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_romania": {
-  "title": "Map of Romania",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Romania",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_serbia": {
-  "title": "Map of Serbia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Serbia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_slovakia": {
-  "title": "Map of Slovakia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Slovakia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_slovenia": {
-  "title": "Map of Slovenia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Slovenia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_spain": {
-  "title": "Map of Spain",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Spain",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_sweden": {
-  "title": "Map of Sweden",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Sweden",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_switzerland": {
-  "title": "Map of Switzerland",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Switzerland",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_turkey": {
-  "title": "Map of Turkey",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Turkey",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_united-kingdom": {
-  "title": "Map of United Kingdom",
-  "description": "Entire country, including roads and landmarks"
+  "title": "United Kingdom",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_canada": {
-  "title": "Map of Canada",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Canada",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_greenland": {
-  "title": "Map of Greenland",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Greenland",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_mexico": {
-  "title": "Map of Mexico",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Mexico",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_united-states-of-america": {
   "title": "United States of America",
-  "description": "Maps of United States of America country, including roads and landmarks"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_argentina": {
-  "title": "Map of Argentina",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Argentina",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_bolivia": {
-  "title": "Map of Bolivia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Bolivia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_brazil": {
-  "title": "Map of Brazil",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Brazil",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_chile": {
-  "title": "Map of Chile",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Chile",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_colombia": {
-  "title": "Map of Colombia",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Colombia",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_ecuador": {
-  "title": "Map of Ecuador",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Ecuador",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_guyana": {
-  "title": "Map of Guyana",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Guyana",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_paraguay": {
-  "title": "Map of Paraguay",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Paraguay",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_peru": {
-  "title": "Map of Peru",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Peru",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_suriname": {
-  "title": "Map of Suriname",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Suriname",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_uruguay": {
-  "title": "Map of Uruguay",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Uruguay",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_venezuela": {
-  "title": "Map of Venezuela",
-  "description": "Entire country, including roads and landmarks"
+  "title": "Venezuela",
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_saint-helena-ascension-and-tristan-da-cunha": {
-  "title": "Map of Saint Helena and islands",
-  "description": "Saint Helena, Ascension & Tristan da Cunha maps, including roads and landmarks"
+  "name": "maps_en_south-atlantic",
+  "title": "South Atlantic",
+  "description": "Full map, including roads and landmarks"
  }
 }
