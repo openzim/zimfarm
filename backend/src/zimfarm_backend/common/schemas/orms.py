@@ -83,6 +83,7 @@ class BaseTaskSchema(BaseModel):
     id: UUID
     status: str
     timestamp: list[tuple[str, datetime.datetime]]
+    recipe_id: UUID | None = Field(exclude=True)
     recipe_name: str | None
     worker_name: str
     updated_at: datetime.datetime
@@ -98,7 +99,6 @@ class TaskLightSchema(BaseTaskSchema):
     """
 
     config: ConfigWithOnlyResourcesSchema
-    recipe_id: UUID | None = Field(exclude=True)
     recipe_most_recent_task: MostRecentTaskSchema | None = None
 
 

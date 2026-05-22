@@ -148,6 +148,7 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
             upload=TaskUploadSchema.model_validate(task.upload),
             updated_at=task.updated_at,
             original_recipe_name=task.original_recipe_name,
+            recipe_id=task.recipe_id,
             recipe_name=row.recipe_name,
             worker_name=row.worker_name,
             context=task.context,

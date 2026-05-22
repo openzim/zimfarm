@@ -1,6 +1,7 @@
 import datetime
 from http import HTTPStatus
 from typing import Any, cast
+from uuid import UUID
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -143,6 +144,8 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
                 zimcheck_base_url=(
                     task.upload.check.upload_uri if task.upload.check else None
                 ),
+                recipe_id=task.recipe_id,
+                recipe_name=task.recipe_name or task.original_recipe_name,
             ),
             timeout=REQ_TIMEOUT_CMS,
             headers={"Authorization": f"Bearer {access_token}"},
@@ -172,7 +175,12 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
 
 
 def get_openzimcms_payload(
-    *, file: TaskFileSchema, zimcheck_base_url: str | None, warehouse_path: str
+    *,
+    file: TaskFileSchema,
+    zimcheck_base_url: str | None,
+    warehouse_path: str,
+    recipe_id: UUID | None,
+    recipe_name: str | None,
 ) -> dict[str, Any]:
     # remove leading "/" in warehouse path since CMS expects relative paths
     folder_name = (
@@ -192,6 +200,8 @@ def get_openzimcms_payload(
             if zimcheck_base_url and file.check_filename
             else None
         ),
+        "recipe_id": str(recipe_id),
+        "recipe_name": recipe_name,
     }
     return payload
 
