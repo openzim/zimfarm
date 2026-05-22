@@ -9,7 +9,7 @@
 
   <!-- Request Button (Normal Priority) -->
   <v-btn
-    color="primary"
+    :color="isDisabled ? undefined : 'primary'"
     variant="elevated"
     size="small"
     :loading="isRequesting"
@@ -17,7 +17,7 @@
     @click="promptRequest(false)"
   >
     <v-tooltip activator="parent" location="top">Request with normal priority</v-tooltip>
-    <v-icon size="small" class="mr-1">mdi-plus</v-icon>
+    <v-icon size="small" class="mr-1">mdi-rocket-launch</v-icon>
     {{
       isRequesting ? requestingText : `Request ${count} selected recipe${count !== 1 ? 's' : ''}`
     }}
@@ -26,7 +26,7 @@
   <!-- Fire Button (High Priority) -->
   <v-btn
     v-if="!isRequesting"
-    color="warning"
+    :color="isDisabled ? undefined : 'warning'"
     variant="elevated"
     size="small"
     :disabled="isDisabled"
