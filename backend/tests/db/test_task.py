@@ -105,7 +105,7 @@ def test_get_tasks(
         skip=skip,
         limit=limit,
         status=status,
-        recipe_name=recipe_name,
+        recipe_identifier=recipe_name,
         offliner=offliner,
     )
     assert result.nb_records == expected_nb_records

@@ -5,6 +5,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session as OrmSession
 
+from zimfarm_backend.common import is_valid_uuid
 from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.orms import BlobSchema, CreateBlobSchema
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
@@ -19,20 +20,22 @@ class BlobListResult(BaseModel):
 def get_blobs(
     session: OrmSession,
     *,
-    recipe_name: str,
+    recipe_identifier: str,
     skip: int,
     limit: int,
 ) -> BlobListResult:
     """Get a list of blobs for the recipe"""
+    if is_valid_uuid(recipe_identifier):
+        where_clause = Recipe.id == recipe_identifier
+    else:
+        where_clause = Recipe.name == recipe_identifier
     query = (
         select(
             func.count().over().label("nb_records"),
             Blob,
         )
         .join(Recipe, Blob.recipe_id == Recipe.id)
-        .where(
-            Recipe.name == recipe_name,
-        )
+        .where(where_clause)
         .offset(skip)
         .limit(limit)
         .order_by(Blob.created_at.desc())

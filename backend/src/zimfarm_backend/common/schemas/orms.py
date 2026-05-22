@@ -266,6 +266,7 @@ class RecipeLightSchema(BaseModel):
     Schema for reading a recipe model with some fields
     """
 
+    id: UUID
     name: str
     category: str
     most_recent_task: MostRecentTaskSchema | None
@@ -323,6 +324,7 @@ class RecipeFullSchema(BaseModel):
     Schema for reading a recipe model with all fields
     """
 
+    id: UUID
     language: LanguageSchema
     durations: list[RecipeDurationSchema] = Field(exclude=True)
     name: str

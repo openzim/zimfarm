@@ -95,7 +95,7 @@ def relaunch_failed_recipes(session: OrmSession, start_date: str):
 
         result = request_task(
             session=session,
-            recipe_name=recipe_name,
+            recipe_identifier=recipe_name,
             requested_by=get_account_by_username(session, username="maint-scripts").id,
         )
         if result.requested_task:

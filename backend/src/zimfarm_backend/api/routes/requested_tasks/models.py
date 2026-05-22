@@ -8,7 +8,6 @@ from zimfarm_backend.common.schemas.fields import (
     LimitFieldMax200,
     NotEmptyString,
     PriorityField,
-    RecipeNameField,
     SkipField,
     WorkerField,
     ZIMDisk,
@@ -32,7 +31,7 @@ class RequestedTaskSchema(BaseModel):
 
 
 class NewRequestedTaskSchema(BaseModel):
-    recipe_names: list[RecipeNameField] = Field(default_factory=list)
+    recipe_names: list[NotEmptyString] = Field(default_factory=list)
     priority: PriorityField | None = None
     worker: WorkerField | None = None
 

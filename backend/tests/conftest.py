@@ -1045,7 +1045,7 @@ def create_requested_task(
             else recipe_config
         )
 
-        recipe = get_recipe_or_none(dbsession, recipe_name=recipe_name)
+        recipe = get_recipe_or_none(dbsession, recipe_name)
         if recipe is None:
             recipe = create_recipe(name=recipe_name, recipe_config=recipe_config)
 

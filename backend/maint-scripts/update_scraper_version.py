@@ -162,7 +162,7 @@ def update_recipes(
             session,
             offliner_definition=offliner_definition,
             author_id=get_account_by_username(session, username="maint-scripts").id,
-            recipe_name=recipe.name,
+            recipe_identifier=recipe.name,
             new_recipe_config=recipe_config,
             comment="updates made via update_scraper_version",
         )

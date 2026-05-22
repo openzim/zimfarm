@@ -370,7 +370,7 @@ def test_create_recipe_with_permssions(
     assert response.status_code == expected_status_code
     if response.status_code == HTTPStatus.OK:
         # assert top-level scalar attributes of the recipe with the payload
-        recipe = get_recipe(dbsession, recipe_name="test_recipe")
+        recipe = get_recipe(dbsession, "test_recipe")
         assert recipe.language_code == "eng"
         assert recipe.tags == ["important"]
         assert recipe.enabled is True
@@ -462,6 +462,7 @@ def test_get_recipe(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     data = response.json()
+    assert "id" in data
     assert "config" in data
     assert "offliner" in data["config"]
     assert "mwPassword" in data["config"]["offliner"]
@@ -504,6 +505,7 @@ def test_get_obsolete_recipe(
     )
     assert response.status_code == HTTPStatus.OK
     recipe_data = response.json()
+    assert "id" in recipe_data
     assert "config" in recipe_data
     assert "offliner" in recipe_data["config"]
     assert "mwUrl" in recipe_data["config"]["offliner"]
@@ -679,8 +681,9 @@ def test_update_recipe(
     dbsession.add(recipe)
     dbsession.flush()
 
+    recipe_identifier = recipe.id if hash(str(payload)) % 2 == 0 else recipe.name
     response = client.patch(
-        f"/v2/recipes/{recipe.name}",
+        f"/v2/recipes/{recipe_identifier}",
         headers={"Authorization": f"Bearer {access_token}"},
         json=payload,
     )
@@ -713,7 +716,7 @@ def test_delete_recipe(
     dbsession.flush()
 
     response = client.delete(
-        f"/v2/recipes/{recipe.name}",
+        f"/v2/recipes/{recipe.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
@@ -770,7 +773,7 @@ def test_clone_recipe(
     dbsession.flush()
 
     response = client.post(
-        f"/v2/recipes/{recipe.name}/clone",
+        f"/v2/recipes/{recipe.id}/clone",
         headers={"Authorization": f"Bearer {access_token}"},
         json={"name": "test_recipe_clone"},
     )
@@ -780,7 +783,7 @@ def test_clone_recipe(
     assert data["id"] is not None
     assert str(data["id"]) != str(recipe.id)
 
-    new_recipe = get_recipe(dbsession, recipe_name="test_recipe_clone")
+    new_recipe = get_recipe(dbsession, "test_recipe_clone")
     assert new_recipe.is_valid == expected_validity_status
 
 
@@ -829,7 +832,7 @@ def test_validate_recipe(
     dbsession.flush()
 
     response = client.get(
-        f"/v2/recipes/{recipe.name}/validate",
+        f"/v2/recipes/{recipe.id}/validate",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == expected_status_code
@@ -1126,7 +1129,7 @@ def test_get_recipe_history_pagination(
         update_recipe(
             session=dbsession,
             author_id=account.id,
-            recipe_name=recipe.name,
+            recipe_identifier=recipe.name,
             comment=f"test_comment_{i}",
             tags=[*recipe.tags, f"test_tag_{i}"],
             offliner_definition=create_offliner_definition_schema(
@@ -1256,7 +1259,7 @@ def test_archive_recipe(
     recipe = create_recipe(name="test_recipe")
 
     response = client.patch(
-        f"/v2/recipes/{recipe.name}/archive",
+        f"/v2/recipes/{recipe.id}/archive",
         headers={"Authorization": f"Bearer {access_token}"},
         json={},
     )
@@ -1330,7 +1333,7 @@ def test_revert_recipe_history(
     update_recipe(
         dbsession,
         author_id=account.id,
-        recipe_name="test_recipe",
+        recipe_identifier="test_recipe",
         offliner_definition=mwoffliner_definition,
         tags=["tag3", "tag4"],
         category=RecipeCategory.other,

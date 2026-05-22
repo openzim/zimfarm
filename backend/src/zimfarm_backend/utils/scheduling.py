@@ -72,7 +72,7 @@ def request_tasks_using_recipe(session: OrmSession):
                     try:
                         result = request_task(
                             session=session,
-                            recipe_name=recipe.name,
+                            recipe_identifier=recipe.name,
                             requested_by=get_account_by_identifier(
                                 session, account_identifier=requester
                             ).id,
