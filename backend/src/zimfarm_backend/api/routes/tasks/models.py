@@ -17,6 +17,7 @@ class TasksGetSchema(BaseModel):
     limit: LimitFieldMax200 = 20
     status: list[TaskStatus] | None = None
     recipe_name: NotEmptyString | None = None
+    recipe_id: NotEmptyString | None = None
     sort_criteria: Literal["done", "doing", "failed", "updated_at"] = "updated_at"
     offliner: NotEmptyString | None = None
     fetch_most_recent_tasks: bool = False

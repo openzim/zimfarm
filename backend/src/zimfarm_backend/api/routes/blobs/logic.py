@@ -44,17 +44,17 @@ router = APIRouter(prefix="/blobs", tags=["blobs"])
 
 
 @router.post(
-    "/{recipe_name}",
+    "/{recipe_identifier}",
     dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
 )
 def create_blob(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     request: CreateBlobRequest,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> BlobSchema:
     "Create a blob for recipe"
 
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
 
     if request.data.startswith("data:"):
         _, encoded_data = request.data.split(",", 1)
@@ -101,11 +101,11 @@ def create_blob(
 
 
 @router.get(
-    "/{recipe_name}",
+    "/{recipe_identifier}",
     dependencies=[Depends(require_permission(namespace="recipes", name="read"))],
 )
 def get_blobs(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     params: Annotated[BlobsGetSchema, Query()],
 ):
@@ -114,7 +114,7 @@ def get_blobs(
         session,
         skip=params.skip,
         limit=params.limit,
-        recipe_name=recipe_name,
+        recipe_identifier=recipe_identifier,
     )
     return ListResponse(
         items=result.blobs,
@@ -184,16 +184,16 @@ def delete_blob(
 
 
 @router.get(
-    "/{recipe_name}/{flag_name}/{checksum}",
+    "/{recipe_identifier}/{flag_name}/{checksum}",
     dependencies=[Depends(require_permission(namespace="recipes", name="read"))],
 )
 def get_blob(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     flag_name: Annotated[NotEmptyString, Path()],
     checksum: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> BlobSchema:
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
     return db_get_blob(
         session, recipe_id=recipe.id, flag_name=flag_name, checksum=checksum
     )

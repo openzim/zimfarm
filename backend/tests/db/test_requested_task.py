@@ -51,7 +51,7 @@ def test_request_task_nonexistent_recipe(dbsession: OrmSession, worker: Worker):
     """Test that request_task returns None for non-existent recipe"""
     result = request_task(
         session=dbsession,
-        recipe_name="nonexistent",
+        recipe_identifier="nonexistent",
         requested_by=uuid4(),
         worker_name=worker.name,
     )
@@ -62,7 +62,7 @@ def test_request_task_nonexistent_worker(dbsession: OrmSession, recipe: Recipe):
     """Test that request_task returns None for non-existent worker"""
     result = request_task(
         session=dbsession,
-        recipe_name=recipe.name,
+        recipe_identifier=recipe.name,
         requested_by=uuid4(),
         worker_name="nonexistent",
     )
@@ -79,7 +79,7 @@ def test_request_task_disabled_recipe(
 
     result = request_task(
         session=dbsession,
-        recipe_name=recipe.name,
+        recipe_identifier=recipe.name,
         requested_by=uuid4(),
         worker_name=worker.name,
     )
@@ -96,7 +96,7 @@ def test_request_task_archived_recipe(
 
     result = request_task(
         session=dbsession,
-        recipe_name=recipe.name,
+        recipe_identifier=recipe.name,
         requested_by=uuid4(),
         worker_name=worker.name,
     )
@@ -117,7 +117,7 @@ def test_request_task_already_requested(
     )
     result = request_task(
         session=dbsession,
-        recipe_name=recipe.name,
+        recipe_identifier=recipe.name,
         requested_by=uuid4(),
         worker_name=worker.name,
     )
@@ -325,7 +325,7 @@ def test_request_task_for_worker(
     requested_by = create_account(username="testuser")
     result = request_task(
         session=dbsession,
-        recipe_name=recipe.name,
+        recipe_identifier=recipe.name,
         requested_by=requested_by.id,
         worker_name=worker.name,
     )

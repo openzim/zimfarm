@@ -272,22 +272,23 @@ def restore_archived_recipes(
 ) -> Response:
     db_restore_recipes(
         session,
-        recipe_names=request.recipe_names,
+        recipe_identifiers=request.recipe_names
+        or [str(recipe_id) for recipe_id in request.recipe_ids],
         actor_id=current_account.id,
         comment=request.comment,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.get("/{recipe_name}")
+@router.get("/{recipe_identifier}")
 def get_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     current_account: Account | None = Depends(get_current_account_or_none),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
-    db_recipe = db_get_recipe(session, recipe_name=recipe_name)
+    db_recipe = db_get_recipe(session, recipe_identifier)
 
     if current_account is None and db_recipe.archived:
         raise UnauthorizedError(
@@ -342,13 +343,13 @@ def get_recipe(
     )
 
 
-@router.get("/{recipe_name}/similar")
+@router.get("/{recipe_identifier}/similar")
 def get_similar_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     params: Annotated[RecipesGetSchema, Query()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[RecipeLightSchema]:
-    recipe = db_get_recipe(session, recipe_name=recipe_name)
+    recipe = db_get_recipe(session, recipe_identifier)
     results = db_get_recipes(
         session,
         skip=params.skip,
@@ -372,16 +373,16 @@ def get_similar_recipe(
 
 
 @router.patch(
-    "/{recipe_name}",
+    "/{recipe_identifier}",
     dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
 def update_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     request: RecipeUpdateSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_account: Account = Depends(get_current_account),
 ) -> JSONResponse:
-    db_recipe = db_get_recipe(session, recipe_name=recipe_name)
+    db_recipe = db_get_recipe(session, recipe_identifier)
     if db_recipe.archived:
         raise BadRequestError("Cannot update an archived recipe")
     offliner = get_offliner(session, db_recipe.config["offliner"]["offliner_id"])
@@ -559,7 +560,7 @@ def update_recipe(
 
     recipe = db_update_recipe(
         session,
-        recipe_name=recipe_name,
+        recipe_identifier=recipe_identifier,
         author_id=current_account.id,
         comment=request.comment,
         new_recipe_config=new_recipe_config,
@@ -589,25 +590,25 @@ def update_recipe(
 
 
 @router.delete(
-    "/{recipe_name}",
+    "/{recipe_identifier}",
     dependencies=[Depends(require_permission(namespace="recipes", name="delete"))],
 )
 def delete_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> Response:
     """Delete a recipe"""
-    db_delete_recipe(session, recipe_name=recipe_name)
+    db_delete_recipe(session, recipe_identifier)
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.get("/{recipe_name}/image-names")
+@router.get("/{recipe_identifier}/image-names")
 def get_recipe_image_names(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     hub_name: Annotated[str, Query()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> ListResponse[Any]:
-    db_get_recipe(session, recipe_name=recipe_name)
+    db_get_recipe(session, recipe_identifier)
     try:
         tags = get_recipe_image_tags(hub_name)
     except requests.HTTPError as exc:
@@ -631,16 +632,16 @@ def get_recipe_image_names(
 
 
 @router.post(
-    "/{recipe_name}/clone",
+    "/{recipe_identifier}/clone",
     dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
 )
 def clone_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     request: CloneSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_account: Account = Depends(get_current_account),
 ) -> RecipeCreateResponseSchema:
-    recipe = db_get_recipe(session, recipe_name=recipe_name)
+    recipe = db_get_recipe(session, recipe_identifier)
     if recipe.archived:
         raise BadRequestError("You cannot clone an archived recipe.")
 
@@ -696,7 +697,7 @@ def clone_recipe(
     except ValidationError:
         db_update_recipe(
             session,
-            recipe_name=new_recipe.name,
+            recipe_identifier=new_recipe.name,
             author_id=current_account.id,
             is_valid=False,
             offliner_definition=create_offliner_definition_schema(
@@ -710,11 +711,11 @@ def clone_recipe(
 
 
 @router.patch(
-    "/{recipe_name}/archive",
+    "/{recipe_identifier}/archive",
     dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
 )
 def archive_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_account: Account = Depends(get_current_account),
@@ -722,23 +723,23 @@ def archive_recipe(
     """Archive a recipe"""
     db_toggle_archive_status(
         session,
-        recipe_name=recipe_name,
+        recipe_identifier=recipe_identifier,
         archived=True,
         actor_id=current_account.id,
         comment=request.comment,
     )
     return JSONResponse(
-        content={"message": f"Recipe '{recipe_name}' has been archived"},
+        content={"message": f"Recipe '{recipe_identifier}' has been archived"},
         status_code=HTTPStatus.OK,
     )
 
 
 @router.patch(
-    "/{recipe_name}/restore",
+    "/{recipe_identifier}/restore",
     dependencies=[Depends(require_permission(namespace="recipes", name="archive"))],
 )
 def restore_archived_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_account: Account = Depends(get_current_account),
@@ -746,26 +747,26 @@ def restore_archived_recipe(
     """Restore an archived recipe"""
     db_toggle_archive_status(
         session,
-        recipe_name=recipe_name,
+        recipe_identifier=recipe_identifier,
         archived=False,
         actor_id=current_account.id,
         comment=request.comment,
     )
     return JSONResponse(
-        content={"message": f"Recipe '{recipe_name}' has been restored"},
+        content={"message": f"Recipe '{recipe_identifier}' has been restored"},
         status_code=HTTPStatus.OK,
     )
 
 
 @router.get(
-    "/{recipe_name}/validate",
+    "/{recipe_identifier}/validate",
     dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
 def validate_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> JSONResponse:
-    recipe = db_get_recipe(session, recipe_name=recipe_name)
+    recipe = db_get_recipe(session, recipe_identifier)
     offliner = get_offliner(session, recipe.config["offliner"]["offliner_id"])
 
     try:
@@ -777,16 +778,16 @@ def validate_recipe(
 
 
 @router.get(
-    "/{recipe_name}/history",
+    "/{recipe_identifier}/history",
     dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
 )
 def get_recipe_history(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 200,
 ) -> ListResponse[RecipeHistorySchema]:
-    recipe = db_get_recipe(session, recipe_name=recipe_name)
+    recipe = db_get_recipe(session, recipe_identifier)
 
     results = db_get_recipe_history(
         session, recipe_id=recipe.id, skip=skip, limit=limit
@@ -803,26 +804,26 @@ def get_recipe_history(
 
 
 @router.get(
-    "/{recipe_name}/history/{history_id}",
+    "/{recipe_identifier}/history/{history_id}",
     dependencies=[Depends(require_permission(namespace="recipes", name="secrets"))],
 )
 def get_recipe_history_entry(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
     session: OrmSession = Depends(gen_dbsession),
 ) -> RecipeHistorySchema:
     history_entry = db_get_recipe_history_entry(
-        session, recipe_name=recipe_name, history_id=history_id
+        session, recipe_identifier=recipe_identifier, history_id=history_id
     )
     return create_recipe_history_schema(history_entry)
 
 
 @router.patch(
-    "/{recipe_name}/revert/{history_id}",
+    "/{recipe_identifier}/revert/{history_id}",
     dependencies=[Depends(require_permission(namespace="recipes", name="update"))],
 )
 def revert_recipe(
-    recipe_name: Annotated[NotEmptyString, Path()],
+    recipe_identifier: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
     request: RevertRecipeSchema,
     session: OrmSession = Depends(gen_dbsession),
@@ -831,12 +832,12 @@ def revert_recipe(
     """Revert a recipe to a previous history."""
     db_revert_recipe(
         session,
-        recipe_name=recipe_name,
+        recipe_identifier=recipe_identifier,
         history_id=history_id,
         author_id=current_account.id,
         comment=request.comment,
     )
     return JSONResponse(
-        content={"message": f"Recipe '{recipe_name}' has been restored"},
+        content={"message": f"Recipe '{recipe_identifier}' has been restored"},
         status_code=HTTPStatus.OK,
     )

@@ -155,7 +155,9 @@ def test_get_blobs(
         )
     dbsession.add(recipe)
     dbsession.flush()
-    results = get_blobs(dbsession, skip=skip, limit=limit, recipe_name=recipe.name)
+    results = get_blobs(
+        dbsession, skip=skip, limit=limit, recipe_identifier=recipe.name
+    )
     assert len(results.blobs) == expected_nb_records
     assert len(results.blobs) <= limit
 
@@ -174,5 +176,7 @@ def test_get_blobs_wrong_recipe_name(
     )
     dbsession.add(recipe)
     dbsession.flush()
-    results = get_blobs(dbsession, skip=0, limit=10, recipe_name=recipe.name + "wrong")
+    results = get_blobs(
+        dbsession, skip=0, limit=10, recipe_identifier=recipe.name + "wrong"
+    )
     assert len(results.blobs) == 0

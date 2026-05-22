@@ -107,7 +107,7 @@ def main(*, dry_run: bool = False):
                 update_recipe(
                     session=session,
                     author_id=user.id,
-                    recipe_name=recipe.name,
+                    recipe_identifier=recipe.name,
                     offliner_definition=offliner_def,
                     new_recipe_config=recipe_config,
                     comment="Restore mwoffliner articleList from history",

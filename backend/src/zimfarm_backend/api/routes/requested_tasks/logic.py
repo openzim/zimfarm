@@ -108,16 +108,16 @@ def create_request_task(
 
     requested_tasks: list[RequestedTaskFullSchema] = []
     errors: dict[str, str] = {}
-    for recipe_name in new_requested_task.recipe_names:
+    for recipe_identifier in new_requested_task.recipe_names:
         result = request_task(
             session,
-            recipe_name=recipe_name,
+            recipe_identifier=recipe_identifier,
             requested_by=current_account.id,
             worker_name=new_requested_task.worker,
             priority=new_requested_task.priority or 0,
         )
         if result.error:
-            errors[recipe_name] = result.error
+            errors[recipe_identifier] = result.error
 
         if result.requested_task:
             requested_tasks.append(result.requested_task)

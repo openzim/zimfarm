@@ -2,13 +2,13 @@ import datetime
 from typing import Any, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, literal, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Bundle, selectinload
 from sqlalchemy.orm import Session as OrmSession
 
-from zimfarm_backend.common import getnow
+from zimfarm_backend.common import getnow, is_valid_uuid
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.schemas import BaseModel
@@ -170,7 +170,7 @@ def get_tasks(
     skip: int,
     limit: int,
     status: list[TaskStatus] | None = None,
-    recipe_name: str | None = None,
+    recipe_identifier: str | None = None,
     sort_criteria: Literal["updated_at", "doing", "done", "failed"] = "updated_at",
     offliner: str | None = None,
     fetch_most_recent_tasks: bool = False,
@@ -189,6 +189,16 @@ def get_tasks(
             order_by = Task.updated_at.desc()
         case _:
             order_by = Task.updated_at.desc()
+
+    if recipe_identifier is not None:
+        if is_valid_uuid(recipe_identifier):
+            recipe_where_clause = Recipe.id == recipe_identifier
+        else:
+            recipe_where_clause = Recipe.name == recipe_identifier
+    else:
+        # if no recipe identifier, then we don't filter by that column and just set it
+        # it to true so every row passes the condition
+        recipe_where_clause = literal(True)
 
     status = status or list(TaskStatus)
     stmt = (  # pyright: ignore[reportUnknownVariableType]
@@ -214,7 +224,7 @@ def get_tasks(
         .join(Worker, Task.worker, isouter=True)
         .join(Recipe, Task.recipe, isouter=True)
         .where(
-            (Recipe.name == recipe_name) | (recipe_name is None),
+            recipe_where_clause,
             (Recipe.config["offliner"]["offliner_id"].astext == offliner)
             | (offliner is None),
             (Task.status.in_(status)),
@@ -405,7 +415,7 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
     now = getnow()
     duration = get_recipe_duration(
         session,
-        recipe_name=task.recipe.name if task.recipe else None,
+        recipe_identifier=task.recipe.name if task.recipe else None,
         worker_name=task.worker.name,
     )
     elapsed = now - get_timestamp_for_status(

@@ -81,6 +81,7 @@ class CloneSchema(BaseModel):
 
 class RestoreRecipesSchema(BaseModel):
     recipe_names: list[RecipeNameField] = Field(default_factory=list)
+    recipe_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
     comment: str | None = None
 
 

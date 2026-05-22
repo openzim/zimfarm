@@ -63,21 +63,22 @@ from zimfarm_backend.db.recipe import (
 
 def test_get_recipe_or_none(dbsession: OrmSession):
     """Test that get_recipe_or_none returns None if the recipe does not exist"""
-    recipe = get_recipe_or_none(dbsession, recipe_name="nonexistent")
+    recipe = get_recipe_or_none(dbsession, "nonexistent")
     assert recipe is None
 
 
 def test_get_recipe_not_found(dbsession: OrmSession):
     """Test that get_recipe raises an exception if the recipe does not exist"""
     with pytest.raises(RecordDoesNotExistError):
-        get_recipe(dbsession, recipe_name="nonexistent")
+        get_recipe(dbsession, "nonexistent")
 
 
 def test_get_recipe(dbsession: OrmSession, recipe: Recipe):
     """Test that get_recipe returns the recipe if it exists"""
-    db_recipe = get_recipe(dbsession, recipe_name=recipe.name)
+    db_recipe = get_recipe(dbsession, str(recipe.id))
     assert db_recipe is not None
     assert db_recipe.name == recipe.name
+    assert db_recipe.id == recipe.id
 
 
 @pytest.mark.parametrize(
@@ -98,7 +99,7 @@ def test_count_enabled_recipes(
 def test_get_recipe_duration_default(dbsession: OrmSession, worker: Worker):
     """Test that returns default duration when no specific duration exists"""
     duration = get_recipe_duration(
-        dbsession, recipe_name="nonexistent", worker_name=worker.name
+        dbsession, recipe_identifier="nonexistent", worker_name=worker.name
     )
     assert duration.value > 0
     assert duration.worker_name is None
@@ -113,7 +114,7 @@ def test_get_recipe_duration_with_worker(
     """Returns worker-specific duration when recipe exists"""
     recipe = create_recipe(worker=worker)
     duration = get_recipe_duration(
-        dbsession, recipe_name=recipe.name, worker_name=worker.name
+        dbsession, recipe_identifier=str(recipe.id), worker_name=worker.name
     )
     assert duration.value == recipe.durations[0].value
     assert duration.worker_name is not None
@@ -229,7 +230,7 @@ def test_update_recipe(
         update_recipe(
             dbsession,
             author_id=account.id,
-            recipe_name=old_recipe.name,
+            recipe_identifier=str(old_recipe.id),
             new_recipe_config=new_recipe_config,
             name=old_recipe.name + "_updated",
             offliner_definition=mwoffliner_definition,
@@ -245,13 +246,14 @@ def test_update_recipe(
 def test_delete_recipe(dbsession: OrmSession, create_recipe: Callable[..., Recipe]):
     """Test that delete_recipe deletes a recipe"""
     recipe = create_recipe()
-    delete_recipe(dbsession, recipe_name=recipe.name)
-    assert get_recipe_or_none(dbsession, recipe_name=recipe.name) is None
+    recipe_id = recipe.id
+    delete_recipe(dbsession, str(recipe.id))
+    assert get_recipe_or_none(dbsession, str(recipe_id)) is None
     # assert that there is no recipe history entry
     assert (
         count_from_stmt(
             dbsession,
-            select(RecipeHistory).where(RecipeHistory.recipe_id == recipe.id),
+            select(RecipeHistory).where(RecipeHistory.recipe_id == recipe_id),
         )
         == 0
     )
@@ -260,7 +262,7 @@ def test_delete_recipe(dbsession: OrmSession, create_recipe: Callable[..., Recip
 def test_delete_recipe_not_found(dbsession: OrmSession):
     """Test that delete_recipe raises an exception if the recipe does not exist"""
     with pytest.raises(RecordDoesNotExistError):
-        delete_recipe(dbsession, recipe_name="nonexistent")
+        delete_recipe(dbsession, "nonexistent")
 
 
 @pytest.mark.parametrize(
@@ -366,7 +368,7 @@ def test_update_recipe_duration_no_tasks(
     """Test that update_recipe_duration does nothing when no matching tasks exist"""
     recipe = create_recipe(name="test_recipe")
 
-    update_recipe_duration(dbsession, recipe_name=recipe.name)
+    update_recipe_duration(dbsession, recipe_identifier=recipe.name)
 
     assert len(recipe.durations) == 1
     assert recipe.durations[0].default is True
@@ -400,11 +402,11 @@ def test_update_recipe_duration_with_completed_tasks(
     dbsession.add(task)
     dbsession.flush()
 
-    update_recipe_duration(dbsession, recipe_name=recipe.name)
+    update_recipe_duration(dbsession, recipe_identifier=str(recipe.id))
 
     # Expire the recipe to force a reload of the recipe
     dbsession.expire(recipe)
-    updated_recipe = get_recipe(dbsession, recipe_name=recipe.name)
+    updated_recipe = get_recipe(dbsession, recipe.name)
 
     assert len(updated_recipe.durations) == 2  # Default + worker-specific
 
@@ -446,11 +448,11 @@ def test_update_recipe_duration_with_failed_tasks(
     dbsession.add(task)
     dbsession.flush()
 
-    update_recipe_duration(dbsession, recipe_name=recipe.name)
+    update_recipe_duration(dbsession, recipe_identifier=recipe.name)
 
     # Expire the recipe to force a reload of the recipe
     dbsession.expire(recipe)
-    updated_recipe = get_recipe(dbsession, recipe_name=recipe.name)
+    updated_recipe = get_recipe(dbsession, recipe.name)
 
     # Verify no new durations were created (only the default remains)
     assert len(updated_recipe.durations) == 1
@@ -501,10 +503,10 @@ def test_update_recipe_duration_multiple_workers(
     dbsession.add_all([task1, task2])
     dbsession.flush()
 
-    update_recipe_duration(dbsession, recipe_name=recipe.name)
+    update_recipe_duration(dbsession, recipe_identifier=recipe.name)
 
     dbsession.expire(recipe)
-    updated_recipe = get_recipe(dbsession, recipe_name=recipe.name)
+    updated_recipe = get_recipe(dbsession, recipe.name)
 
     assert len(updated_recipe.durations) == 3  # Default + 2 worker-specific
 
@@ -523,7 +525,7 @@ def test_get_recipe_history_entry_or_none_not_found(
     dbsession: OrmSession, recipe: Recipe
 ):
     history_entry = get_recipe_history_entry_or_none(
-        dbsession, recipe_name=recipe.name, history_id=uuid4()
+        dbsession, recipe_identifier=recipe.name, history_id=uuid4()
     )
     assert history_entry is None
 
@@ -531,7 +533,7 @@ def test_get_recipe_history_entry_or_none_not_found(
 def test_get_recipe_history_entry_or_none(dbsession: OrmSession, recipe: Recipe):
     history_entry = get_recipe_history_entry_or_none(
         dbsession,
-        recipe_name=recipe.name,
+        recipe_identifier=recipe.name,
         history_id=recipe.history_entries[0].id,
     )
     assert history_entry is not None
@@ -541,7 +543,7 @@ def test_get_recipe_history_entry(dbsession: OrmSession, recipe: Recipe):
     with pytest.raises(RecordDoesNotExistError):
         get_recipe_history_entry(
             dbsession,
-            recipe_name=recipe.name,
+            recipe_identifier=recipe.name,
             history_id=uuid4(),
         )
 
@@ -569,7 +571,7 @@ def test_toggle_recipe_archive_status(
         recipe = create_recipe(archived=archived)
         toggle_archive_status(
             dbsession,
-            recipe_name=recipe.name,
+            recipe_identifier=recipe.name,
             archived=new_archive_status,
             actor_id=account.id,
         )
@@ -596,7 +598,7 @@ def test_restore_recipes(
     create_recipe(name="testrecipe", archived=True)
 
     with expected:
-        restore_recipes(dbsession, recipe_names=recipe_names, actor_id=account.id)
+        restore_recipes(dbsession, recipe_identifiers=recipe_names, actor_id=account.id)
 
 
 def test_revert_recipe_archived_recipe(
@@ -613,7 +615,7 @@ def test_revert_recipe_archived_recipe(
     ):
         revert_recipe(
             dbsession,
-            recipe_name="archived_recipe",
+            recipe_identifier="archived_recipe",
             history_id=history_id,
             author_id=account.id,
         )
@@ -637,7 +639,7 @@ def test_revert_recipe_no_offliner_definition_version(
     ):
         revert_recipe(
             dbsession,
-            recipe_name="test_recipe",
+            recipe_identifier="test_recipe",
             history_id=history_entry.id,
             author_id=account.id,
         )
@@ -703,7 +705,7 @@ def test_revert_recipe_all_fields(
     update_recipe(
         dbsession,
         author_id=account.id,
-        recipe_name="test_recipe",
+        recipe_identifier="test_recipe",
         new_recipe_config=new_recipe_config,
         offliner_definition=mwoffliner_definition,
         tags=["tag3", "tag4"],
@@ -719,7 +721,7 @@ def test_revert_recipe_all_fields(
         ),
     )
 
-    updated_recipe = get_recipe(dbsession, recipe_name="test_recipe")
+    updated_recipe = get_recipe(dbsession, "test_recipe")
 
     assert updated_recipe.config != initial_config
     assert updated_recipe.tags != initial_tags
@@ -731,7 +733,7 @@ def test_revert_recipe_all_fields(
 
     reverted_recipe = revert_recipe(
         dbsession,
-        recipe_name="test_recipe",
+        recipe_identifier="test_recipe",
         history_id=initial_history_id,
         author_id=account.id,
     )

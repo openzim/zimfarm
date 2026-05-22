@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
-from zimfarm_backend.common import getnow, to_naive_utc
+from zimfarm_backend.common import getnow, is_valid_uuid, to_naive_utc
 from zimfarm_backend.common.constants import (
     ARTIFACTS_EXPIRATION,
     ARTIFACTS_UPLOAD_URI,
@@ -196,12 +196,17 @@ def _create_new_requested_task(
 
 
 def _validate_recipe_request_uniqueness(
-    session: OrmSession, *, recipe_name: str, worker_name: str | None
+    session: OrmSession, *, recipe_identifier: str, worker_name: str | None
 ):
+    if is_valid_uuid(recipe_identifier):
+        recipe_where_clause = Recipe.id == recipe_identifier
+    else:
+        recipe_where_clause = Recipe.name == recipe_identifier
+
     query = (
         select(RequestedTask, Recipe)
         .join(Recipe, RequestedTask.recipe)
-        .where(Recipe.name == recipe_name)
+        .where(recipe_where_clause)
     )
     if worker_name is not None:
         query = query.join(Worker, RequestedTask.worker).where(
@@ -209,18 +214,18 @@ def _validate_recipe_request_uniqueness(
         )
 
     if count_from_stmt(session, query) > 0:
-        return f"Recipe '{recipe_name}' already requested"
+        return f"Recipe '{recipe_identifier}' already requested"
     return None
 
 
 def _validate_recipe_state(
-    session: OrmSession, recipe_name: str
+    session: OrmSession, recipe_identifier: str
 ) -> tuple[Recipe | None, str | None]:
-    recipe = get_recipe_or_none(session, recipe_name=recipe_name)
+    recipe = get_recipe_or_none(session, recipe_identifier)
     if recipe is None or not recipe.enabled:
-        return None, f"Recipe '{recipe_name}' not found or disabled"
+        return None, f"Recipe '{recipe_identifier}' not found or disabled"
     if recipe.archived:
-        return None, f"Recipe '{recipe_name}' is archived"
+        return None, f"Recipe '{recipe_identifier}' is archived"
     return recipe, None
 
 
@@ -284,7 +289,7 @@ def _validate_worker_resources(
 def request_task(
     session: OrmSession,
     *,
-    recipe_name: str,
+    recipe_identifier: str,
     requested_by: UUID,
     worker_name: str | None = None,
     priority: int = 0,
@@ -297,11 +302,11 @@ def request_task(
     """
 
     if error := _validate_recipe_request_uniqueness(
-        session, recipe_name=recipe_name, worker_name=worker_name
+        session, recipe_identifier=recipe_identifier, worker_name=worker_name
     ):
         return RequestTaskResult(requested_task=None, error=error)
 
-    recipe, error = _validate_recipe_state(session, recipe_name)
+    recipe, error = _validate_recipe_state(session, recipe_identifier)
     if recipe is None:
         return RequestTaskResult(requested_task=None, error=error)
 
@@ -497,7 +502,7 @@ def create_requested_task_with_duration(
         context=task.context,
         duration=get_recipe_duration(
             session,
-            recipe_name=task.recipe.name if task.recipe else None,
+            recipe_identifier=task.recipe.name if task.recipe else None,
             worker_name=worker.name,
         ),
         updated_at=task.updated_at,

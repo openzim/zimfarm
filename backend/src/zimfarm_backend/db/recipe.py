@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
-from zimfarm_backend.common import constants, getnow
+from zimfarm_backend.common import constants, getnow, is_valid_uuid
 from zimfarm_backend.common.enums import (
     RecipeCategory,
     RecipePeriodicity,
@@ -89,19 +89,23 @@ def count_enabled_recipes(session: OrmSession, recipe_names: list[str]) -> int:
     )
 
 
-def get_recipe_or_none(session: OrmSession, *, recipe_name: str) -> Recipe | None:
-    """Get a recipe for the given recipe name if possible else None"""
+def get_recipe_or_none(session: OrmSession, recipe_identifier: str) -> Recipe | None:
+    """Get a recipe for the by id or name if possible else None"""
+    if is_valid_uuid(recipe_identifier):
+        where_clause = Recipe.id == recipe_identifier
+    else:
+        where_clause = Recipe.name == recipe_identifier
     return session.scalars(
         select(Recipe)
-        .where(Recipe.name == recipe_name)
+        .where(where_clause)
         .options(selectinload(Recipe.offliner_definition))
     ).one_or_none()
 
 
-def get_recipe(session: OrmSession, *, recipe_name: str) -> Recipe:
+def get_recipe(session: OrmSession, recipe_identifier: str) -> Recipe:
     """Get a recipe for the given recipe name if possible else raise an exception"""
-    if (recipe := get_recipe_or_none(session, recipe_name=recipe_name)) is None:
-        raise RecordDoesNotExistError(f"Recipe with name {recipe_name} does not exist")
+    if (recipe := get_recipe_or_none(session, recipe_identifier)) is None:
+        raise RecordDoesNotExistError(f"Recipe {recipe_identifier} does not exist")
     return recipe
 
 
@@ -126,12 +130,12 @@ def get_duration_for_recipe(recipe: Recipe, worker_name: str) -> RecipeDurationS
 
 
 def get_recipe_duration(
-    session: OrmSession, *, recipe_name: str | None, worker_name: str
+    session: OrmSession, *, recipe_identifier: str | None, worker_name: str
 ) -> RecipeDurationSchema:
     """get duration for a recipe and worker (or default one)"""
-    if recipe_name is None:
+    if recipe_identifier is None:
         return DEFAULT_RECIPE_DURATION
-    recipe = get_recipe_or_none(session, recipe_name=recipe_name)
+    recipe = get_recipe_or_none(session, recipe_identifier)
     if recipe is None:
         return DEFAULT_RECIPE_DURATION
     return get_duration_for_recipe(recipe, worker_name)
@@ -140,10 +144,10 @@ def get_recipe_duration(
 def update_recipe_duration(
     session: OrmSession,
     *,
-    recipe_name: str,
+    recipe_identifier: str,
 ):
     """Update the duration for a recipe and worker"""
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
     # retrieve tasks that completed the resources intensive part
     # we don't mind to retrieve all of them because they are regularly purged
     tasks = session.execute(
@@ -245,6 +249,7 @@ def get_recipes(
     stmt = (
         select(
             func.count().over().label("total_records"),
+            Recipe.id.label("recipe_id"),
             Recipe.name.label("recipe_name"),
             Recipe.category,
             Recipe.enabled,
@@ -291,6 +296,7 @@ def get_recipes(
 
     for (
         nb_records,
+        recipe_id,
         recipe_name,
         category,
         enabled,
@@ -317,6 +323,7 @@ def get_recipes(
         results.nb_records = nb_records
         results.recipes.append(
             RecipeLightSchema(
+                id=recipe_id,
                 name=recipe_name,
                 category=category,
                 enabled=enabled,
@@ -442,6 +449,7 @@ def create_recipe_full_schema(
             context={"skip_validation": skip_validation},
         )
     return RecipeFullSchema(
+        id=recipe.id,
         language=language,
         durations=[
             RecipeDurationSchema(
@@ -511,7 +519,7 @@ def toggle_archive_status(
     session: OrmSession,
     *,
     actor_id: UUID,
-    recipe_name: str,
+    recipe_identifier: str,
     archived: bool,
     comment: str | None = None,
 ) -> Recipe:
@@ -521,10 +529,10 @@ def toggle_archive_status(
 
     # Since we are toggling the archive status, the recipe in question must
     # be the opposite of the current archive status
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
     if recipe.archived == archived:
         raise RecordAlreadyExistsError(
-            f"Recipe with name {recipe_name} already has archive status {archived}"
+            f"Recipe  {recipe_identifier} already has archive status {archived}"
         )
     recipe.archived = archived
     history_entry = RecipeHistory(
@@ -583,7 +591,7 @@ def update_recipe(
     session: OrmSession,
     *,
     author_id: UUID,
-    recipe_name: str,
+    recipe_identifier: str,
     offliner_definition: OfflinerDefinitionSchema,
     new_recipe_config: RecipeConfigSchema | None = None,
     language: LanguageSchema | None = None,
@@ -598,10 +606,10 @@ def update_recipe(
     notification: RecipeNotificationSchema | None = None,
 ) -> Recipe:
     """Update a recipe with the given values that are set."""
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
 
     if recipe.archived:
-        raise RecordDoesNotExistError(f"Recipe with name {recipe_name} is archived")
+        raise RecordDoesNotExistError(f"Recipe  {recipe_identifier} is archived")
 
     if new_recipe_config:
         recipe.config = new_recipe_config.model_dump(
@@ -648,9 +656,9 @@ def update_recipe(
     return recipe
 
 
-def delete_recipe(session: OrmSession, *, recipe_name: str) -> None:
+def delete_recipe(session: OrmSession, recipe_identifier: str) -> None:
     """Delete a recipe"""
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
     # first unset most recent task to avoid circular dependency
     recipe.most_recent_task = None
     session.delete(recipe)
@@ -701,10 +709,10 @@ def get_recipe_history(
 
 
 def get_recipe_history_entry_or_none(
-    session: OrmSession, *, recipe_name: str, history_id: UUID
+    session: OrmSession, *, recipe_identifier: str, history_id: UUID
 ) -> RecipeHistory | None:
     """Get a recipe's history entry or None if it does not exist"""
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
     return session.scalars(
         select(RecipeHistory).where(
             RecipeHistory.id == history_id, RecipeHistory.recipe_id == recipe.id
@@ -713,15 +721,16 @@ def get_recipe_history_entry_or_none(
 
 
 def get_recipe_history_entry(
-    session: OrmSession, *, recipe_name: str, history_id: UUID
+    session: OrmSession, *, recipe_identifier: str, history_id: UUID
 ) -> RecipeHistory:
     """Get a recipe's history entry"""
     if history_entry := get_recipe_history_entry_or_none(
-        session, recipe_name=recipe_name, history_id=history_id
+        session, recipe_identifier=recipe_identifier, history_id=history_id
     ):
         return history_entry
     raise RecordDoesNotExistError(
-        f"Recipe '{recipe_name}' does not have a history entry with id {history_id}"
+        f"Recipe '{recipe_identifier}' does not have a history entry with id "
+        f"{history_id}"
     )
 
 
@@ -729,15 +738,15 @@ def restore_recipes(
     session: OrmSession,
     *,
     actor_id: UUID,
-    recipe_names: list[str],
+    recipe_identifiers: list[str],
     comment: str | None = None,
 ) -> None:
     """Restore a list of archived recipes"""
-    for recipe_name in recipe_names:
+    for recipe_identifier in recipe_identifiers:
         toggle_archive_status(
             session,
             actor_id=actor_id,
-            recipe_name=recipe_name,
+            recipe_identifier=recipe_identifier,
             archived=False,
             comment=comment,
         )
@@ -746,18 +755,18 @@ def restore_recipes(
 def revert_recipe(
     session: OrmSession,
     *,
-    recipe_name: str,
+    recipe_identifier: str,
     history_id: UUID,
     author_id: UUID,
     comment: str | None = None,
 ) -> Recipe:
     """Revert the recipe configuration and settings to those defined in history_id"""
-    recipe = get_recipe(session, recipe_name=recipe_name)
+    recipe = get_recipe(session, recipe_identifier)
     if recipe.archived:
-        raise RecordDoesNotExistError(f"Recipe with name {recipe_name} is archived")
+        raise RecordDoesNotExistError(f"Recipe {recipe_identifier} is archived")
 
     history_entry = get_recipe_history_entry(
-        session, recipe_name=recipe_name, history_id=history_id
+        session, recipe_identifier=recipe_identifier, history_id=history_id
     )
     if history_entry.offliner_definition_version is None:
         raise ValueError(
