@@ -33,7 +33,7 @@
       @click="emit('request-task', selectedWorker)"
     >
       <v-tooltip activator="parent" location="top"> Request with normal priority </v-tooltip>
-      <v-icon size="small" class="mr-1">mdi-plus-circle</v-icon>
+      <v-icon size="small" class="mr-1">mdi-rocket-launch</v-icon>
       Request
     </v-btn>
 
