@@ -1,7 +1,7 @@
 <template>
   <v-btn
     v-if="canRestore"
-    color="success"
+    :color="isDisabled ? undefined : 'success'"
     variant="elevated"
     size="small"
     :loading="isRestoring"
