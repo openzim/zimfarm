@@ -1,4 +1,5 @@
 import datetime
+from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
@@ -17,14 +18,13 @@ from zimfarm_backend.db.refresh_token import (
 
 
 @pytest.fixture
-@pytest.mark.num_accounts(1)
-def refresh_token(dbsession: OrmSession, accounts: list[Account]) -> Refreshtoken:
+def refresh_token(dbsession: OrmSession, account: Account) -> Refreshtoken:
     """Create a refresh token for an account"""
     token = Refreshtoken(
         token=uuid4(),
         expire_time=getnow() + datetime.timedelta(seconds=1_000),
     )
-    token.account = accounts[0]
+    token.account = account
     dbsession.add(token)
     dbsession.flush()
     return token
@@ -36,13 +36,15 @@ def test_get_refresh_token_or_none(dbsession: OrmSession):
     assert refresh_token is None
 
 
-@pytest.mark.num_accounts(1)
-def test_create_refresh_token(dbsession: OrmSession, accounts: list[Account]):
+def test_create_refresh_token(
+    dbsession: OrmSession, create_account: Callable[..., Account]
+):
     """Test that create_refresh_token creates a refresh token"""
-    refresh_token = create_refresh_token(dbsession, accounts[0].id)
+    account = create_account()
+    refresh_token = create_refresh_token(dbsession, account.id)
     assert refresh_token is not None
     assert refresh_token.token is not None
-    assert refresh_token.account_id == accounts[0].id
+    assert refresh_token.account_id == account.id
     assert refresh_token.expire_time is not None
 
 

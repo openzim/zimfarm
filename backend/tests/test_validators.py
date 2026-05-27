@@ -1,11 +1,10 @@
 # ruff: noqa: E501
-# ruff: noqa: E501
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
 import pydantic
 import pytest
-from _pytest.python_api import RaisesContext
+from _pytest.raises import RaisesExc
 from pydantic import ValidationError, create_model
 
 from zimfarm_backend.common.constants import parse_bool
@@ -43,7 +42,7 @@ class SkipableUrlModel(BaseModel):
 def test_ted_flags_schema(
     ted_flags_schema_cls: type[pydantic.BaseModel],
     languages: str,
-    expected: RaisesContext[Exception],
+    expected: RaisesExc[Exception],
 ):
     with expected:
         ted_flags_schema_cls(
@@ -128,7 +127,7 @@ def test_ted_flags_schema_fields_exclusivity(
     links: str,
     topics: str,
     playlists: str,
-    expected: RaisesContext[Exception],
+    expected: RaisesExc[Exception],
 ):
     with expected:
         ted_flags_schema_cls(
@@ -168,7 +167,7 @@ def test_ted_flags_schema_fields_exclusivity(
 def test_ted_flags_schema_links(
     ted_flags_schema_cls: type[pydantic.BaseModel],
     links: str,
-    expected: RaisesContext[Exception],
+    expected: RaisesExc[Exception],
 ):
     with expected:
         ted_flags_schema_cls(
@@ -234,7 +233,7 @@ def test_parse_bool(value: Any, *, expected: bool):
     ],
 )
 def test_relaxed_boolean_model(
-    *, value: str | int | bool, expected: RaisesContext[Exception]
+    *, value: str | int | bool, expected: RaisesExc[Exception]
 ):
     with expected:
         SkipableBoolModel.model_validate({"value": value})
@@ -273,7 +272,7 @@ def test_relaxed_boolean_model(
     ],
 )
 def test_relaxed_boolean_skip_validation(
-    *, value: str | int | bool, expected: RaisesContext[Exception]
+    *, value: str | int | bool, expected: RaisesExc[Exception]
 ):
     with expected:
         SkipableBoolModel.model_validate(
@@ -303,7 +302,7 @@ def test_relaxed_boolean_skip_validation(
         ),
     ],
 )
-def test_secret_url_model(value: str, expected: RaisesContext[Exception]):
+def test_secret_url_model(value: str, expected: RaisesExc[Exception]):
     with expected:
         SecretUrlModel.model_validate({"value": value})
 
@@ -330,9 +329,7 @@ def test_secret_url_model(value: str, expected: RaisesContext[Exception]):
         ),
     ],
 )
-def test_secret_url_model_skip_validation(
-    value: str, expected: RaisesContext[Exception]
-):
+def test_secret_url_model_skip_validation(value: str, expected: RaisesExc[Exception]):
     with expected:
         SecretUrlModel.model_validate(
             {"value": value}, context={"skip_validation": True}
@@ -361,7 +358,7 @@ def test_secret_url_model_skip_validation(
         ),
     ],
 )
-def test_skipable_url_model(value: str, expected: RaisesContext[Exception]):
+def test_skipable_url_model(value: str, expected: RaisesExc[Exception]):
     with expected:
         SecretUrlModel.model_validate({"value": value})
 
@@ -388,9 +385,7 @@ def test_skipable_url_model(value: str, expected: RaisesContext[Exception]):
         ),
     ],
 )
-def test_skipable_url_model_skip_validation(
-    value: str, expected: RaisesContext[Exception]
-):
+def test_skipable_url_model_skip_validation(value: str, expected: RaisesExc[Exception]):
     with expected:
         SecretUrlModel.model_validate(
             {"value": value}, context={"skip_validation": True}
@@ -406,7 +401,7 @@ def test_skipable_url_model_skip_validation(
     ],
 )
 def test_grapheme_length_validation_on_strings(
-    *, grapheme: str, skip_validation: bool, expected: RaisesContext[Exception]
+    *, grapheme: str, skip_validation: bool, expected: RaisesExc[Exception]
 ):
     """Test that grapheme validation is applied to string flags."""
     field = generate_field_type(
@@ -436,7 +431,7 @@ def test_grapheme_length_validation_on_strings(
     ],
 )
 def test_grapheme_length_validation_on_list_of_strings(
-    *, grapheme: str, skip_validation: bool, expected: RaisesContext[Exception]
+    *, grapheme: str, skip_validation: bool, expected: RaisesExc[Exception]
 ):
     """Test that grapheme validation is applied to the inner string in list of string flag"""
     field = generate_field_type(

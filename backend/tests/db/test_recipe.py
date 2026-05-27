@@ -5,7 +5,7 @@ from copy import deepcopy
 from uuid import uuid4
 
 import pytest
-from _pytest.python_api import RaisesContext
+from _pytest.raises import RaisesExc
 from faker import Faker
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
@@ -564,7 +564,7 @@ def test_toggle_recipe_archive_status(
     *,
     archived: bool,
     new_archive_status: bool,
-    expected: RaisesContext[Exception],
+    expected: RaisesExc[Exception],
 ):
     account = create_account()
     with expected:
@@ -592,7 +592,7 @@ def test_restore_recipes(
     create_recipe: Callable[..., Recipe],
     create_account: Callable[..., Account],
     recipe_names: list[str],
-    expected: RaisesContext[Exception],
+    expected: RaisesExc[Exception],
 ):
     account = create_account()
     create_recipe(name="testrecipe", archived=True)

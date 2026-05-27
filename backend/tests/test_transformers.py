@@ -3,7 +3,7 @@ from contextlib import nullcontext as does_not_raise
 from typing import Any
 
 import pytest
-from _pytest.python_api import RaisesContext
+from _pytest.raises import RaisesExc
 
 from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas.offliners.builder import generate_similarity_data
@@ -215,7 +215,7 @@ def test_generate_similarity_data(
 def test_generate_similarity_data_value_missing(
     similarity_data: list[SimilarityDataSchema],
     data: dict[str, Any],
-    expected: RaisesContext[Exception],
+    expected: RaisesExc[Exception],
 ):
     spec = OfflinerSpecSchema.model_validate_json(
         """{

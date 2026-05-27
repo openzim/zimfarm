@@ -3,7 +3,7 @@ from contextlib import nullcontext as does_not_raise
 from http import HTTPStatus
 
 import pytest
-from _pytest.python_api import RaisesContext
+from _pytest.raises import RaisesExc
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy.orm import Session as OrmSession
@@ -57,7 +57,7 @@ def test_account_creation_schema(
     display_name: str | None,
     password: str | None,
     role: RoleEnum,
-    expected: RaisesContext[Exception],
+    expected: RaisesExc[Exception],
 ):
     with expected:
         AccountCreateSchema(

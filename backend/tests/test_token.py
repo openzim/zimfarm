@@ -2,7 +2,7 @@
 from contextlib import nullcontext as does_not_raise
 
 import pytest
-from _pytest.python_api import RaisesContext
+from _pytest.raises import RaisesExc
 from cryptography.hazmat.primitives.asymmetric import dsa
 
 from zimfarm_backend.exceptions import PublicKeyLoadError
@@ -59,7 +59,7 @@ vMLud8dyKMud/T1up4PPavUCAwEAAQ==
         ),
     ],
 )
-def test_load_public_key(public_key: str, expected: RaisesContext[Exception]):
+def test_load_public_key(public_key: str, expected: RaisesExc[Exception]):
     with expected:
         load_public_key(bytes(public_key, encoding="ascii"))
 
@@ -84,7 +84,7 @@ def test_load_public_key(public_key: str, expected: RaisesContext[Exception]):
         ),
     ],
 )
-def test_get_public_key_type(public_key: str, expected: RaisesContext[Exception]):
+def test_get_public_key_type(public_key: str, expected: RaisesExc[Exception]):
     key = load_public_key(bytes(public_key, encoding="ascii"))
     assert get_public_key_type(key) == expected
 

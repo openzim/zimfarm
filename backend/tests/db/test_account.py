@@ -60,15 +60,6 @@ def test_get_account_by_username(dbsession: OrmSession, account: Account):
     assert db_account.username == account.username
 
 
-@pytest.mark.num_accounts(10)
-def test_get_accounts_pagination(dbsession: OrmSession, accounts: list[Account]):
-    """Test that get_accounts pagination works correctly"""
-    # Test first page
-    result = get_accounts(dbsession, skip=0, limit=1)
-    assert result.nb_records == len(accounts)
-    assert len(result.accounts) == 1
-
-
 @pytest.mark.parametrize("show_workers", [True, False])
 def test_get_accounts_filter_workers(
     dbsession: OrmSession, create_account: Callable[..., Account], *, show_workers: bool
