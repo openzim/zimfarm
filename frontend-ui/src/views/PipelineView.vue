@@ -16,6 +16,7 @@
     :canRequestTasks="canRequestTasks"
     :canUnRequestTasks="canUnRequestTasks"
     :canCancelTasks="canCancelTasks"
+    :isRequestedTasks="currentFilter === 'todo'"
     @limit-changed="handleLimitChange"
     @load-data="loadData"
   />
