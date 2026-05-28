@@ -182,6 +182,7 @@ ALL_PLATFORMS = [
     "libretexts",
     "gutenberg",
     "phet",
+    "maps",
 ]
 PLATFORMS_TASKS: dict[str, int] = {}
 for platform in ALL_PLATFORMS:
