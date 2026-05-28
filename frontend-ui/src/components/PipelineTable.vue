@@ -50,7 +50,7 @@
             :status="item.status"
             :timestamp="item.timestamp"
             :updated-at="item.updated_at"
-            :task-id="item.id"
+            :task-id="isRequestedTasks ? null : item.id"
           />
         </template>
 
@@ -205,6 +205,7 @@ const props = defineProps<{
   tasks: TaskLight[] | RequestedTaskLight[] // the tasks to display
   paginator: Paginator // the paginator
   errors: string[] // the errors to display
+  isRequestedTasks?: boolean
 }>()
 
 const emit = defineEmits<{
