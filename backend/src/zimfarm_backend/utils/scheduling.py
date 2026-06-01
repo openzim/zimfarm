@@ -38,7 +38,7 @@ def request_tasks_using_recipe(session: OrmSession):
             continue  # manually has no data
 
         period_start = getnow() - datetime.timedelta(days=period_data["days"])
-        logger.debug(f"requesting for `{period}` recipes (before {period_start})")
+        logger.info(f"requesting for `{period}` recipes (before {period_start})")
 
         # find non-requested recipes which last run started before our period start
         for recipe in session.execute(
@@ -58,7 +58,12 @@ def request_tasks_using_recipe(session: OrmSession):
                     )
                     > period_start
                 ):
+                    logger.debug(
+                        f"{recipe.name} not requested because most_recent_task "
+                        f"{last_run.id} started recently"
+                    )
                     continue
+
                 # don't request a task if the most_recent_task is still running
                 if last_run and last_run.status not in TaskStatus.complete():
                     logger.debug(
@@ -67,31 +72,31 @@ def request_tasks_using_recipe(session: OrmSession):
                     )
                     continue
 
-                # Create a nested transaction for each task request
-                with session.begin_nested():
-                    try:
-                        result = request_task(
-                            session=session,
-                            recipe_identifier=recipe.name,
-                            requested_by=get_account_by_identifier(
-                                session, account_identifier=requester
-                            ).id,
-                            worker_name=worker,
-                            priority=priority,
-                        )
-                        if result.requested_task:
-                            logger.debug(f"Successfully requested {recipe.name}")
+            # Create a nested transaction for each task request
+            with session.begin_nested():
+                try:
+                    result = request_task(
+                        session=session,
+                        recipe_identifier=recipe.name,
+                        requested_by=get_account_by_identifier(
+                            session, account_identifier=requester
+                        ).id,
+                        worker_name=worker,
+                        priority=priority,
+                    )
+                    if result.requested_task:
+                        logger.info(f"Successfully requested {recipe.name}")
 
-                        if result.error:
-                            logger.warning(
-                                "Could not request task due to the following reason: "
-                                f"{result.error}"
-                            )
-                    except ValidationError:
-                        logger.exception(
-                            f"Validation error requesting {recipe.name}",
+                    if result.error:
+                        logger.warning(
+                            "Could not request task due to the following reason: "
+                            f"{result.error}"
                         )
-                    except Exception:
-                        logger.exception(
-                            f"Unexpected error requesting {recipe.name}",
-                        )
+                except ValidationError:
+                    logger.exception(
+                        f"Validation error requesting {recipe.name}",
+                    )
+                except Exception:
+                    logger.exception(
+                        f"Unexpected error requesting {recipe.name}",
+                    )
