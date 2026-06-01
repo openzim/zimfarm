@@ -1,0 +1,92 @@
+{
+ "maps_en_all": {
+  "resources": {
+   "disk": 322122547200,
+   "memory": 68719476736
+  },
+  "title": "World"
+ },
+ "maps_en_africa": {
+  "resources": {
+   "disk": 241591910400
+  }
+ },
+ "maps_en_antarctica": {
+  "resources": {
+   "disk": 214748364800
+  }
+ },
+ "maps_en_asia": {
+  "resources": {
+   "disk": 241591910400
+  }
+ },
+ "maps_en_australia-and-oceania": {
+  "resources": {
+   "disk": 214748364800
+  },
+  "name": "maps_en_australia-oceania"
+ },
+ "maps_en_europe": {
+  "resources": {
+   "disk": 268435456000
+  },
+  "default_view": "56.9,11.0"
+ },
+ "maps_en_north-america": {
+  "resources": {
+   "disk": 241591910400,
+   "memory": 25769803776
+  },
+  "title": "North America"
+ },
+ "maps_en_russian-federation": {
+  "name": "maps_en_russia",
+  "resources": {
+   "disk": 241591910400
+  },
+  "title": "Russian Federation"
+ },
+ "maps_en_south-america": {
+  "resources": {
+   "disk": 241591910400
+  },
+  "title": "South America"
+ },
+ "maps_en_ukraine-with-crimea": {
+  "name": "maps_en_ukraine"
+ },
+ "maps_en_congo-republic-brazzaville": {
+  "title": "Rep. of Congo (Brazzaville)"
+ },
+ "maps_en_congo-democratic-republic-kinshasa": {
+  "title": "Dem. Rep. of Congo (Kinshasa)"
+ },
+ "maps_en_myanmar-a.k.a.-burma": {
+  "name": "maps_en_myanmar-burma"
+ },
+ "maps_en_polyn-sie-fran-aise-french-polynesia": {
+  "name": "maps_en_french-polynesia",
+  "title": "French Polynesia"
+ },
+ "maps_en_saint-helena-ascension-and-tristan-da-cunha": {
+  "name": "maps_en_south-atlantic",
+  "title": "South Atlantic"
+ },
+ "maps_en_gcc-states": {
+  "title": "Gulf States"
+ },
+ "maps_en_indonesia-with-east-timor": {
+  "title": "Indonesia and Timor Leste"
+ },
+ "maps_en_malaysia-singapore-and-brunei": {
+  "title": "Malaysia, Singapore and Brunei"
+ },
+ "maps_en_american-oceania": {
+  "do_not_create": true
+ },
+ "maps_en_le-de-clipperton": {
+  "name": "maps_en_ile-de-clipperton",
+  "title": "Clipperton Island"
+ }
+}
