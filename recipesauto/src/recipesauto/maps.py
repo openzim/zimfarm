@@ -103,6 +103,11 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     def _get_cleaned(value: str) -> str:
         return re.sub(r"[^.a-zA-Z0-9]+", "-", value).strip("-").lower()
 
+    def _get_resources(override: dict[str, Any]) -> dict[str, Any]:
+        resources = {"cpu": 3, "disk": 214748364800, "memory": 17179869184}
+        resources.update(override)
+        return resources
+
     config_data = json.loads((Path(__file__).parent / "maps.json").read_text())
 
     # # Add missing countries in data file
@@ -112,7 +117,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     #     title = f"Map of {area.name}"
     #     if len(title) > 30:
     #         logger.warning(f"Too long title: {title}")
-    #     config_data[get_name(area.name)] = {
+    #     config_data.get(get_name(area.name), {}) = {
     #         "title": title,
     #         "description": "Entire country, including roads and landmarks",
     #     }
@@ -131,12 +136,16 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                         "publisher": "openZIM",
                         "stats-filename": "/output/task_progress.json",
                         "output": "/output",
-                        "title": config_data[get_name(area.name)]["title"],
-                        "description": config_data[get_name(area.name)]["description"],
-                        "default-view": config_data[get_name(area.name)].get(
+                        "title": config_data.get(get_name(area.name), {}).get("title")
+                        or area.name,
+                        "description": config_data.get(get_name(area.name), {}).get(
+                            "description"
+                        )
+                        or "Full map, including roads and landmarks",
+                        "default-view": config_data.get(get_name(area.name), {}).get(
                             "default_view"
                         ),
-                        "name": config_data[get_name(area.name)].get("name")
+                        "name": config_data.get(get_name(area.name), {}).get("name")
                         or get_name(area.name),
                         "include-poly": area.poly_url,
                         "offliner_id": "maps",
@@ -149,13 +158,15 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "name": "ghcr.io/openzim/maps",
                     "tag": get_scraper_version(get_name(area.name)),
                 },
-                "resources": config_data[get_name(area.name)].get("resources")
-                or {"cpu": 3, "disk": 214748364800, "memory": 17179869184},
+                "resources": _get_resources(
+                    config_data.get(get_name(area.name), {}).get("resources", {})
+                ),
                 "warehouse_path": "",
             },
             "enabled": True,
             "language": "eng",
-            "name": config_data[get_name(area.name)].get("name") or get_name(area.name),
+            "name": config_data.get(get_name(area.name), {}).get("name")
+            or get_name(area.name),
             "periodicity": "annually",
             "tags": ["openstreetmap"],
             "archived": False,
@@ -164,5 +175,5 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "version": get_scraper_version(get_name(area.name)),
         }
         for area in areas
-        if get_name(area.name) in config_data
+        if not config_data.get(get_name(area.name), {}).get("do_not_create", False)
     ]
