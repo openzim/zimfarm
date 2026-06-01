@@ -59,6 +59,10 @@ def get_areas(page: str, level: int) -> list[Area]:
         if not name:
             raise Exception("Unexpected HTML document: name is empty")
 
+        # Ignore duplicate countries like Russia which exists twice
+        if any(1 if area.name == name else 0 for area in areas):
+            continue
+
         html = urljoin(page, link["href"])  # pyright: ignore[reportArgumentType]
         poly = html.replace(".html", ".poly")
 
@@ -94,7 +98,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         return f"maps_en_{_get_cleaned(value)}"
 
     def get_scraper_version(name: str) -> str:
-        return "dev" if name in ("maps_en_all", "maps_en_india") else "0.1.1"
+        return "dev" if name in ("none") else "0.2.1"
 
     def _get_cleaned(value: str) -> str:
         return re.sub(r"[^.a-zA-Z0-9]+", "-", value).strip("-").lower()
@@ -140,7 +144,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     if value
                 },
                 "monitor": False,
-                "platform": None,
+                "platform": "maps",
                 "image": {
                     "name": "ghcr.io/openzim/maps",
                     "tag": get_scraper_version(get_name(area.name)),
@@ -152,7 +156,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "enabled": True,
             "language": "eng",
             "name": config_data[get_name(area.name)].get("name") or get_name(area.name),
-            "periodicity": "manually",
+            "periodicity": "annually",
             "tags": ["openstreetmap"],
             "archived": False,
             "context": "",

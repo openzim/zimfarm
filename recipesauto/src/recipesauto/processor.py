@@ -241,6 +241,7 @@ class Processor:
                         "notification",
                         "is_requested",
                         "is_valid",
+                        "id",
                     ]:
                         continue
                     expected_value = expected_recipe[current_recipe_key]

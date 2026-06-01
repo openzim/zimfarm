@@ -15,8 +15,7 @@
    "memory": 17179869184
   },
   "title": "Africa",
-  "description": "Full map, including roads and landmarks",
-  "default_view": "1,18"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_antarctica": {
   "resources": {
@@ -34,8 +33,7 @@
    "memory": 17179869184
   },
   "title": "Asia",
-  "description": "Full map, including roads and landmarks",
-  "default_view": "1,18"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_australia-and-oceania": {
   "name": "maps_en_australia-oceania",
@@ -45,8 +43,7 @@
    "memory": 17179869184
   },
   "title": "Australia and Oceania",
-  "description": "Full map, including roads and landmarks",
-  "default_view": "-30,140"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_central-america": {
   "resources": {
@@ -80,11 +77,10 @@
   "resources": {
    "cpu": 3,
    "disk": 241591910400,
-   "memory": 17179869184
+   "memory": 25769803776
   },
   "title": "North America",
-  "description": "Full map, including roads and landmarks",
-  "default_view": "27,-110"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_russian-federation": {
   "name": "maps_en_russia",
@@ -94,8 +90,7 @@
    "memory": 17179869184
   },
   "title": "Russian Federation",
-  "description": "Full map, including roads and landmarks",
-  "default_view": "0,108"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_south-america": {
   "resources": {
@@ -104,8 +99,7 @@
    "memory": 17179869184
   },
   "title": "South America",
-  "description": "Full map, including roads and landmarks",
-  "default_view": "-28,-60"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_ukraine-with-crimea": {
   "name": "maps_en_ukraine",
@@ -115,8 +109,7 @@
    "memory": 17179869184
   },
   "title": "Ukraine (with Crimea)",
-  "description": "Full map, including roads and landmarks",
-  "default_view": "51,31.5"
+  "description": "Full map, including roads and landmarks"
  },
  "maps_en_algeria": {
   "title": "Algeria",
