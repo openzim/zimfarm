@@ -156,6 +156,7 @@
 import { ref, computed, watch } from 'vue'
 import CodeEditor from '@/components/CodeEditor.vue'
 import { computeChecksumFromBase64 } from '@/utils/checksum'
+import { textToBase64 } from '@/utils/blob'
 
 interface Props {
   modelValue?: string | null
@@ -283,11 +284,6 @@ watch(
   },
   { immediate: true },
 )
-
-// Helper function to convert text to base64
-const textToBase64 = (text: string): string => {
-  return btoa(text)
-}
 
 // Watch for changes in text data to compute checksum
 watch(

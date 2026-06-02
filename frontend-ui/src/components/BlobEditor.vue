@@ -85,6 +85,7 @@ import InlineTextEditor from '@/components/InlineTextEditor.vue'
 import InlineImageEditor from '@/components/InlineImageEditor.vue'
 import { computeChecksumFromBase64, computeChecksumFromFile } from '@/utils/checksum'
 import { useBlobStore } from '@/stores/blob'
+import { textToBase64 } from '@/utils/blob'
 
 const config = inject<Config>(constants.config)
 if (!config) {
@@ -440,11 +441,6 @@ const handleImageSave = async (imageData: string) => {
   if (success) {
     blobEditorContent.value = imageData
   }
-}
-
-// Text editor functions
-const textToBase64 = (text: string): string => {
-  return btoa(text)
 }
 
 const handleTextSave = async (content: string) => {

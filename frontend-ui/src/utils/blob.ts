@@ -20,3 +20,12 @@ export const isTextKind = (kind: BlobKind): kind is TextKind => {
 export const isImageKind = (kind: BlobKind): boolean => {
   return kind === 'image' || kind === 'illustration'
 }
+
+export const textToBase64 = (text: string): string => {
+  const utf8Bytes = new TextEncoder().encode(text)
+  let binaryString = ''
+  for (let i = 0; i < utf8Bytes.length; i++) {
+    binaryString += String.fromCharCode(utf8Bytes[i])
+  }
+  return btoa(binaryString)
+}
