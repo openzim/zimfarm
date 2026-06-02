@@ -80,7 +80,7 @@ import httpRequest from '@/utils/httpRequest'
 import { formattedBytesSize } from '@/utils/format'
 import constants from '@/constants'
 import type { Config } from '@/config'
-import { computed, ref, watch, inject } from 'vue'
+import { computed, ref, watch, inject, onMounted } from 'vue'
 import InlineTextEditor from '@/components/InlineTextEditor.vue'
 import InlineImageEditor from '@/components/InlineImageEditor.vue'
 import { computeChecksumFromBase64, computeChecksumFromFile } from '@/utils/checksum'
@@ -386,8 +386,6 @@ const loadImageFromUrl = async (url: string) => {
     console.error('Failed to load image content:', error)
     previewErrorMessage.value = `Failed to load ${props.kind} for editing (URL: ${url})`
     hasError.value = true
-    // if we cannot load the blob and it supports remote input, force remote input mode
-    if (props.allowRemoteUrl) contentMode.value = 'remote'
   } finally {
     loadingBlobContent.value = false
   }
@@ -417,8 +415,6 @@ const loadTextFromUrl = async (url: string) => {
     console.error('Failed to load text content:', error)
     previewErrorMessage.value = `Failed to load text file for editing (URL: ${url})`
     hasError.value = true
-    // if we cannot load the blob and it supports remote input, force remote input mode
-    if (props.allowRemoteUrl) contentMode.value = 'remote'
   } finally {
     loadingBlobContent.value = false
   }
@@ -599,6 +595,18 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(() => {
+  if (props.allowRemoteUrl) {
+    if (props.modelValue && props.modelValue.startsWith(config.ZIMFARM_WEBAPI)) {
+      contentMode.value = 'local'
+    } else {
+      contentMode.value = 'remote'
+    }
+  } else {
+    contentMode.value = 'local'
+  }
+})
 </script>
 
 <style scoped>
