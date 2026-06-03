@@ -69,10 +69,6 @@
           </router-link>
         </template>
 
-        <template #[`item.category`]="{ item }">
-          {{ item.category }}
-        </template>
-
         <template #[`item.language`]="{ item }">
           {{ item.language.name }}
         </template>
@@ -127,7 +123,6 @@ interface Props {
   loadingText: string
   filters?: {
     name: string
-    categories: string[]
     languages: string[]
     tags: string[]
   }
@@ -136,7 +131,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  filters: () => ({ name: '', categories: [], languages: [], tags: [] }),
+  filters: () => ({ name: '', languages: [], tags: [] }),
   selectedRecipes: () => [],
   showSelection: true,
 })

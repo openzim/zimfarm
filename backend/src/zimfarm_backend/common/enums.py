@@ -104,52 +104,31 @@ class WarehousePath(StrEnum):
     videos = "/videos"
     zimit = "/zimit"
     libretexts = "/libretexts"
+    gutenberg = "/gutenberg"
+    other = "/other"
+    phet = "/phet"
+    psiram = "/psiram"
+    stack_exchange = "/stack_exchange"
+    ted = "/ted"
+    wikiversity = "/wikiversity"
+    wikivoyage = "/wikivoyage"
+    wiktionary = "/wiktionary"
+    ifixit = "/ifixit"
+    freecodecamp = "/freecodecamp"
+    devdocs = "/devdocs"
+    mindtouch = "/mindtouch"
+    maps = "/maps"
+    vikidia = "/vikidia"
+    wikibooks = "/wikibooks"
+    wikihow = "/wikihow"
+    wikinews = "/wikinews"
+    wikipedia = "/wikipedia"
+    wikiquote = "/wikiquote"
+    wikisource = "/wikisource"
+    openedx = "/mooc"  # custom path
 
     @classmethod
     def all(cls) -> list[str]:
-        return [
-            *RecipeCategory.all_warehouse_paths(),
-            cls.videos,
-            cls.zimit,
-            cls.libretexts,
-            cls.hidden_dev,
-            cls.hidden_private,
-            cls.hidden_endless,
-            cls.hidden_bard,
-            cls.hidden_bsf,
-            cls.hidden_datacup,
-            cls.hidden_custom_apps,
-            cls.root,
-        ]
-
-
-class RecipeCategory(StrEnum):
-    gutenberg = "gutenberg"
-    other = "other"
-    phet = "phet"
-    psiram = "psiram"
-    stack_exchange = "stack_exchange"
-    ted = "ted"
-    openedx = "openedx"
-    vikidia = "vikidia"
-    wikibooks = "wikibooks"
-    wikihow = "wikihow"
-    wikinews = "wikinews"
-    wikipedia = "wikipedia"
-    wikiquote = "wikiquote"
-    wikisource = "wikisource"
-    wikispecies = "wikispecies"
-    wikiversity = "wikiversity"
-    wikivoyage = "wikivoyage"
-    wiktionary = "wiktionary"
-    ifixit = "ifixit"
-    freecodecamp = "freecodecamp"
-    devdocs = "devdocs"
-    mindtouch = "mindtouch"
-    maps = "maps"
-
-    @classmethod
-    def all(cls):
         return [
             cls.gutenberg,
             cls.other,
@@ -165,7 +144,6 @@ class RecipeCategory(StrEnum):
             cls.wikipedia,
             cls.wikiquote,
             cls.wikisource,
-            cls.wikispecies,
             cls.wikiversity,
             cls.wikivoyage,
             cls.wiktionary,
@@ -174,20 +152,17 @@ class RecipeCategory(StrEnum):
             cls.devdocs,
             cls.mindtouch,
             cls.maps,
-        ]
-
-    @classmethod
-    def get_warehouse_path(cls, category: str) -> str:
-        return f"/{category}"
-
-    @classmethod
-    def all_warehouse_paths(cls) -> list[str]:
-        custom_paths = {cls.openedx: "mooc"}
-        excluded_categories = [cls.wikispecies]
-        return [
-            cls.get_warehouse_path(custom_paths.get(category, category))
-            for category in cls.all()
-            if category not in excluded_categories
+            cls.videos,
+            cls.zimit,
+            cls.libretexts,
+            cls.hidden_dev,
+            cls.hidden_private,
+            cls.hidden_endless,
+            cls.hidden_bard,
+            cls.hidden_bsf,
+            cls.hidden_datacup,
+            cls.hidden_custom_apps,
+            cls.root,
         ]
 
 

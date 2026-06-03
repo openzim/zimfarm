@@ -73,21 +73,12 @@
     </v-row>
 
     <v-row>
-      <v-col cols="12" sm="4">
-        <v-select
-          v-model="editRecipe.category"
-          :items="categoriesOptions"
-          label="Category"
-          density="compact"
-          variant="outlined"
-        />
-      </v-col>
       <v-col cols="12" sm="4" v-if="!appConfig.DISABLE_WAREHOUSE_PATH">
         <v-select
           v-model="editRecipe.config.warehouse_path"
           :items="warehousePathsOptions"
           label="Warehouse Path"
-          hint="Where to upload files. Usually matches category."
+          hint="Where to upload ZIM files"
           required
           placeholder="Warehouse Path"
           density="compact"
@@ -977,7 +968,7 @@ const hasChanges = computed<boolean>(() => {
   if (!(props.recipe && editRecipe.value)) return false
 
   // Check basic recipe properties
-  const basicProps: Array<keyof Recipe> = ['category', 'name', 'enabled', 'periodicity']
+  const basicProps: Array<keyof Recipe> = ['name', 'enabled', 'periodicity']
   for (const prop of basicProps) {
     if (editRecipe.value[prop] !== props.recipe[prop]) return true
   }
@@ -1358,13 +1349,6 @@ const languagesOptions = computed(() => {
   }))
 })
 
-const categoriesOptions = computed(() => {
-  return constants.CATEGORIES.map((category) => ({
-    title: category,
-    value: category,
-  }))
-})
-
 const warehousePathsOptions = computed(() => {
   return constants.WAREHOUSE_PATHS.map((path) => ({
     title: path,
@@ -1505,13 +1489,11 @@ const buildPayload = (): RecipeUpdateSchema | null => {
   payload.name = editRecipe.value.name.trim()
 
   // Basic properties
-  const basicProps: Array<keyof Recipe> = ['name', 'category', 'enabled', 'periodicity']
+  const basicProps: Array<keyof Recipe> = ['name', 'enabled', 'periodicity']
   for (const prop of basicProps) {
     if (editRecipe.value[prop] !== props.recipe[prop]) {
       if (prop === 'name') {
         payload.name = editRecipe.value[prop]
-      } else if (prop === 'category') {
-        payload.category = editRecipe.value[prop]
       } else if (prop === 'enabled') {
         payload.enabled = editRecipe.value[prop]
       } else if (prop === 'periodicity') {

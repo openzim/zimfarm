@@ -13,7 +13,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from zimfarm_backend.api.routes.tasks import logic as tasks_module
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import RecipeCategory, TaskStatus
+from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema, LanguageSchema
 from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task, Worker
@@ -34,7 +34,6 @@ def test_get_tasks(
     for i in range(30):
         recipe = create_recipe(
             name=f"wiki_eng_{i}",
-            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )

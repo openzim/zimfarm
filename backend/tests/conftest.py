@@ -919,7 +919,6 @@ def create_recipe(
     def _create_recipe(
         *,
         name: str = "testrecipe",
-        category: str = "wikipedia",
         periodicity: str = "monthly",
         notification: dict[str, Any] | None = None,
         offliner_definition: OfflinerDefinitionSchema | None = None,
@@ -939,7 +938,6 @@ def create_recipe(
         recipe = Recipe(
             name=name,
             tags=tags or ["nopic"],
-            category=category,
             config=(
                 raw_recipe_config
                 if raw_recipe_config
@@ -969,7 +967,6 @@ def create_recipe(
             comment=None,
             config=recipe.config,
             name=recipe.name,
-            category=recipe.category,
             enabled=recipe.enabled,
             language_code=recipe.language_code,
             tags=recipe.tags,
