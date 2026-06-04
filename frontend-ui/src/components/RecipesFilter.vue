@@ -15,21 +15,6 @@
         </v-col>
         <v-col cols="12" sm="6" md="3">
           <v-select
-            v-model="localFilters.categories"
-            :items="categoriesOptions"
-            label="Categories"
-            placeholder="Select categories"
-            variant="outlined"
-            density="compact"
-            hide-details
-            multiple
-            chips
-            closable-chips
-            @update:model-value="emitFilters"
-          />
-        </v-col>
-        <v-col cols="12" sm="6" md="3">
-          <v-select
             v-model="localFilters.languages"
             :items="languagesOptions"
             label="Languages"
@@ -96,12 +81,10 @@ import { computed, ref, watch } from 'vue'
 interface Props {
   filters: {
     name: string
-    categories: string[]
     languages: string[]
     tags: string[]
     offliners: string[]
   }
-  categories: string[]
   languages: Language[]
   tags: string[]
   offliners: string[]
@@ -114,7 +97,6 @@ const emit = defineEmits<{
   filtersChanged: [
     filters: {
       name: string
-      categories: string[]
       languages: string[]
       tags: string[]
       offliners: string[]
@@ -126,7 +108,6 @@ const emit = defineEmits<{
 // Local filters state
 const localFilters = ref({
   name: props.filters.name,
-  categories: [...props.filters.categories],
   languages: [...props.filters.languages],
   tags: [...props.filters.tags],
   offliners: [...props.filters.offliners],
@@ -138,7 +119,6 @@ watch(
   (newFilters) => {
     localFilters.value = {
       name: newFilters.name,
-      categories: [...newFilters.categories],
       languages: [...newFilters.languages],
       tags: [...newFilters.tags],
       offliners: [...newFilters.offliners],
@@ -147,12 +127,6 @@ watch(
 )
 
 // Computed properties for select options
-const categoriesOptions = computed(() => {
-  return props.categories.map((category) => ({
-    title: category,
-    value: category,
-  }))
-})
 
 const languagesOptions = computed(() => {
   return props.languages.map((language) => ({
@@ -178,7 +152,6 @@ const offlinersOptions = computed(() => {
 const hasActiveFilters = computed(() => {
   return (
     props.filters.name.length > 0 ||
-    props.filters.categories.length > 0 ||
     props.filters.languages.length > 0 ||
     props.filters.tags.length > 0 ||
     props.filters.offliners.length > 0
@@ -189,7 +162,6 @@ const hasActiveFilters = computed(() => {
 function emitFilters() {
   emit('filtersChanged', {
     name: localFilters.value.name,
-    categories: localFilters.value.categories,
     languages: localFilters.value.languages,
     tags: localFilters.value.tags,
     offliners: localFilters.value.offliners,

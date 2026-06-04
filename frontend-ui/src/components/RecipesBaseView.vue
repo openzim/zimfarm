@@ -3,7 +3,6 @@
     <RecipesFilter
       v-if="ready"
       :filters="filters"
-      :categories="categories"
       :languages="languages"
       :tags="tags"
       :offliners="offliners"
@@ -113,7 +112,6 @@ const emit = defineEmits<{
   'filters-updated': [
     filters: {
       name: string
-      categories: string[]
       languages: string[]
       tags: string[]
       offliners: string[]
@@ -124,7 +122,6 @@ const emit = defineEmits<{
 // Define headers for the table
 const headers = [
   { title: 'Name', value: 'name', sortable: false },
-  { title: 'Category', value: 'category', sortable: false },
   { title: 'Language', value: 'language', sortable: false },
   { title: 'Offliner', value: 'offliner', sortable: false },
   { title: 'Requested', value: 'requested', sortable: false },
@@ -142,7 +139,6 @@ const filters = computed(() => {
   const query = router.currentRoute.value.query
   const derived = {
     name: '',
-    categories: [] as string[],
     languages: [] as string[],
     tags: [] as string[],
     offliners: [] as string[],
@@ -150,11 +146,6 @@ const filters = computed(() => {
 
   if (query.name && typeof query.name === 'string') {
     derived.name = query.name
-  }
-
-  if (query.category) {
-    const categoryValue = Array.isArray(query.category) ? query.category : [query.category]
-    derived.categories = categoryValue.filter((c): c is string => c !== null)
   }
 
   if (query.lang) {
@@ -199,7 +190,6 @@ const workersStore = useWorkersStore()
 const languages = computed(() => languageStore.languages)
 const tags = computed(() => tagStore.tags)
 const offliners = computed(() => offlinerStore.offliners)
-const categories = constants.CATEGORIES
 
 const paginator = ref<Paginator>({
   page: Number(route.query.page) || 1,
@@ -217,7 +207,6 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
   await recipeStore.fetchRecipes(
     limit,
     skip,
-    filters.value.categories.length > 0 ? filters.value.categories : undefined,
     filters.value.languages.length > 0 ? filters.value.languages : undefined,
     filters.value.tags.length > 0 ? filters.value.tags : undefined,
     filters.value.name || undefined,
@@ -263,7 +252,6 @@ async function handleLimitChange(newLimit: number) {
 async function clearFilters() {
   const emptyFilters = {
     name: '',
-    categories: [],
     languages: [],
     tags: [],
     offliners: [],
@@ -372,11 +360,6 @@ function updateUrlFilters(sourceFilters: typeof filters.value) {
 
   if (sourceFilters.name) {
     query.name = sourceFilters.name
-  }
-  if (sourceFilters.categories.length === 1) {
-    query.category = sourceFilters.categories[0]
-  } else if (sourceFilters.categories.length > 1) {
-    query.category = sourceFilters.categories
   }
   if (sourceFilters.languages.length === 1) {
     query.lang = sourceFilters.languages[0]

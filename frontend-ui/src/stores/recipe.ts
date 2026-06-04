@@ -52,7 +52,6 @@ export const useRecipeStore = defineStore('recipe', () => {
   const fetchRecipes = async (
     limit: number,
     skip: number,
-    category: string[] | undefined,
     lang: string[] | undefined,
     tag: string[] | undefined,
     name: string | undefined,
@@ -65,7 +64,6 @@ export const useRecipeStore = defineStore('recipe', () => {
       Object.entries({
         limit,
         skip,
-        category,
         lang,
         tag,
         name,
@@ -93,7 +91,6 @@ export const useRecipeStore = defineStore('recipe', () => {
     params: {
       limit: number
       skip: number
-      category?: string[]
       lang?: string[]
       tag?: string[]
       name?: string

@@ -26,7 +26,6 @@ export interface RecipeConfig {
 export interface BaseRecipeHistorySchema {
   config: Record<string, unknown>
   name: string
-  category: string
   enabled: boolean
   language_code: string
   tags: string[]
@@ -48,7 +47,6 @@ export interface Recipe {
   language: Language
   duration: RecipeDuration
   name: string
-  category: string
   config: ExpandedRecipeConfig
   enabled: boolean
   tags: string[]
@@ -65,7 +63,6 @@ export interface Recipe {
 
 export interface RecipeLight {
   name: string
-  category: string
   most_recent_task: MostRecentTask | null
   config: ConfigWithOnlyOffliner
   language: Language
@@ -78,7 +75,6 @@ export interface RecipeLight {
 export interface RecipeUpdateSchema {
   name: string | null
   language: string | null
-  category: string | null
   periodicity: string | null
   tags: string[] | null
   enabled: boolean | null

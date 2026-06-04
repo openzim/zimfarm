@@ -56,7 +56,6 @@ const router = useRouter()
 // State
 const currentFilters = ref({
   name: '',
-  categories: [] as string[],
   languages: [] as string[],
   tags: [] as string[],
   offliners: [] as string[],
@@ -90,7 +89,6 @@ async function fetchArchivedCount(filters: typeof currentFilters.value) {
     await recipeStore.fetchRecipes(
       1, // limit - we only need the count
       0, // skip
-      filters.categories.length > 0 ? filters.categories : undefined,
       filters.languages.length > 0 ? filters.languages : undefined,
       filters.tags.length > 0 ? filters.tags : undefined,
       filters.name || undefined,
@@ -116,11 +114,6 @@ function navigateToArchives() {
 
   if (currentFilters.value.name) {
     query.name = currentFilters.value.name
-  }
-  if (currentFilters.value.categories.length === 1) {
-    query.category = currentFilters.value.categories[0]
-  } else if (currentFilters.value.categories.length > 1) {
-    query.category = currentFilters.value.categories
   }
   if (currentFilters.value.languages.length === 1) {
     query.lang = currentFilters.value.languages[0]

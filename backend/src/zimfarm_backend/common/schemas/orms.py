@@ -268,7 +268,6 @@ class RecipeLightSchema(BaseModel):
 
     id: UUID
     name: str
-    category: str
     most_recent_task: MostRecentTaskSchema | None
     config: ConfigOfflinerOnlySchema
     language: LanguageSchema
@@ -304,7 +303,6 @@ class RecipeHistorySchema(BaseModel):
     created_at: datetime.datetime
     comment: str | None
     name: str
-    category: str
     enabled: bool
     language_code: str
     tags: list[str]
@@ -328,7 +326,6 @@ class RecipeFullSchema(BaseModel):
     language: LanguageSchema
     durations: list[RecipeDurationSchema] = Field(exclude=True)
     name: str
-    category: str
     config: RecipeConfigSchema | ExpandedRecipeConfigSchema
     enabled: bool
     tags: list[str]

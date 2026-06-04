@@ -260,7 +260,6 @@ class Recipe(Base):
         init=False, primary_key=True, server_default=text("uuid_generate_v4()")
     )
     name: Mapped[str] = mapped_column(unique=True, index=True)
-    category: Mapped[str] = mapped_column(index=True)
     # config must be JSON instead of JSONB so that we can query on dict item value.
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
@@ -337,7 +336,6 @@ class RecipeHistory(Base):
     created_at: Mapped[datetime]
     comment: Mapped[str | None]
     name: Mapped[str]
-    category: Mapped[str]
     config: Mapped[dict[str, Any]] = mapped_column(MutableDict.as_mutable(JSON))
     enabled: Mapped[bool]
     language_code: Mapped[str]

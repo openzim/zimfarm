@@ -65,7 +65,6 @@ def create_recipe(ted_topic_name: str, access_token: str):
     logger.info(f"Creating recipe for {ted_topic_name}")
 
     data = {
-        "category": "ted",
         "config": {
             "offliner": {
                 "offliner_id": "ted",

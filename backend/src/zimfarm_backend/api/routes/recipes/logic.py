@@ -37,7 +37,6 @@ from zimfarm_backend.api.routes.recipes.models import (
 from zimfarm_backend.api.routes.utils import get_recipe_image_tags
 from zimfarm_backend.common.enums import (
     DockerImageName,
-    RecipeCategory,
     RecipePeriodicity,
 )
 from zimfarm_backend.common.schemas.fields import (
@@ -120,7 +119,6 @@ def get_recipes(
         skip=params.skip,
         limit=params.limit,
         lang=params.lang,
-        categories=params.category,
         tags=params.tag,
         name=params.name,
         archived=params.archived,
@@ -198,7 +196,6 @@ def create_recipe(
         author_id=current_account.id,
         name=request.name,
         offliner_definition=offliner_definition,
-        category=RecipeCategory(request.category),
         language=language,
         config=config,
         tags=request.tags,
@@ -355,7 +352,6 @@ def get_similar_recipe(
         skip=params.skip,
         limit=params.limit,
         lang=params.lang,
-        categories=params.category,
         tags=params.tag,
         archived=params.archived,
         similarity_data=recipe.similarity_data,
@@ -566,7 +562,6 @@ def update_recipe(
         new_recipe_config=new_recipe_config,
         language=language,
         name=request.name,
-        category=request.category,
         tags=request.tags,
         enabled=request.enabled,
         periodicity=request.periodicity,
@@ -660,7 +655,6 @@ def clone_recipe(
         author_id=current_account.id,
         comment=request.comment,
         name=request.name,
-        category=RecipeCategory(recipe.category),
         config=RecipeConfigSchema.model_validate(
             {
                 **recipe.config,

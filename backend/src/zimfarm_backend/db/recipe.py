@@ -12,7 +12,6 @@ from sqlalchemy.orm import selectinload
 from zimfarm_backend import logger
 from zimfarm_backend.common import constants, getnow, is_valid_uuid
 from zimfarm_backend.common.enums import (
-    RecipeCategory,
     RecipePeriodicity,
     TaskStatus,
 )
@@ -229,7 +228,6 @@ def get_recipes(
     limit: int,
     name: str | None = None,
     lang: list[str] | None = None,
-    categories: list[RecipeCategory] | None = None,
     tags: list[str] | None = None,
     archived: bool | None = None,
     omit_names: list[str] | None = None,
@@ -251,7 +249,6 @@ def get_recipes(
             func.count().over().label("total_records"),
             Recipe.id.label("recipe_id"),
             Recipe.name.label("recipe_name"),
-            Recipe.category,
             Recipe.enabled,
             Recipe.language_code,
             OfflinerDefinition.offliner.label("offliner"),
@@ -273,7 +270,6 @@ def get_recipes(
             # otherwise, we compare the argument to its default which translates
             # to a SQL true i.e we don't filter based on this argument (a no-op).
             (Recipe.archived == archived) | (archived is None),
-            (Recipe.category.in_(categories or []) | (categories is None)),
             (Recipe.language_code.in_(lang or []) | (lang is None)),
             (Recipe.tags.contains(tags or []) | (tags is None)),
             (
@@ -298,7 +294,6 @@ def get_recipes(
         nb_records,
         recipe_id,
         recipe_name,
-        category,
         enabled,
         language_code,
         offliner,
@@ -325,7 +320,6 @@ def get_recipes(
             RecipeLightSchema(
                 id=recipe_id,
                 name=recipe_name,
-                category=category,
                 enabled=enabled,
                 language=language,
                 config=ConfigOfflinerOnlySchema(
@@ -366,7 +360,6 @@ def create_recipe(
     *,
     author_id: UUID,
     name: str,
-    category: RecipeCategory,
     language: LanguageSchema,
     config: RecipeConfigSchema,
     offliner_definition: OfflinerDefinitionSchema,
@@ -381,7 +374,6 @@ def create_recipe(
     offliner = get_offliner(session, offliner_definition.offliner)
     recipe = Recipe(
         name=name,
-        category=category,
         language_code=language.code,
         config=config.model_dump(mode="json", context={"show_secrets": True}),
         tags=tags,
@@ -409,7 +401,6 @@ def create_recipe(
         comment=comment,
         config=config.model_dump(mode="json"),
         name=recipe.name,
-        category=recipe.category,
         enabled=recipe.enabled,
         language_code=recipe.language_code,
         tags=recipe.tags,
@@ -461,7 +452,6 @@ def create_recipe_full_schema(
             for duration in recipe.durations
         ],
         name=recipe.name,
-        category=recipe.category,
         config=RecipeConfigSchema.model_validate(
             {
                 **recipe.config,
@@ -540,7 +530,6 @@ def toggle_archive_status(
         comment=comment,
         config=recipe.config,
         name=recipe.name,
-        category=recipe.category,
         enabled=recipe.enabled,
         language_code=recipe.language_code,
         tags=recipe.tags,
@@ -570,7 +559,6 @@ def create_recipe_history_entry(
         comment=comment,
         config=recipe.config,
         name=recipe.name,
-        category=recipe.category,
         enabled=recipe.enabled,
         language_code=recipe.language_code,
         tags=recipe.tags,
@@ -597,7 +585,6 @@ def update_recipe(
     language: LanguageSchema | None = None,
     name: str | None = None,
     is_valid: bool | None = None,
-    category: RecipeCategory | None = None,
     tags: list[str] | None = None,
     enabled: bool | None = None,
     periodicity: RecipePeriodicity | None = None,
@@ -625,7 +612,6 @@ def update_recipe(
 
     recipe.offliner_definition_id = offliner_definition.id
     recipe.name = name if name is not None else recipe.name
-    recipe.category = category if category is not None else recipe.category
     recipe.tags = tags if tags is not None else recipe.tags
     recipe.enabled = enabled if enabled is not None else recipe.enabled
     recipe.periodicity = periodicity if periodicity is not None else recipe.periodicity
@@ -674,7 +660,6 @@ def create_recipe_history_schema(
         created_at=history_entry.created_at,
         comment=history_entry.comment,
         name=history_entry.name,
-        category=history_entry.category,
         enabled=history_entry.enabled,
         language_code=history_entry.language_code,
         tags=history_entry.tags,
@@ -804,7 +789,6 @@ def revert_recipe(
     recipe.language_code = history_entry.language_code
     recipe.offliner_definition_id = offliner_definition.id
     recipe.name = history_entry.name
-    recipe.category = history_entry.category
     recipe.tags = history_entry.tags
     recipe.enabled = history_entry.enabled
     recipe.periodicity = history_entry.periodicity

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
-from zimfarm_backend.common.enums import RecipeCategory, RecipePeriodicity
+from zimfarm_backend.common.enums import RecipePeriodicity
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import (
     EventNotificationSchema,
@@ -32,19 +32,8 @@ from zimfarm_backend.db.recipe import get_recipe, update_recipe
         pytest.param("", 10, id="all"),
         pytest.param("&name=wiki&lang=eng", 10, id="wiki_eng"),
         pytest.param("&name=wiki&lang=fra", 0, id="wiki_fra"),
-        pytest.param("&name=recipe&category=wikipedia", 0, id="recipe_wikipedia"),
         pytest.param("&name=recipe&lang=eng&tag=important", 0, id="eng_important"),
         pytest.param("&name=nonexistent", 0, id="nonexistent"),
-        pytest.param(
-            "&name=recipe&lang=eng&category=other&tag=test",
-            0,
-            id="recipe_eng_other_test",
-        ),
-        pytest.param(
-            "&name=wiki&lang=eng&category=wikipedia&tag=important",
-            10,
-            id="wiki_eng_important",
-        ),
     ],
 )
 def test_get_recipes(
@@ -66,7 +55,6 @@ def test_get_recipes(
     for i in range(10):
         recipe = create_recipe(
             name=f"wiki_eng_{i}",
-            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
@@ -137,7 +125,6 @@ def test_get_similar_recipes(
     for i in range(10):
         recipe = create_recipe(
             name=f"wiki_eng_{i}",
-            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
@@ -171,7 +158,6 @@ def test_get_similar_recipes(
         pytest.param(
             {
                 "name": "test_recipe",
-                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -203,7 +189,6 @@ def test_get_similar_recipes(
         pytest.param(
             {
                 "name": "test_recipe",
-                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -237,7 +222,6 @@ def test_get_similar_recipes(
         pytest.param(
             {
                 "name": "test_recipe",
-                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -270,7 +254,6 @@ def test_get_similar_recipes(
         pytest.param(
             {
                 "name": "test_recipe",
-                "category": RecipeCategory.wikipedia.value,
                 "language": "eng",
                 "tags": ["important"],
                 "config": {
@@ -355,7 +338,6 @@ def test_create_recipe_with_permssions(
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "name": "test_recipe",
-            "category": RecipeCategory.wikipedia.value,
             "language": "eng",
             "tags": ["important"],
             "config": recipe_config.model_dump(
@@ -376,7 +358,6 @@ def test_create_recipe_with_permssions(
         assert recipe.enabled is True
         assert recipe.context == "test"
         assert recipe.periodicity == RecipePeriodicity.manually.value
-        assert recipe.category == RecipeCategory.wikipedia.value
 
 
 @pytest.mark.parametrize(
@@ -416,7 +397,6 @@ def test_recipe_name(
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "name": recipe_name,
-            "category": RecipeCategory.wikipedia.value,
             "language": "eng",
             "tags": ["important"],
             "config": recipe_config.model_dump(
@@ -572,7 +552,6 @@ def test_update_recipe_forbidden(
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "name": "test_recipe",
-            "category": RecipeCategory.wikipedia.value,
         },
     )
     assert response.status_code == HTTPStatus.FORBIDDEN
@@ -861,7 +840,6 @@ def test_create_duplicate_recipe(
         headers={"Authorization": f"Bearer {access_token}"},
         json={
             "name": "test_recipe",
-            "category": RecipeCategory.wikipedia.value,
             "language": "eng",
             "tags": ["important"],
             "config": recipe_config.model_dump(
@@ -1119,7 +1097,6 @@ def test_get_recipe_history_pagination(
     )
     recipe = create_recipe(
         name="test_recipe",
-        category=RecipeCategory.wikipedia,
         language=LanguageSchema(code="eng", name="English"),
         tags=["important"],
     )
@@ -1323,7 +1300,6 @@ def test_revert_recipe_history(
         name="test_recipe",
         enabled=True,
         tags=["tag1", "tag2"],
-        category="wikipedia",
         periodicity="monthly",
         context="initial context",
         recipe_config=recipe_config,
@@ -1336,7 +1312,6 @@ def test_revert_recipe_history(
         recipe_identifier="test_recipe",
         offliner_definition=mwoffliner_definition,
         tags=["tag3", "tag4"],
-        category=RecipeCategory.other,
         periodicity=RecipePeriodicity.quarterly,
         context="updated context",
         enabled=False,

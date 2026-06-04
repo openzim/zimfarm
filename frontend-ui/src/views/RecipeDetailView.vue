@@ -173,14 +173,6 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Category</div>
-                  </v-col>
-                  <v-col cols="12" md="8">{{ recipe.category }}</v-col>
-                </v-row>
-                <v-divider class="my-2"></v-divider>
-
-                <v-row no-gutters class="py-2">
-                  <v-col cols="12" md="4">
                     <div class="text-subtitle-2">Language</div>
                   </v-col>
                   <v-col cols="12" md="8">
@@ -871,7 +863,6 @@ const recipes = ref<RecipeLight[]>([])
 const loadingSimilar = ref(false)
 const similarHeaders = [
   { title: 'Name', value: 'name' },
-  { title: 'Category', value: 'category' },
   { title: 'Language', value: 'language' },
   { title: 'Offliner', value: 'offliner' },
 ]

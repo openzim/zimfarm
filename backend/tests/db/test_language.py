@@ -26,7 +26,6 @@ def english_recipe(
     recipe = Recipe(
         language_code="eng",
         name="test",
-        category="test",
         config={"test": "test"},
         enabled=True,
         tags=["test"],
@@ -59,7 +58,6 @@ def test_get_languages_pagination(
         Recipe(
             language_code="eng",  # English
             name="test1",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -69,7 +67,6 @@ def test_get_languages_pagination(
         Recipe(
             language_code="fra",  # French
             name="test2",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -79,7 +76,6 @@ def test_get_languages_pagination(
         Recipe(
             language_code="spa",  # Spanish
             name="test3",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -89,7 +85,6 @@ def test_get_languages_pagination(
         Recipe(
             language_code="eng",  # English
             name="test4",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -99,7 +94,6 @@ def test_get_languages_pagination(
         Recipe(
             language_code="spa",  # Spanish
             name="test5",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -125,7 +119,6 @@ def test_get_invalid_languages(
         Recipe(
             language_code="en",  # English
             name="test1",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -135,7 +128,6 @@ def test_get_invalid_languages(
         Recipe(
             language_code="fr",  # French
             name="test2",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -145,7 +137,6 @@ def test_get_invalid_languages(
         Recipe(
             language_code="jp",  # Japanase
             name="test3",
-            category="test",
             config={"test": "test"},
             enabled=True,
             tags=["test"],
@@ -180,7 +171,6 @@ def test_get_recipe_with_invalid_language_from_db(
     recipe = Recipe(
         language_code=code,
         name="test1",
-        category="test",
         config=create_recipe_config().model_dump(mode="json"),
         enabled=True,
         tags=["test"],

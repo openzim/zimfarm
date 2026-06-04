@@ -4,7 +4,6 @@ from uuid import UUID
 from pydantic import Field
 
 from zimfarm_backend.common.enums import (
-    RecipeCategory,
     RecipePeriodicity,
 )
 from zimfarm_backend.common.schemas import BaseModel
@@ -27,7 +26,6 @@ from zimfarm_backend.common.schemas.models import (
 class RecipesGetSchema(BaseModel):
     skip: SkipField = 0
     limit: LimitFieldMax200 = 20
-    category: list[RecipeCategory] | None = None
     tag: list[NotEmptyString] | None = None
     lang: list[NotEmptyString] | None = None
     name: NotEmptyString | None = None
@@ -38,7 +36,6 @@ class RecipesGetSchema(BaseModel):
 class RecipeCreateSchema(BaseModel):
     name: RecipeNameField
     language: ZIMLangCode
-    category: RecipeCategory
     periodicity: RecipePeriodicity
     tags: list[NotEmptyString] = Field(default_factory=list)
     enabled: bool
@@ -56,7 +53,6 @@ class RecipeCreateResponseSchema(BaseModel):
 class RecipeUpdateSchema(BaseModel):
     name: RecipeNameField | None = None
     language: ZIMLangCode | None = None
-    category: RecipeCategory | None = None
     periodicity: RecipePeriodicity | None = None
     tags: list[NotEmptyString] | None = None
     enabled: bool | None = None

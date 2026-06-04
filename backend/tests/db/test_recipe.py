@@ -11,7 +11,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.enums import (
-    RecipeCategory,
     RecipePeriodicity,
     TaskStatus,
     WarehousePath,
@@ -133,7 +132,6 @@ def test_create_recipe(
     recipe = create_recipe(
         session=dbsession,
         name="test_recipe",
-        category=RecipeCategory.other,
         author_id=account.id,
         language=LanguageSchema(code="eng", name="English"),
         config=recipe_config,
@@ -146,7 +144,6 @@ def test_create_recipe(
     )
 
     assert recipe.name == "test_recipe"
-    assert recipe.category == RecipeCategory.other
     assert recipe.language_code == "eng"
     assert recipe.context == "test"
     assert recipe.config == recipe_config.model_dump(
@@ -178,7 +175,6 @@ def test_create_duplicate_recipe_with_existing_name(
         session=dbsession,
         name=recipe_name,
         author_id=account.id,
-        category=RecipeCategory.other,
         language=LanguageSchema(code="eng", name="English"),
         config=recipe_config,
         tags=["test"],
@@ -192,7 +188,6 @@ def test_create_duplicate_recipe_with_existing_name(
             session=dbsession,
             name=recipe_name,
             author_id=account.id,
-            category=RecipeCategory.other,
             language=LanguageSchema(code="eng", name="English"),
             config=recipe_config,
             tags=["test"],
@@ -266,29 +261,12 @@ def test_delete_recipe_not_found(dbsession: OrmSession):
 
 
 @pytest.mark.parametrize(
-    "name,lang,categories,tags,expected_count",
+    "name,lang,tags,expected_count",
     [
-        pytest.param(None, None, None, None, 30, id="all"),
-        pytest.param("wiki", ["eng"], None, None, 10, id="wiki_eng"),
-        pytest.param("wiki", ["eng", "fra"], None, None, 20, id="wiki_eng_fra"),
-        pytest.param(
-            "recipe",
-            None,
-            [RecipeCategory.wikipedia],
-            None,
-            0,
-            id="recipe_wikipedia",
-        ),
-        pytest.param(None, ["eng"], None, ["important"], 10, id="eng_important"),
-        pytest.param("nonexistent", None, None, None, 0, id="nonexistent"),
-        pytest.param(
-            "recipe",
-            ["eng"],
-            [RecipeCategory.other],
-            ["test"],
-            10,
-            id="recipe_eng_other_test",
-        ),
+        pytest.param(None, None, None, 30, id="all"),
+        pytest.param("wiki", ["eng"], None, 10, id="wiki_eng"),
+        pytest.param("wiki", ["eng", "fra"], None, 20, id="wiki_eng_fra"),
+        pytest.param("nonexistent", None, None, 0, id="nonexistent"),
     ],
 )
 def test_get_recipes(
@@ -298,7 +276,6 @@ def test_get_recipes(
     create_task: Callable[..., Task],
     name: str | None,
     lang: list[str] | None,
-    categories: list[RecipeCategory] | None,
     tags: list[str] | None,
     expected_count: int,
 ):
@@ -306,7 +283,6 @@ def test_get_recipes(
     for i in range(10):
         recipe = create_recipe(
             name=f"wiki_eng_{i}",
-            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="eng", name="English"),
             tags=["important"],
         )
@@ -320,7 +296,6 @@ def test_get_recipes(
     for i in range(10):
         recipe = create_recipe(
             name=f"wiki_fra_{i}",
-            category=RecipeCategory.wikipedia,
             language=LanguageSchema(code="fra", name="French"),
             tags=["important"],
         )
@@ -334,7 +309,6 @@ def test_get_recipes(
     for i in range(10):
         recipe = create_recipe(
             name=f"other_recipe_{i}",
-            category=RecipeCategory.other,
             language=LanguageSchema(code="eng", name="English"),
             tags=["test"],
         )
@@ -352,7 +326,6 @@ def test_get_recipes(
         limit=limit,
         name=name,
         lang=lang,
-        categories=categories,
         tags=tags,
     )
     assert results.nb_records == expected_count
@@ -664,7 +637,6 @@ def test_revert_recipe_all_fields(
         name="test_recipe",
         enabled=True,
         tags=["tag1", "tag2"],
-        category="wikipedia",
         periodicity="monthly",
         context="initial context",
         recipe_config=recipe_config,
@@ -673,7 +645,6 @@ def test_revert_recipe_all_fields(
     initial_history_id = recipe.history_entries[0].id
     initial_config = deepcopy(recipe.config)
     initial_tags = deepcopy(recipe.tags)
-    initial_category = recipe.category
     initial_periodicity = recipe.periodicity
     initial_context = recipe.context
     initial_enabled = recipe.enabled
@@ -709,7 +680,6 @@ def test_revert_recipe_all_fields(
         new_recipe_config=new_recipe_config,
         offliner_definition=mwoffliner_definition,
         tags=["tag3", "tag4"],
-        category=RecipeCategory.other,
         periodicity=RecipePeriodicity.quarterly,
         context="updated context",
         enabled=False,
@@ -725,7 +695,6 @@ def test_revert_recipe_all_fields(
 
     assert updated_recipe.config != initial_config
     assert updated_recipe.tags != initial_tags
-    assert updated_recipe.category != initial_category
     assert updated_recipe.periodicity != initial_periodicity
     assert updated_recipe.context != initial_context
     assert updated_recipe.enabled != initial_enabled
@@ -740,7 +709,6 @@ def test_revert_recipe_all_fields(
 
     assert reverted_recipe.config == initial_config
     assert reverted_recipe.tags == initial_tags
-    assert reverted_recipe.category == initial_category
     assert reverted_recipe.periodicity == initial_periodicity
     assert reverted_recipe.context == initial_context
     assert reverted_recipe.enabled == initial_enabled
