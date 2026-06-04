@@ -159,6 +159,39 @@ curl -fsSL https://api.farm.openzim.org/v2/recipes/backup -o /tmp/all_recipes.js
 python3 /app/import_recipes.py /tmp/all_recipes.json
 ```
 
+### Import production DB dump
+
+If you have access to a production DB dump, you can restore it locally.
+
+Mount you dump at `/data/zimfarm` in PG container.
+
+Drop and recreate the `zimfarm` database:
+
+```
+docker exec -it zf_postgresdb bash -c \
+  'psql -U zimfarm -d postgres -c "DROP DATABASE zimfarm WITH (FORCE);" -c "CREATE DATABASE zimfarm;"'
+```
+
+Restore DB dump (assuming it is mounted in /data/cms)
+
+```
+docker exec -it zf_postgresdb bash -c \
+  'pg_restore -U zimfarm -d zimfarm /data/zimfarm'
+```
+
+Delete admin user so that it is recreated by API startup with admin/admin_pass credentials:
+
+```
+docker exec -it zf_postgresdb bash -c \
+  "psql -U zimfarm -d zimfarm -c \"DELETE FROM account WHERE username='admin';\""
+```
+
+Restart the API:
+
+```
+docker restart zf_backend
+```
+
 ### mark a task as started
 
 Through the UI, it is easy to create a requested task for your test worker. However, if you do not want to run the worker manager because you do not want the task to really proceed, it gets complicated to fake the start this requested task, i.e mark the fact that the test worker manager has reserved this requested task.
