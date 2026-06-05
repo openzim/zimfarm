@@ -107,7 +107,7 @@ jobs:
         run: inv coverage --args "-vvv"
 
       - name: Upload coverage report to codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           directory: backend
           fail_ci_if_error: true
