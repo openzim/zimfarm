@@ -93,7 +93,8 @@ def dbsession(
 def dbsession_manual(
     func: Callable[..., Any],
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    """Decorator to create an SQLAlchemy ORM session object and wrap the function
+    """
+    Decorator to create an SQLAlchemy ORM session object and wrap the function
     inside the session. A `session` argument is automatically set. Transaction must
     be managed by the developer (e.g. perform a commit / rollback).
     """
