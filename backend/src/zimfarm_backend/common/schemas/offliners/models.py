@@ -121,6 +121,11 @@ class SimilarityDataSchema(CamelModel):
     transformers: list[TransformerSchema]
 
 
+class ZimMetadata(CamelModel):
+    metadata: str  # the name of the Metadata entry e.g Name, Language
+    flag: str  # the flag that is used to generate this metadata
+
+
 class OfflinerSpecSchema(CamelModel):
     flags: dict[str, FlagSchema]
     model_validators: list[ModelValidatorSchema] = Field(  # pyright: ignore
@@ -131,3 +136,12 @@ class OfflinerSpecSchema(CamelModel):
     similarity_data: list[SimilarityDataSchema] = Field(  # pyright: ignore
         default_factory=list
     )
+    zim_metadata: list[ZimMetadata] = Field(default_factory=list)  # pyright: ignore
+
+    @model_validator(mode="after")
+    def check_zim_metadata_fields(self) -> Self:
+        """Ensure that for each metadata entry, it's flag exists in self.flags"""
+        for entry in self.zim_metadata:
+            if entry.flag not in self.flags:
+                raise ValueError(f"{entry.flag} is not a in the flags dictionary")
+        return self
