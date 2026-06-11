@@ -11,7 +11,7 @@
       <v-card-text>
         <v-row align="stretch">
           <v-col cols="12" sm="6" md="3" class="d-flex">
-            <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1">
+            <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1" style="min-height: 76px">
               <div class="d-flex align-center">
                 <v-icon class="mr-2" color="success">mdi-server</v-icon>
                 <div>
@@ -27,6 +27,7 @@
               rounded
               border
               class="pa-2 d-flex align-center justify-space-between flex-grow-1"
+              style="min-height: 76px"
             >
               <div class="d-flex align-center">
                 <v-progress-circular
@@ -50,6 +51,7 @@
               rounded
               border
               class="pa-2 d-flex align-center justify-space-between flex-grow-1"
+              style="min-height: 76px"
             >
               <div class="d-flex align-center">
                 <v-progress-circular
@@ -73,6 +75,7 @@
               rounded
               border
               class="pa-2 d-flex align-center justify-space-between flex-grow-1"
+              style="min-height: 76px"
             >
               <div class="d-flex align-center">
                 <v-progress-circular
