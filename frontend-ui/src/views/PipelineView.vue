@@ -47,7 +47,7 @@ const loadingStore = useLoadingStore()
 const filterOptions = [
   { value: 'todo', label: 'TODO' },
   { value: 'doing', label: 'DOING' },
-  { value: 'done', label: 'DONE' },
+  { value: 'done', label: 'SUCCEEDED' },
   { value: 'failed', label: 'FAILED' },
 ]
 // determine the headers based on the selected table
