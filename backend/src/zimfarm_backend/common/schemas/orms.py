@@ -273,6 +273,7 @@ class RecipeLightSchema(BaseModel):
     language: LanguageSchema
     enabled: bool
     archived: bool
+    tags: list[str]
     nb_requested_tasks: int = Field(exclude=True)
     context: str
 

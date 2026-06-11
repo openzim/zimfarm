@@ -69,6 +69,7 @@ export interface RecipeLight {
   enabled: boolean
   is_requested: boolean
   archived: boolean
+  tags: string[]
   context: string
 }
 

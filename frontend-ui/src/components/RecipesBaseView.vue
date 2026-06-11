@@ -123,6 +123,7 @@ const emit = defineEmits<{
 const headers = [
   { title: 'Name', value: 'name', sortable: false },
   { title: 'Language', value: 'language', sortable: false },
+  { title: 'Tags', value: 'tags', sortable: false },
   { title: 'Offliner', value: 'offliner', sortable: false },
   { title: 'Requested', value: 'requested', sortable: false },
   { title: 'Last Task', value: 'last_task', sortable: false },
