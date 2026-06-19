@@ -13,30 +13,30 @@
           <v-col cols="12" sm="6" md="3" class="d-flex">
             <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1">
               <div class="d-flex align-center">
-                <v-icon class="mr-2" color="success">mdi-server</v-icon>
-                <div>
+                <div class="metric-visual d-flex align-center justify-center">
+                  <v-icon color="success" size="40">mdi-server</v-icon>
+                </div>
+                <div class="ml-3">
                   <div class="text-caption text-medium-emphasis">Online workers</div>
-                  <div class="text-h6">{{ onlineWorkers.length }}</div>
+                  <div class="text-body-2">{{ onlineWorkers.length }}</div>
                 </div>
               </div>
             </v-sheet>
           </v-col>
 
           <v-col cols="12" sm="6" md="3" class="d-flex">
-            <v-sheet
-              rounded
-              border
-              class="pa-2 d-flex align-center justify-space-between flex-grow-1"
-            >
+            <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1">
               <div class="d-flex align-center">
-                <v-progress-circular
-                  :model-value="percentCpu"
-                  :color="colorCpu"
-                  size="44"
-                  width="4"
-                >
-                  <span class="text-caption">{{ percentCpu }}%</span>
-                </v-progress-circular>
+                <div class="metric-visual d-flex align-center justify-center">
+                  <v-progress-circular
+                    :model-value="percentCpu"
+                    :color="colorCpu"
+                    size="44"
+                    width="4"
+                  >
+                    <span class="text-caption">{{ percentCpu }}%</span>
+                  </v-progress-circular>
+                </div>
                 <div class="ml-3">
                   <div class="text-caption text-medium-emphasis">CPU</div>
                   <div class="text-body-2">{{ usageCpu }}</div>
@@ -46,20 +46,18 @@
           </v-col>
 
           <v-col cols="12" sm="6" md="3" class="d-flex">
-            <v-sheet
-              rounded
-              border
-              class="pa-2 d-flex align-center justify-space-between flex-grow-1"
-            >
+            <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1">
               <div class="d-flex align-center">
-                <v-progress-circular
-                  :model-value="percentMemory"
-                  :color="colorMemory"
-                  size="44"
-                  width="4"
-                >
-                  <span class="text-caption">{{ percentMemory }}%</span>
-                </v-progress-circular>
+                <div class="metric-visual d-flex align-center justify-center">
+                  <v-progress-circular
+                    :model-value="percentMemory"
+                    :color="colorMemory"
+                    size="44"
+                    width="4"
+                  >
+                    <span class="text-caption">{{ percentMemory }}%</span>
+                  </v-progress-circular>
+                </div>
                 <div class="ml-3">
                   <div class="text-caption text-medium-emphasis">Memory</div>
                   <div class="text-body-2">{{ usageMemory }}</div>
@@ -69,20 +67,18 @@
           </v-col>
 
           <v-col cols="12" sm="6" md="3" class="d-flex">
-            <v-sheet
-              rounded
-              border
-              class="pa-2 d-flex align-center justify-space-between flex-grow-1"
-            >
+            <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1">
               <div class="d-flex align-center">
-                <v-progress-circular
-                  :model-value="percentDisk"
-                  :color="colorDisk"
-                  size="44"
-                  width="4"
-                >
-                  <span class="text-caption">{{ percentDisk }}%</span>
-                </v-progress-circular>
+                <div class="metric-visual d-flex align-center justify-center">
+                  <v-progress-circular
+                    :model-value="percentDisk"
+                    :color="colorDisk"
+                    size="44"
+                    width="4"
+                  >
+                    <span class="text-caption">{{ percentDisk }}%</span>
+                  </v-progress-circular>
+                </div>
                 <div class="ml-3">
                   <div class="text-caption text-medium-emphasis">Disk</div>
                   <div class="text-body-2">{{ usageDisk }}</div>
@@ -349,3 +345,11 @@ watch(
   { deep: true, immediate: true },
 )
 </script>
+
+<style scoped>
+.metric-visual {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+</style>
