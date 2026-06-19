@@ -73,6 +73,21 @@
           {{ item.language.name }}
         </template>
 
+        <template #[`item.tags`]="{ item }">
+          <div class="d-flex flex-wrap ga-1 py-1">
+            <v-chip
+              v-for="tag in item.tags"
+              :key="tag"
+              size="x-small"
+              variant="tonal"
+              color="primary"
+            >
+              {{ tag }}
+            </v-chip>
+            <span v-if="!item.tags?.length" class="text-medium-emphasis">-</span>
+          </div>
+        </template>
+
         <template #[`item.offliner`]="{ item }">
           {{ item.config.offliner || 'Unknown' }}
         </template>

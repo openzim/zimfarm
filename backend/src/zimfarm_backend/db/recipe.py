@@ -259,6 +259,7 @@ def get_recipes(
             func.coalesce(subquery.c.nb_requested_tasks, 0).label("nb_requested_tasks"),
             Recipe.archived,
             Recipe.context,
+            Recipe.tags,
         )
         .join(OfflinerDefinition, Recipe.offliner_definition)
         .join(Task, Recipe.most_recent_task, isouter=True)
@@ -304,6 +305,7 @@ def get_recipes(
         nb_requested_tasks,
         _archived,
         context,
+        recipe_tags,
     ) in session.execute(stmt).all():
         # Because the SQL window function returns the total_records
         # for every row, assign that value to the nb_records
@@ -338,6 +340,7 @@ def get_recipes(
                 nb_requested_tasks=nb_requested_tasks,
                 context=context,
                 archived=_archived,
+                tags=recipe_tags,
             )
         )
 
