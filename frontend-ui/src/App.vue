@@ -53,7 +53,7 @@ const navigationItems = computed<NavigationItem[]>(() => [
     show: true,
   },
   {
-    name: 'recipes-list',
+    name: 'recipes',
     label: 'Recipes',
     route: 'recipes',
     icon: 'mdi-book-open-variant',
@@ -69,7 +69,7 @@ const navigationItems = computed<NavigationItem[]>(() => [
     show: true,
   },
   {
-    name: 'users-list',
+    name: 'users',
     label: 'Users',
     route: 'users',
     icon: 'mdi-account-group',

@@ -1192,7 +1192,7 @@ const deleteRecipe = async () => {
   const response = await recipeStore.deleteRecipe(props.recipeName)
   if (response) {
     notificationStore.showSuccess(`Recipe <code>${props.recipeName}</code> has been deleted.`)
-    router.push({ name: 'recipes-list' })
+    router.push({ name: 'recipes' })
   } else {
     for (const error of recipeStore.errors) {
       notificationStore.showError(error)

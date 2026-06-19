@@ -4,7 +4,7 @@
   <div>
     <RecipesBaseView
       :archived="false"
-      :route-name="'recipes-list'"
+      :route-name="'recipes'"
       :can-request-tasks="canRequestTasks"
       @filters-updated="handleFiltersUpdated"
     >
