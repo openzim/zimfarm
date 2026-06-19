@@ -35,7 +35,7 @@ jobs:
       healthcheck: ${{ steps.filter.outputs.healthcheck || 'false' }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dorny/paths-filter@v4
         id: filter
@@ -72,7 +72,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.dnscache == 'true' || inputs.force == true || contains(inputs.force_components, 'dnscache') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -93,7 +93,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.uploader == 'true' || inputs.force == true || contains(inputs.force_components, 'uploader') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -114,7 +114,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force == true || contains(inputs.force_components, 'backend') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -149,7 +149,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.backend == 'true' || inputs.force == true || contains(inputs.force_components, 'backend') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -184,7 +184,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.frontend_ui == 'true' || inputs.force == true || contains(inputs.force_components, 'frontend_ui') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -218,7 +218,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.receiver == 'true' || inputs.force == true || contains(inputs.force_components, 'receiver') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -245,7 +245,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.task_worker == 'true' || inputs.force == true || contains(inputs.force_components, 'task_worker') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -266,7 +266,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.worker_manager == 'true' || inputs.force == true || contains(inputs.force_components, 'worker_manager') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -287,7 +287,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.monitor_child == 'true' || inputs.force == true || contains(inputs.force_components, 'monitor_child') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -307,7 +307,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.monitor_parent == 'true' || inputs.force == true || contains(inputs.force_components, 'monitor_parent') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -327,7 +327,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.watcher == 'true' || inputs.force == true || contains(inputs.force_components, 'watcher') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
@@ -354,7 +354,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.healthcheck == 'true' || inputs.force == true || contains(inputs.force_components, 'healthcheck') }}
     steps:
       - name: Retrieve source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build and publish Docker Image
         uses: openzim/docker-publish-action@v10
