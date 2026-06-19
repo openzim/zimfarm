@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "PyJWT == 2.13.0",
     "humanfriendly == 10.0",
-    "cryptography == 46.0.7",
+    "cryptography == 48.0.1",
     "docker == 7.1.0",
     "requests == 2.33.0",
     "psutil == 7.0.0",
