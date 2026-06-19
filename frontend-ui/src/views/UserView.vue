@@ -368,7 +368,7 @@ const deleteUser = async () => {
   const success = await userStore.deleteUser(props.userId)
   if (success) {
     notificationStore.showSuccess(`User account ${user.value?.display_name} has been deleted.`)
-    router.push({ name: 'users-list' })
+    router.push({ name: 'users' })
   } else {
     for (const error of userStore.errors) {
       notificationStore.showError(error)

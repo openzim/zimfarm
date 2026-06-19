@@ -23,6 +23,7 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | Worker • ${to.params.workerName}`,
+      parentNavigation: 'workers',
     },
   },
   {
@@ -32,6 +33,7 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | Worker • ${to.params.workerName}`,
+      parentNavigation: 'workers',
     },
   },
   {
@@ -77,6 +79,7 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | Task • ${to.params.id}`,
+      parentNavigation: 'pipeline',
     },
   },
 
@@ -87,6 +90,7 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | Task • ${to.params.id}`,
+      parentNavigation: 'pipeline',
     },
   },
 
@@ -97,6 +101,7 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.recipeName}`,
+      parentNavigation: 'recipes',
     },
   },
   {
@@ -106,11 +111,12 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | Recipe • ${to.params.recipeName}`,
+      parentNavigation: 'recipes',
     },
   },
   {
     path: '/recipes',
-    name: 'recipes-list',
+    name: 'recipes',
     component: RecipesView,
     meta: { title: 'Zimfarm | Recipes' },
   },
@@ -118,7 +124,7 @@ const routes = [
     path: '/recipes/archives',
     name: 'archived-recipes',
     component: ArchivedRecipesView,
-    meta: { title: 'Zimfarm | Archived Recipes' },
+    meta: { title: 'Zimfarm | Archived Recipes', parentNavigation: 'recipes' },
   },
   {
     path: '/users/:userId',
@@ -127,6 +133,7 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.userId}`,
+      parentNavigation: 'users',
     },
   },
   {
@@ -136,11 +143,12 @@ const routes = [
     props: true,
     meta: {
       title: (to: RouteLocationNormalized) => `Zimfarm | User • ${to.params.userId}`,
+      parentNavigation: 'users',
     },
   },
   {
     path: '/users',
-    name: 'users-list',
+    name: 'users',
     component: UsersView,
     meta: { title: 'Zimfarm | Users' },
   },
