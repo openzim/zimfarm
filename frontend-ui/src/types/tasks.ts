@@ -12,7 +12,7 @@ export interface TaskEvent {
 }
 
 export interface ZimUrl {
-  kind: 'view' | 'download'
+  kind: 'view' | 'download' | 'zimcheck'
   url: string
   collection: string
 }
