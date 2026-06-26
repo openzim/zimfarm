@@ -105,7 +105,7 @@ class TaskLightSchema(BaseTaskSchema):
 class ZimUrlSchema(BaseModel):
     """Schema for a single zim URL"""
 
-    kind: Literal["view", "download"]
+    kind: Literal["view", "download", "zimcheck"]
     url: AnyUrl
     collection: str
 

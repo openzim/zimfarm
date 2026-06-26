@@ -89,7 +89,7 @@
               </template>
             </v-tooltip>
             <v-btn
-              v-if="file.check_filename"
+              v-if="checksUrl"
               variant="text"
               size="x-small"
               class="ml-1 pa-0"
@@ -150,7 +150,7 @@
 import FileInfoTable from '@/components/FileInfoTable.vue'
 import ZimUrlButtons from '@/components/ZimUrlButtons.vue'
 import { TaskStatus } from '@/types/base'
-import type { Task, TaskFile } from '@/types/tasks'
+import type { Task, TaskFile, ZimUrl } from '@/types/tasks'
 import { formatDt, formatDurationBetween, formattedBytesSize } from '@/utils/format'
 import { checkUrl } from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
@@ -191,8 +191,12 @@ const uploadDurationTime = computed(() => {
 })
 
 const checksUrl = computed(() => {
-  if (!props.file.check_filename) return ''
-  return checkUrl(props.task, props.file.check_filename)
+  if (props.file.zim_urls == null) {
+    // Fall back to old behaviour when zim_urls is not available
+    if (!props.file.check_filename) return ''
+    return checkUrl(props.task, props.file.check_filename)
+  }
+  return props.file.zim_urls?.find((url: ZimUrl) => url.kind === 'zimcheck')?.url
 })
 
 const fallbackDownloadUrl = computed(() => {
