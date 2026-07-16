@@ -46,7 +46,7 @@ test = [
 task = [
     "kiwixstorage == 0.9.0",
     "libzim == 3.7.0",
-    "ujson == 5.12.1",
+    "ujson == 5.13.0",
 ]
 
 dev = [
