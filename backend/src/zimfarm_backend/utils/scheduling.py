@@ -44,6 +44,7 @@ def request_tasks_using_recipe(session: OrmSession):
         for recipe in session.execute(
             sa.select(dbm.Recipe).where(
                 dbm.Recipe.enabled,
+                dbm.Recipe.archived.is_(False),
                 dbm.Recipe.periodicity == period,
                 ~sa.exists().where(dbm.RequestedTask.recipe_id == dbm.Recipe.id),
             )
