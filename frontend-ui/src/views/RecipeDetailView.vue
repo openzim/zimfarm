@@ -23,10 +23,10 @@
     </v-row>
 
     <!-- Title Row -->
-    <v-row>
+    <v-row v-if="ready && recipe">
       <v-col>
         <h2 class="text-h6 text-md-h4">
-          <code>{{ recipeName }}</code>
+          <code>{{ recipe.name }}</code>
         </h2>
       </v-col>
     </v-row>
@@ -53,7 +53,7 @@
           value="details"
           :to="{
             name: 'recipe-detail',
-            params: { recipeName: recipeName },
+            params: { recipeName: recipe.name },
           }"
         >
           <v-icon class="mr-2">mdi-information</v-icon>
@@ -64,7 +64,7 @@
           value="config"
           :to="{
             name: 'recipe-detail-tab',
-            params: { recipeName: recipeName, selectedTab: 'config' },
+            params: { recipeName: recipe.name, selectedTab: 'config' },
           }"
         >
           <v-icon class="mr-2">mdi-cog</v-icon>
@@ -76,7 +76,7 @@
           value="history"
           :to="{
             name: 'recipe-detail-tab',
-            params: { recipeName: recipeName, selectedTab: 'history' },
+            params: { recipeName: recipe.name, selectedTab: 'history' },
           }"
         >
           <v-icon class="mr-2">mdi-history</v-icon>
@@ -88,7 +88,7 @@
           value="edit"
           :to="{
             name: 'recipe-detail-tab',
-            params: { recipeName: recipeName, selectedTab: 'edit' },
+            params: { recipeName: recipe.name, selectedTab: 'edit' },
           }"
         >
           <v-icon class="mr-2">mdi-pencil</v-icon>
@@ -100,7 +100,7 @@
           value="clone"
           :to="{
             name: 'recipe-detail-tab',
-            params: { recipeName: recipeName, selectedTab: 'clone' },
+            params: { recipeName: recipe.name, selectedTab: 'clone' },
           }"
         >
           <v-icon class="mr-2">mdi-content-copy</v-icon>
@@ -112,7 +112,7 @@
           value="archive"
           :to="{
             name: 'recipe-detail-tab',
-            params: { recipeName: recipeName, selectedTab: 'archive' },
+            params: { recipeName: recipe.name, selectedTab: 'archive' },
           }"
         >
           <v-icon class="mr-2">{{
@@ -126,7 +126,7 @@
           value="similar"
           :to="{
             name: 'recipe-detail-tab',
-            params: { recipeName: recipeName, selectedTab: 'similar' },
+            params: { recipeName: recipe.name, selectedTab: 'similar' },
           }"
         >
           <v-icon class="mr-2">mdi-creation</v-icon>
@@ -139,7 +139,7 @@
           value="delete"
           :to="{
             name: 'recipe-detail-tab',
-            params: { recipeName: recipeName, selectedTab: 'delete' },
+            params: { recipeName: recipe.name, selectedTab: 'delete' },
           }"
         >
           <v-icon class="mr-2">mdi-delete</v-icon>
@@ -161,7 +161,7 @@
                   <v-col cols="12" md="8">
                     <a
                       target="_blank"
-                      :href="webApiUrl + '/recipes/' + recipeName"
+                      :href="webApiUrl + '/recipes/' + recipe.name"
                       class="text-decoration-none"
                     >
                       document
@@ -489,7 +489,7 @@
             :has-more="canLoadMoreHistory"
             :loading="loadingHistory"
             :paginator="recipeHistoryStore.paginator"
-            :recipe-name="recipeName"
+            :recipe-name="recipe.name"
             @load="loadHistory"
             @revert="handleRevert"
           />
@@ -690,7 +690,7 @@
         <!-- Clone Tab -->
         <v-window-item value="clone">
           <div v-if="canCreateRecipes" class="pa-4">
-            <CloneRecipe :from="recipeName" @clone="cloneRecipe" />
+            <CloneRecipe :from="recipe.name" @clone="cloneRecipe" />
           </div>
         </v-window-item>
 
@@ -698,7 +698,7 @@
         <v-window-item value="archive">
           <div v-if="canArchiveRecipes" class="pa-4">
             <ArchiveItem
-              :name="recipeName"
+              :name="recipe.name"
               :is-archived="recipe?.archived || false"
               @archive-item="archiveRecipe"
               @restore-item="restoreRecipe"
@@ -710,7 +710,7 @@
         <v-window-item value="delete">
           <div v-if="canDeleteRecipes" class="pa-4">
             <DeleteItem
-              :name="recipeName"
+              :name="recipe.name"
               description="recipe"
               property="name"
               @delete-item="deleteRecipe"
@@ -723,7 +723,7 @@
           <v-card flat>
             <v-card-text>
               <div class="mb-4 text-body-1">
-                Recipes similar to <code>{{ recipeName }}</code>
+                Recipes similar to <code>{{ recipe.name }}</code>
               </div>
               <RecipesTable
                 :headers="similarHeaders"
@@ -1016,7 +1016,7 @@ const requestTask = async (workerName: string | null, priority?: boolean) => {
 
   const response = await requestedTasksStore.requestTasks(body)
   if (response) {
-    const msg = `Recipe <em>${props.recipeName}</em> has been requested as <code>${shortId(
+    const msg = `Recipe <em>${recipe.value?.name}</em> has been requested as <code>${shortId(
       response.requested[0],
     )}</code>.`
     notificationStore.showSuccess(msg)
@@ -1191,7 +1191,7 @@ const loadHistory = async ({ limit, skip }: { limit: number; skip: number }) => 
 const deleteRecipe = async () => {
   const response = await recipeStore.deleteRecipe(props.recipeName)
   if (response) {
-    notificationStore.showSuccess(`Recipe <code>${props.recipeName}</code> has been deleted.`)
+    notificationStore.showSuccess(`Recipe <code>${recipe.value?.name}</code> has been deleted.`)
     router.push({ name: 'recipes' })
   } else {
     for (const error of recipeStore.errors) {
@@ -1203,7 +1203,7 @@ const deleteRecipe = async () => {
 const archiveRecipe = async (comment?: string) => {
   const response = await recipeStore.archiveRecipe(props.recipeName, comment)
   if (response) {
-    notificationStore.showSuccess(`Recipe <code>${props.recipeName}</code> has been archived.`)
+    notificationStore.showSuccess(`Recipe <code>${recipe.value?.name}</code> has been archived.`)
     // Refresh the recipe data to update the archive status
     await refreshData(true)
     // Switch to info tab after archiving
@@ -1218,7 +1218,7 @@ const archiveRecipe = async (comment?: string) => {
 const restoreRecipe = async (comment?: string) => {
   const response = await recipeStore.restoreRecipe(props.recipeName, comment)
   if (response) {
-    notificationStore.showSuccess(`Recipe <code>${props.recipeName}</code> has been restored.`)
+    notificationStore.showSuccess(`Recipe <code>${recipe.value?.name}</code> has been restored.`)
     // Refresh the recipe data to update the archive status
     await refreshData(true)
     // Switch to info tab after restoring
