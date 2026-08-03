@@ -183,6 +183,7 @@ class DockerImageName(StrEnum):
     devdocs = "openzim/devdocs"
     mindtouch = "openzim/mindtouch"
     maps = "openzim/maps"
+    zimwright = "openzim/zimwright"
 
     @classmethod
     def all(cls) -> set[str]:
@@ -203,6 +204,7 @@ class DockerImageName(StrEnum):
             cls.devdocs,
             cls.mindtouch,
             cls.maps,
+            cls.zimwright,
         }
 
 
