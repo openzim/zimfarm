@@ -54,6 +54,7 @@ def test_get_tasks(
     assert len(data["items"]) == 5
 
     for item in data["items"]:
+        assert item["recipe_enabled"] is True
         most_recent_task = item["recipe_most_recent_task"]
         if fetch_most_recent_tasks == "true":
             assert most_recent_task is not None
@@ -61,8 +62,49 @@ def test_get_tasks(
             assert "status" in most_recent_task
             assert "timestamp" in most_recent_task
             assert "updated_at" in most_recent_task
+            assert most_recent_task["is_requested"] is False
         else:
             assert most_recent_task is None
+
+
+def test_get_tasks_of_disabled_recipe_with_requested_task(
+    dbsession: OrmSession,
+    client: TestClient,
+    access_token: str,
+    create_task: Callable[..., Task],
+    create_recipe: Callable[..., Recipe],
+    create_requested_task: Callable[..., RequestedTask],
+):
+    """Test that tasks report whether their recipe is disabled and its last run"""
+    recipe = create_recipe(name="disabled_recipe", enabled=False)
+    task = create_task(recipe_name="disabled_recipe")
+    recipe.most_recent_task = task
+    dbsession.add(recipe)
+    dbsession.flush()
+
+    response = client.get(
+        "/v2/tasks?recipe_name=disabled_recipe&fetch_most_recent_tasks=true",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    items = response.json()["items"]
+    assert len(items) == 1
+    assert items[0]["recipe_enabled"] is False
+    assert items[0]["recipe_most_recent_task"]["id"] == str(task.id)
+    assert items[0]["recipe_most_recent_task"]["is_requested"] is False
+
+    # a requested task is more recent than the most recent task of the recipe
+    requested_task = create_requested_task(recipe_name="disabled_recipe")
+
+    response = client.get(
+        "/v2/tasks?recipe_name=disabled_recipe&fetch_most_recent_tasks=true",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    items = response.json()["items"]
+    assert len(items) == 1
+    assert items[0]["recipe_most_recent_task"]["id"] == str(requested_task.id)
+    assert items[0]["recipe_most_recent_task"]["is_requested"] is True
 
 
 @pytest.mark.parametrize("hide_secrets", ["true", "false"])

@@ -42,6 +42,14 @@
             :to="{ name: 'recipe-detail', params: { recipeName: item.recipe_name } }"
           >
             {{ item.recipe_name }}
+            <v-icon
+              v-if="(item as TaskLight).recipe_enabled === false"
+              size="small"
+              color="orange"
+              class="ml-1"
+            >
+              mdi-pause
+            </v-icon>
           </router-link>
         </template>
 
@@ -149,7 +157,11 @@
             :status="(item as TaskLight).recipe_most_recent_task!.status"
             :timestamp="(item as TaskLight).recipe_most_recent_task!.timestamp"
             :updated-at="(item as TaskLight).recipe_most_recent_task!.updated_at"
-            :task-id="(item as TaskLight).recipe_most_recent_task!.id"
+            :task-id="
+              (item as TaskLight).recipe_most_recent_task!.is_requested
+                ? null
+                : (item as TaskLight).recipe_most_recent_task!.id
+            "
           />
         </template>
 

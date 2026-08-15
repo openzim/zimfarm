@@ -73,6 +73,8 @@ class MostRecentTaskSchema(BaseModel):
     status: str
     updated_at: MadeAwareDateTime
     timestamp: list[tuple[str, datetime.datetime]]
+    # whether this is a requested task instead of a task
+    is_requested: bool = False
 
 
 class BaseTaskSchema(BaseModel):
@@ -99,6 +101,7 @@ class TaskLightSchema(BaseTaskSchema):
     """
 
     config: ConfigWithOnlyResourcesSchema
+    recipe_enabled: bool | None = None
     recipe_most_recent_task: MostRecentTaskSchema | None = None
 
 
