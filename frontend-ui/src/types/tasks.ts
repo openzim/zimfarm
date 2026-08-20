@@ -3,6 +3,7 @@ import type { ExpandedRecipeConfig, RecipeNotification } from '@/types/recipe'
 
 export interface TaskLight extends BaseTask {
   config: ConfigWithOnlyResources
+  recipe_enabled?: boolean | null
   recipe_most_recent_task?: MostRecentTask | null
 }
 

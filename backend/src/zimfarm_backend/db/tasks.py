@@ -38,6 +38,7 @@ from zimfarm_backend.db.models import (
     File,
     OfflinerDefinition,
     Recipe,
+    RequestedTask,
     Task,
     Worker,
 )
@@ -219,6 +220,7 @@ def get_tasks(
             Account.display_name.label("requested_by"),
             Recipe.name.label("recipe_name"),
             Recipe.id.label("recipe_id"),
+            Recipe.enabled.label("recipe_enabled"),
             Worker.name.label("worker_name"),
         )
         .join(Account, Task.requested_by)
@@ -249,6 +251,7 @@ def get_tasks(
         requested_by,
         _recipe_name,
         _recipe_id,
+        _recipe_enabled,
         worker_name,
     ) in session.execute(
         stmt  # pyright: ignore[reportUnknownArgumentType]
@@ -273,6 +276,7 @@ def get_tasks(
                 requested_by=requested_by,
                 recipe_name=_recipe_name,
                 recipe_id=_recipe_id,
+                recipe_enabled=_recipe_enabled,
                 worker_name=worker_name,
             )
         )
@@ -307,6 +311,32 @@ def get_tasks(
                             status=task_status,
                             updated_at=task_updated_at,
                             timestamp=task_timestamp,
+                        )
+
+            # a requested task is always more recent than any task of the recipe,
+            # and there is at most one of them per recipe
+            requested_stmt = select(
+                RequestedTask.recipe_id,
+                RequestedTask.id,
+                RequestedTask.status,
+                RequestedTask.updated_at,
+                RequestedTask.timestamp,
+            ).where(RequestedTask.recipe_id.in_(list(recipe_ids)))
+            for (
+                schedule_id,
+                requested_task_id,
+                requested_task_status,
+                requested_task_updated_at,
+                requested_task_timestamp,
+            ) in session.execute(requested_stmt).all():
+                for task in results.tasks:
+                    if schedule_id == task.recipe_id:
+                        task.recipe_most_recent_task = MostRecentTaskSchema(
+                            id=requested_task_id,
+                            status=requested_task_status,
+                            updated_at=requested_task_updated_at,
+                            timestamp=requested_task_timestamp,
+                            is_requested=True,
                         )
 
     return results

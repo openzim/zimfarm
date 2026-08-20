@@ -67,6 +67,7 @@ export interface MostRecentTask {
   status: string
   updated_at: string
   timestamp: [string, string][] // [status, datetime] tuples
+  is_requested?: boolean // whether this is a requested task instead of a task
 }
 export enum TaskStatus {
   requested = 'requested',
