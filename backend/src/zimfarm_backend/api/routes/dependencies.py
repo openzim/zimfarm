@@ -77,7 +77,11 @@ def get_current_account_or_none_with_session(
         # If this is a kiwix token, we create a new account account
         if account is None and CREATE_NEW_OAUTH_ACCOUNT:
             if not claims.name:
-                raise UnauthorizedError("Token is missing 'profile' scope")
+                raise UnauthorizedError(
+                    "Logged in user is unknown in Zimfarm and it is impossible to "
+                    "automatically create a new user because token is missing profile "
+                    "scope."
+                )
             create_account(
                 session,
                 display_name=claims.name,
