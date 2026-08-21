@@ -945,6 +945,32 @@ const areAllFieldsValid = computed(() => {
   return true
 })
 
+// Helper to filter out no-op differences (e.g. null -> "") that shouldn't be
+// considered changes when comparing flags
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isNoopDiff = (change: any): boolean => {
+  // New empty fields are not real changes
+  if (
+    change.kind === 'N' &&
+    (change.rhs === '' || change.rhs === undefined || change.rhs === null)
+  ) {
+    return true
+  }
+  if (change.kind === 'E') {
+    // If we are toggling a switch to false and it's a null on the original object,
+    // then it's not a change
+    if (change.lhs === null && change.rhs === false) return true
+    // Changing from null/empty to null/empty is not a change.
+    if (
+      (change.lhs === null || change.lhs === '') &&
+      (change.rhs === undefined || change.rhs === null || change.rhs === '')
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
 // Generate differences for the diff viewer
 const recipeDifferences = computed(() => {
   if (!(props.recipe && editRecipe.value)) return undefined
@@ -957,7 +983,10 @@ const recipeDifferences = computed(() => {
   editedRecipe.config.offliner = JSON.parse(JSON.stringify(editFlags.value))
 
   // Generate diff
-  return diff(currentRecipe, editedRecipe)
+  const differences = diff(currentRecipe, editedRecipe)
+  if (!differences) return undefined
+
+  return differences.filter((change) => !isNoopDiff(change))
 })
 
 const canSubmit = computed(() => {
@@ -1037,29 +1066,8 @@ const hasChanges = computed<boolean>(() => {
 
   if (!changes) return false
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  changes = changes.filter(function (change: any) {
-    // Filter out empty changes (new empty fields or fields changed to empty)
-    if (
-      change.kind === 'N' &&
-      (change.rhs === '' || change.rhs === undefined || change.rhs === null)
-    ) {
-      return false
-    }
-    if (change.kind === 'E') {
-      // if we are toggling a switch to false and it's a null on the original object,
-      // then it's not a change
-      if (change.lhs === null && change.rhs === false) return false
-      // If changing from null/empty to null/empty, it's not a change
-      if (
-        (change.lhs === null || change.lhs === '') &&
-        (change.rhs === undefined || change.rhs === null || change.rhs === '')
-      ) {
-        return false
-      }
-    }
-    return true
-  })
+  changes = changes.filter((change) => !isNoopDiff(change))
+
   return changes.length > 0
 })
 
