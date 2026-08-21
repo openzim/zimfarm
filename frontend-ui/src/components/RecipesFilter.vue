@@ -14,7 +14,7 @@
           />
         </v-col>
         <v-col cols="12" sm="6" md="3">
-          <v-select
+          <v-autocomplete
             v-model="localFilters.languages"
             :items="languagesOptions"
             label="Languages"
@@ -25,11 +25,15 @@
             multiple
             chips
             closable-chips
+            clear-on-select
+            :custom-filter="
+              (value: string, query: string) => fuzzyFilter(value, query, languageNames)
+            "
             @update:model-value="emitFilters"
           />
         </v-col>
         <v-col cols="12" sm="6" md="3">
-          <v-select
+          <v-autocomplete
             v-model="localFilters.tags"
             :items="tagsOptions"
             label="Tags"
@@ -40,11 +44,13 @@
             multiple
             chips
             closable-chips
+            clear-on-select
+            :custom-filter="(value: string, query: string) => fuzzyFilter(value, query, props.tags)"
             @update:model-value="emitFilters"
           />
         </v-col>
         <v-col cols="12" sm="6" md="3">
-          <v-select
+          <v-autocomplete
             v-model="localFilters.offliners"
             :items="offlinersOptions"
             label="Offliners"
@@ -55,6 +61,10 @@
             multiple
             chips
             closable-chips
+            clear-on-select
+            :custom-filter="
+              (value: string, query: string) => fuzzyFilter(value, query, props.offliners)
+            "
             @update:model-value="emitFilters"
           />
         </v-col>
@@ -75,6 +85,7 @@
 
 <script setup lang="ts">
 import type { Language } from '@/types/language'
+import { fuzzyFilter } from '@/utils/cmp'
 import { computed, ref, watch } from 'vue'
 
 // Props
@@ -127,6 +138,8 @@ watch(
 )
 
 // Computed properties for select options
+
+const languageNames = computed(() => props.languages.map((language) => language.name))
 
 const languagesOptions = computed(() => {
   return props.languages.map((language) => ({

@@ -46,7 +46,7 @@
         />
       </v-col>
       <v-col cols="12" sm="4">
-        <v-select
+        <v-autocomplete
           v-model="editRecipe.language.code"
           :items="languagesOptions"
           label="Language"
@@ -54,10 +54,14 @@
           density="compact"
           variant="outlined"
           persistent-hint
+          clear-on-select
+          :custom-filter="
+            (value: string, query: string) => fuzzyFilter(value, query, languageNames)
+          "
         />
       </v-col>
       <v-col cols="12" sm="4">
-        <v-select
+        <v-autocomplete
           v-model="editRecipe.tags"
           :items="tags"
           label="Tags"
@@ -65,9 +69,11 @@
           multiple
           chips
           closable-chips
+          clear-on-select
           density="compact"
           variant="outlined"
           persistent-hint
+          :custom-filter="(value: string, query: string) => fuzzyFilter(value, query, tags)"
         />
       </v-col>
     </v-row>
@@ -1349,6 +1355,8 @@ const handleInputWithGraphemeLimit = (field: FlagField, value: string) => {
     editFlags.value[field.dataKey] = trimmedValue
   }
 }
+
+const languageNames = computed(() => props.languages.map((language) => language.name))
 
 const languagesOptions = computed(() => {
   return props.languages.map((language) => ({
