@@ -88,7 +88,7 @@ services:
       INFORM_CMS: false
       ZIM_UPLOAD_URI: sftp://uploader@receiver:22/zim/
       LOGS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-logs
-      ZIMCHECK_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
+      ZIMCHECK_RESULTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-zimchecks
       ARTIFACTS_UPLOAD_URI: s3+http://minio:9000/?keyId=minio_key&secretAccessKey=minio_secret&bucketName=zimfarm-artifacts
       ZIMCHECK_OPTION: --all
       INIT_USERNAME: admin

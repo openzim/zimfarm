@@ -106,9 +106,19 @@ def generate_http_upload_url(uri: str, filename: str) -> str:
     url = urllib.parse.urlparse(uri)
     scheme = url.scheme
 
+    def get_url_scheme(url: urllib.parse.ParseResult) -> str:
+        if url.scheme.startswith("s3"):
+            if url.scheme.startswith("s3+https"):
+                return "https"
+            elif url.scheme.startswith("s3+http"):
+                return "http"
+        return "https"
+
     # If scheme is not http or https, convert to https
     if scheme not in ["http", "https"]:
-        url = urllib.parse.urlparse(uri.replace(url.scheme + ":", "https:"))
+        url = urllib.parse.urlparse(
+            uri.replace(url.scheme + ":", get_url_scheme(url) + ":")
+        )
 
     # Handle S3 scheme
     if scheme in ["s3", "s3+http", "s3+https"]:
