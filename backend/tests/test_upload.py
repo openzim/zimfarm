@@ -325,6 +325,12 @@ def test_build_task_upload_uris_no_secrets_in_uri():
             id="s3+https-uri-with-bucket",
         ),
         pytest.param(
+            "s3+http://s3.example.com/path?bucketName=my-bucket",
+            "file.zim",
+            "http://s3.example.com/path/my-bucket/file.zim",
+            id="s3+http-uri-with-bucket",
+        ),
+        pytest.param(
             "s3://s3.us-east-1.example.com/?bucketName=zim-bucket&token=secret",
             "wikipedia_en_all.zim",
             "https://s3.us-east-1.example.com/zim-bucket/wikipedia_en_all.zim",
