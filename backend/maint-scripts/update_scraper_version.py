@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 """
-Script to update recipes and requested tasks with new image tags or offliner
-definitions.
+Script to update recipes and requested tasks. Use the -h flag to see the script
+description.
 
 EXAMPLES:
 
@@ -22,7 +22,7 @@ top level key that houses it's specification. For example, if the offliner defin
 contains a new field like:
 
     "article_list_to_ignore": {
-        "type": "string",
+    "type": "string",
         "required": false,
         "title": "Article List to ignore",
         "description": "List of articles to ignore"
@@ -43,27 +43,41 @@ database. If you must use the -n flag, here are some examples:
 5. Rename a field in recipe and requested tasks flags:
    ./update_scraper_version.py -o mwoffliner -d 2.1.0 -n "old_name:new_name"
 
-6. Multiple name mappings (add, remove, and rename in one command):
+6. Change flags names(add, remove, and rename in one command):
    ./update_scraper_version.py -o mwoffliner -d 2.1.0 \
-     -n "+:new_field,old_field:-,old_name:new_name"
+     -m "+:new_field,old_field:-,old_name:new_name"
+
+7. Set the value of an existing flag:
+   ./update_scraper_version.py -o mwoffliner \
+     -s "articleList=https://example.com/list.tsv"
 """
 
 import argparse
-from typing import cast
+import json
+from copy import deepcopy
+from pathlib import Path
+from typing import Any, cast
 
 import sqlalchemy as sa
+from pydantic.alias_generators import to_camel
+from sqlalchemy import and_
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from zimfarm_backend import logger
+from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.schemas.models import (
     DockerImageSchema,
     RecipeConfigSchema,
 )
+from zimfarm_backend.common.schemas.offliners.models import (
+    FlagSchema,
+    OfflinerSpecSchema,
+)
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
 from zimfarm_backend.db.account import get_account_by_username
-from zimfarm_backend.db.models import Recipe, RequestedTask
+from zimfarm_backend.db.models import OfflinerDefinition, Recipe, RequestedTask
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
@@ -89,11 +103,248 @@ def parse_name_mappings(value: str) -> dict[str, str]:
 
         old_name, new_name = mapping.split(":", 1)
         if not old_name.strip() or not new_name.strip():
-            raise argparse.ArgumentTypeError(f"Empty name in mapping: '{mapping}'")
+            raise argparse.ArgumentTypeError("Empty value provided for new/old name")
 
         mappings[old_name.strip()] = new_name.strip()
 
     return mappings
+
+
+def parse_comma_separated_values(value: str | None) -> list[str] | None:
+    if value is None:
+        return None
+    return [v.strip() for v in value.split(",")]
+
+
+def parse_field_values(value: str | None) -> dict[str, Any]:
+    """Parse field value assignments from 'name=value,name=value...' format."""
+    if not value:
+        return {}
+
+    field_values: dict[str, Any] = {}
+    for assignment in value.split(","):
+        if "=" not in assignment:
+            raise argparse.ArgumentTypeError(
+                f"Invalid assignment format: '{assignment}'. Expected 'name=value'"
+            )
+        name, raw_value = assignment.split("=", 1)
+        name = name.strip()
+        if not name:
+            raise argparse.ArgumentTypeError("Empty field name provided")
+        raw_value = raw_value.strip()
+        field_values[name] = (
+            None if raw_value.lower() in {"null", "none"} else raw_value
+        )
+
+    return field_values
+
+
+def _flag_alias(flag_name: str, flag: FlagSchema, base_model: str) -> str:
+    """Return the alias used in the database for a flag."""
+    if flag.alias:
+        return flag.alias
+    if base_model == "CamelModel":
+        return to_camel(flag_name)
+    return flag_name.replace("_", "-")
+
+
+def _find_flag(
+    spec: OfflinerSpecSchema, offliner: OfflinerSchema, name: str
+) -> FlagSchema | None:
+    """Find a flag in the spec by its database alias or flag name."""
+    for flag_name, flag in spec.flags.items():
+        if _flag_alias(flag_name, flag, offliner.base_model) == name:
+            return flag
+        if flag_name == name:
+            return flag
+    return None
+
+
+def _as_list(value: str) -> list[str]:
+    """Cast a comma-separated string to a list of strings."""
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _cast_flag_value(flag: FlagSchema, value: Any) -> Any:
+    """Cast a value to the type of the given flag."""
+    if value is None:
+        return None
+    match flag.type:
+        case "boolean":
+            return parse_bool(value)
+        case "integer":
+            return int(value)
+        case "float":
+            return float(value)
+        case "list-of-boolean":
+            return [parse_bool(item) for item in _as_list(value)]
+        case "list-of-integer":
+            return [int(item) for item in _as_list(value)]
+        case "list-of-string" | "list-of-url" | "list-of-email" | "list-of-string-enum":
+            return _as_list(value)
+        case _:
+            return str(value)
+
+
+def apply_field_values(
+    data: dict[str, Any],
+    field_values: dict[str, Any],
+    offliner: OfflinerSchema,
+    offliner_definition: OfflinerDefinitionSchema,
+) -> dict[str, Any]:
+    data = deepcopy(data)
+    for field, value in field_values.items():
+        flag = _find_flag(offliner_definition.schema_, offliner, field)
+        if flag is None:
+            logger.warning(
+                f"Unknown offliner flag '{field}'. Setting value without casting."
+            )
+            data[field] = value
+        else:
+            data[field] = _cast_flag_value(flag, value)
+    return data
+
+
+def _format_value(value: Any) -> str:
+    """Format a value for display in the markdown report."""
+    if value is None:
+        return "None"
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False, default=str)
+
+
+def _md(value: Any) -> str:
+    """Wrap a value in markdown inline code, escaping markdown-sensitive chars."""
+    text = (
+        _format_value(value)
+        .replace("`", "\\`")
+        .replace("|", "\\|")
+        .replace("\n", "\\n")
+    )
+    return f"`{text}`"
+
+
+def diff_offliner_flags(
+    old_data: dict[str, Any], new_data: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Diff two offliner flag dicts and return a list of per-field changes."""
+    changes: list[dict[str, Any]] = []
+    for key in sorted(set(old_data) | set(new_data)):
+        if key not in old_data:
+            changes.append(
+                {
+                    "field": f"offliner.{key}",
+                    "old": None,
+                    "new": new_data[key],
+                    "change_type": "added",
+                }
+            )
+        elif key not in new_data:
+            changes.append(
+                {
+                    "field": f"offliner.{key}",
+                    "old": old_data[key],
+                    "new": None,
+                    "change_type": "removed",
+                }
+            )
+        elif old_data[key] != new_data[key]:
+            changes.append(
+                {
+                    "field": f"offliner.{key}",
+                    "old": old_data[key],
+                    "new": new_data[key],
+                    "change_type": "changed",
+                }
+            )
+    return changes
+
+
+def _format_field_change(field_change: dict[str, Any]) -> str:
+    """Format a single field change as a markdown list item."""
+    field = _md(field_change["field"])
+    if field_change["change_type"] == "added":
+        return f"- {field}: added {_md(field_change['new'])}"
+    if field_change["change_type"] == "removed":
+        return f"- {field}: removed {_md(field_change['old'])}"
+    return f"- {field}: {_md(field_change['old'])} → {_md(field_change['new'])}"
+
+
+def generate_markdown_report(
+    *,
+    offliner: str,
+    image_tag: str | None,
+    offliner_definition_version: str | None,
+    flag_names: dict[str, str],
+    flag_values: dict[str, Any],
+    changes: list[dict[str, Any]],
+) -> str:
+    """Generate a markdown report describing the changes of a dry run."""
+    lines: list[str] = []
+    lines.append("# Scraper version update report (dry run)")
+    lines.append("")
+    lines.append(f"- **Offliner:** `{offliner}`")
+    if image_tag:
+        lines.append(f"- **Image tag:** `{image_tag}`")
+    if offliner_definition_version:
+        lines.append(
+            f"- **Offliner definition version:** `{offliner_definition_version}`"
+        )
+    if flag_names:
+        mappings: list[str] = []
+        for old_name, new_name in flag_names.items():
+            if old_name == "+":
+                mappings.append(f"add `{new_name}`")
+            elif new_name == "-":
+                mappings.append(f"remove `{old_name}`")
+            else:
+                mappings.append(f"`{old_name}` → `{new_name}`")
+        lines.append(f"- **Name mappings:** {', '.join(mappings)}")
+    if flag_values:
+        assignments = ", ".join(
+            f"`{field}` = {_md(value)}" for field, value in flag_values.items()
+        )
+        lines.append(f"- **Set values:** {assignments}")
+    lines.append("")
+
+    nb_recipes = sum(1 for change in changes if change["kind"] == "recipe")
+    nb_requested_tasks = sum(
+        1 for change in changes if change["kind"] == "requested_task"
+    )
+    lines.append("## Summary")
+    lines.append("")
+    lines.append(f"- **Recipes affected:** {nb_recipes}")
+    lines.append(f"- **Requested tasks affected:** {nb_requested_tasks}")
+    lines.append("")
+
+    recipes = [change for change in changes if change["kind"] == "recipe"]
+    lines.append("## Recipes")
+    lines.append("")
+    if recipes:
+        for change in recipes:
+            lines.append(f"### `{change['identifier']}`")
+            lines.append("")
+            lines.extend(_format_field_change(fc) for fc in change["changes"])
+            lines.append("")
+    else:
+        lines.append("_None_")
+        lines.append("")
+
+    tasks = [change for change in changes if change["kind"] == "requested_task"]
+    lines.append("## Requested tasks")
+    lines.append("")
+    if tasks:
+        for change in tasks:
+            lines.append(f"### `{change['identifier']}`")
+            lines.append("")
+            lines.extend(_format_field_change(fc) for fc in change["changes"])
+            lines.append("")
+    else:
+        lines.append("_None_")
+        lines.append("")
+
+    return "\n".join(lines)
 
 
 def update_recipes(
@@ -102,42 +353,113 @@ def update_recipes(
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema | None,
     image_tag: str | None,
-    name_mappings: dict[str, str],
+    flag_names: dict[str, str],
+    flag_values: dict[str, Any],
+    exclude_offliner_defintion_versions: list[str] | None,
+    include_offliner_definition_versions: list[str] | None,
+    include_contexts: list[str] | None,
+    exclude_contexts: list[str] | None,
+    dry_run: bool,
+    changes: list[dict[str, Any]] | None = None,
 ) -> int:
     nb_modified: int = 0
 
-    for obj in session.execute(
-        sa.select(Recipe).where(
-            Recipe.config["offliner"]["offliner_id"].astext == offliner.id,
-            Recipe.archived.is_(False),
+    stmt = sa.select(Recipe).where(
+        Recipe.config["offliner"]["offliner_id"].astext == offliner.id,
+        Recipe.archived.is_(False),
+    )
+    if include_contexts is not None:
+        stmt = stmt.where(Recipe.context.in_(include_contexts))
+
+    if exclude_contexts is not None:
+        stmt = stmt.where(Recipe.context.not_in(exclude_contexts))
+
+    if exclude_offliner_defintion_versions or include_offliner_definition_versions:
+        stmt = stmt.join(
+            OfflinerDefinition,
+            and_(
+                Recipe.offliner_definition_id == OfflinerDefinition.id,
+                OfflinerDefinition.version.not_in(
+                    exclude_offliner_defintion_versions or []
+                )
+                | (exclude_offliner_defintion_versions is None),
+                OfflinerDefinition.version.in_(
+                    include_offliner_definition_versions or []
+                )
+                | (include_offliner_definition_versions is None),
+            ),
         )
-    ).scalars():
+
+    for obj in session.execute(stmt).scalars():
         recipe = create_recipe_full_schema(obj, offliner)
         recipe_config = cast(RecipeConfigSchema, recipe.config)
+        old_image_tag = recipe_config.image.tag
+        old_version = recipe.version
 
         if offliner_definition is None:
+            # Apply the actions using the current offliner definition of the recipe
             offliner_definition = get_offliner_definition_by_id(
                 session, recipe.offliner_definition_id
             )
 
-        if image_tag:
+        if image_tag and recipe_config.image.tag != image_tag:
             logger.info(
                 f"setting {offliner.id} image tag for recipe {obj.name} "
-                f"to {args.image_tag}..."
+                f"to {args.set_image_tag_to}..."
             )
             recipe_config.image = DockerImageSchema(
                 name=recipe_config.image.name, tag=image_tag
             )
 
-        if offliner_definition.id != recipe.offliner_definition_id:
-            logger.info(f"setting offliner definition for recipe {obj.name}...")
+        old_offliner_data = obj.config["offliner"]
+        new_offliner_data = old_offliner_data
 
-        data = update_offliner_flags(
-            offliner=offliner,
-            offliner_definition=offliner_definition,
-            data=obj.config["offliner"],
-            name_mappings=name_mappings,
-        )
+        if flag_names:
+            logger.debug(f"modifying config flag names for recipe {obj.name}...")
+            new_offliner_data = update_offliner_flags(
+                offliner=offliner,
+                offliner_definition=offliner_definition,
+                data=old_offliner_data,
+                name_mappings=flag_names,
+            )
+
+        if flag_values:
+            logger.debug(f"setting config values for recipe {obj.name}...")
+            new_offliner_data = apply_field_values(
+                new_offliner_data, flag_values, offliner, offliner_definition
+            )
+
+        if changes is not None:
+            recipe_changes: list[dict[str, Any]] = []
+            if image_tag and old_image_tag != image_tag:
+                recipe_changes.append(
+                    {
+                        "field": "image.tag",
+                        "old": old_image_tag,
+                        "new": image_tag,
+                        "change_type": "changed",
+                    }
+                )
+            if old_version != offliner_definition.version:
+                recipe_changes.append(
+                    {
+                        "field": "offliner_definition.version",
+                        "old": old_version,
+                        "new": offliner_definition.version,
+                        "change_type": "changed",
+                    }
+                )
+            recipe_changes.extend(
+                diff_offliner_flags(old_offliner_data, new_offliner_data)
+            )
+            if recipe_changes:
+                changes.append(
+                    {
+                        "kind": "recipe",
+                        "identifier": obj.name,
+                        "changes": recipe_changes,
+                    }
+                )
 
         recipe_config = RecipeConfigSchema.model_validate(
             # reuse the existing config except for the offliner and image
@@ -150,13 +472,16 @@ def update_recipes(
                 "offliner": create_offliner_instance(
                     offliner=offliner,
                     offliner_definition=offliner_definition,
-                    data=data,
+                    data=new_offliner_data,
                     skip_validation=True,
                     extra="allow",
                 ),
             },
             context={"skip_validation": True},
         )
+
+        if offliner_definition.id != recipe.offliner_definition_id:
+            logger.info(f"setting offliner definition for recipe {obj.name}...")
 
         update_recipe(
             session,
@@ -166,6 +491,8 @@ def update_recipes(
             new_recipe_config=recipe_config,
             comment="updates made via update_scraper_version",
         )
+        if not dry_run:
+            session.commit()
 
         nb_modified += 1
     return nb_modified
@@ -177,44 +504,137 @@ def update_requested_tasks(
     offliner: OfflinerSchema,
     offliner_definition: OfflinerDefinitionSchema | None,
     image_tag: str | None,
-    name_mappings: dict[str, str],
+    flag_names: dict[str, str],
+    flag_values: dict[str, Any],
+    exclude_offliner_defintion_versions: list[str] | None,
+    include_offliner_definition_versions: list[str] | None,
+    include_contexts: list[str] | None,
+    exclude_contexts: list[str] | None,
+    dry_run: bool,
+    changes: list[dict[str, Any]] | None = None,
 ) -> int:
     nb_modified: int = 0
+    stmt = sa.select(RequestedTask).where(
+        RequestedTask.config["offliner"]["offliner_id"].astext == offliner.id
+    )
+    if include_contexts is not None:
+        stmt = stmt.where(RequestedTask.context.in_(include_contexts))
 
-    for obj in session.execute(
-        sa.select(RequestedTask).where(
-            RequestedTask.config["offliner"]["offliner_id"].astext == offliner.id
+    if exclude_contexts is not None:
+        stmt = stmt.where(RequestedTask.context.not_in(exclude_contexts))
+
+    if exclude_offliner_defintion_versions or include_offliner_definition_versions:
+        stmt = stmt.join(
+            OfflinerDefinition,
+            and_(
+                RequestedTask.offliner_definition_id == OfflinerDefinition.id,
+                OfflinerDefinition.version.not_in(
+                    exclude_offliner_defintion_versions or []
+                )
+                | (exclude_offliner_defintion_versions is None),
+                OfflinerDefinition.version.in_(
+                    include_offliner_definition_versions or []
+                )
+                | (include_offliner_definition_versions is None),
+            ),
         )
-    ).scalars():
-        if image_tag:
+
+    for obj in session.execute(stmt).scalars():
+        old_image_tag = obj.config["image"]["tag"]
+        old_version = obj.offliner_definition.version
+        old_offliner_data = obj.config["offliner"]
+
+        if image_tag and image_tag != obj.config["image"]["tag"]:
             logger.info(
                 f"setting {offliner.id} image tag for requested task {obj.id} "
-                f"to {args.image_tag}..."
+                f"to {args.set_image_tag_to}..."
             )
             obj.config["image"]["tag"] = image_tag
             flag_modified(obj, "config")
 
-        if offliner_definition:
+        new_offliner_data = old_offliner_data
+        if offliner_definition and offliner_definition.id != obj.offliner_definition_id:
             logger.info(f"setting offliner definition for requested task {obj.id}...")
-            if name_mappings:
-                obj.config["offliner"] = update_offliner_flags(
-                    offliner=offliner,
-                    offliner_definition=offliner_definition,
-                    data=obj.config["offliner"],
-                    name_mappings=name_mappings,
-                )
             obj.offliner_definition_id = offliner_definition.id
+        else:
+            offliner_definition = OfflinerDefinitionSchema.model_validate(
+                obj.offliner_definition
+            )
+
+        if flag_names:
+            logger.debug(f"modifying config flag names for recipe {obj.id}...")
+            new_offliner_data = update_offliner_flags(
+                offliner=offliner,
+                offliner_definition=offliner_definition,
+                data=old_offliner_data,
+                name_mappings=flag_names,
+            )
+            obj.config["offliner"] = new_offliner_data
             flag_modified(obj, "config")
+
+        if flag_values:
+            logger.debug(f"setting config values for requested task {obj.id}...")
+            new_offliner_data = apply_field_values(
+                new_offliner_data,
+                flag_values,
+                offliner,
+                offliner_definition or obj.offliner_definition,
+            )
+            obj.config["offliner"] = new_offliner_data
+            flag_modified(obj, "config")
+
         # Just needed to ensure our model still works
         create_requested_task_full_schema(session, obj)
+
+        if changes is not None:
+            task_changes: list[dict[str, Any]] = []
+            if image_tag and old_image_tag != image_tag:
+                task_changes.append(
+                    {
+                        "field": "image.tag",
+                        "old": old_image_tag,
+                        "new": image_tag,
+                        "change_type": "changed",
+                    }
+                )
+            if offliner_definition and old_version != offliner_definition.version:
+                task_changes.append(
+                    {
+                        "field": "offliner_definition.version",
+                        "old": old_version,
+                        "new": offliner_definition.version,
+                        "change_type": "changed",
+                    }
+                )
+            task_changes.extend(
+                diff_offliner_flags(old_offliner_data, new_offliner_data)
+            )
+            if task_changes:
+                changes.append(
+                    {
+                        "kind": "requested_task",
+                        "identifier": str(obj.id),
+                        "changes": task_changes,
+                    }
+                )
+
+        if not dry_run:
+            session.commit()
         nb_modified += 1
     return nb_modified
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Update recipes and requested tasks image tag "
-        "or offliner definition",
+        description="""
+Update recipes and requested tasks. The update actions include: setting image tag,
+setting offliner definition version, adding/removing/renaming flags in the offliner
+definiton version, setting flag values to a new value. At least one of the flags for
+performing these update actions must be set as the rest are flags for filtering
+recipes/requested tasks to operate on. When no offliner definition is specified, the
+update operations are applied to the existing offliner definitions of the recipes/
+requested tasks.
+""",
     )
 
     # Required offliner specification
@@ -223,45 +643,149 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "-t", "--image-tag", help="Image tag to update to", metavar="TAG"
+        "-t",
+        "--set-image-tag-to",
+        help="Update recipes/requested tasks to the image tag",
+        metavar="TAG",
     )
     parser.add_argument(
         "-d",
-        "--offliner-definition-version",
+        "--set-offliner-definition-version-to",
         metavar="VERSION",
-        help="Offliner definition version to update",
+        help="Update recipes/requested tasks to use the offliner definition version",
     )
 
     parser.add_argument(
-        "-n",
-        "--name-mappings",
-        metavar="MAPPINGS",
-        help="Name mappings in format 'oldName:newName,oldName:newName...'. "
-        "When 'oldName' is '+', 'newName' would be added to the recipe flags. "
-        "When 'newName' is '-', 'oldName' is removed from the recipe flags. "
-        "When 'newName' and 'oldName' are different, data at 'oldName' is renmaed "
-        "with 'oldName' as key.",
+        "-e",
+        "--exclude-offliner-definition-versions",
+        metavar="VERSION",
+        type=parse_comma_separated_values,
+        help=(
+            "Exclude recipes/requested tasks with these offliner definitions versions "
+            "in the update action (comma-separated)"
+        ),
+    )
+
+    parser.add_argument(
+        "-i",
+        "--include-offliner-definition-versions",
+        metavar="VERSION",
+        type=parse_comma_separated_values,
+        help=(
+            "Include recipes/requested tasks with these offliner definitions versions "
+            "in the update action (comma-separated)"
+        ),
+    )
+    parser.add_argument(
+        "--include-contexts",
+        metavar="CONTEXTS",
+        type=parse_comma_separated_values,
+        help=(
+            "Include recipes/requested tasks with these contexts in the update action "
+            "(comma-separated)"
+        ),
+    )
+    parser.add_argument(
+        "--exclude-contexts",
+        metavar="CONTEXTS",
+        type=parse_comma_separated_values,
+        help="Exclude recipes/requested tasks with these contexts in the update action "
+        "(comma-separated)",
+    )
+
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Do not commit changes to the database",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--set-flag-names-to",
+        metavar="OLDNAME:NEWNAME",
+        help=(
+            "Add/remove/rename flag names in the recipe(s) using the format "
+            "OLDNAME:NEWNAME,OLDNAME:NEWNAME... "
+            "When 'OLDNAME' is '+', 'NEWNAME' would be added to the recipe flags. "
+            "When 'NEWNAME' is '-', 'OLDNAME' is removed from the recipe flags. "
+            "When 'NEWNAME' and 'OLDNAME' are different, flag at 'OLDNAME' is "
+            "renamed to 'NEWNAME' in the recipe/requested task. The names provided "
+            "should be the same as the alias generated by the offliner definition of "
+            "the recipe/requested task"
+        ),
         type=parse_name_mappings,
+        default={},
+    )
+
+    parser.add_argument(
+        "-s",
+        "--set-flag-values-to",
+        metavar="FIELD=VALUE",
+        help="Set values for recipe flags in the format "
+        "'name=value,name=value...'. Use 'null' or 'None' to unset a flag.",
+        type=parse_field_values,
         default={},
     )
     args = parser.parse_args()
 
-    with Session.begin() as session:
+    # Ensure there is at least one update/set operation to perform
+    if not any(
+        [
+            args.set_image_tag_to,
+            args.set_offliner_definition_version_to,
+            args.set_flag_names_to,
+            args.set_flag_values_to,
+        ]
+    ):
+        raise ValueError(
+            "You must specify one update operation to perform on "
+            "recipes/requested tasks"
+        )
+
+    # Ensure there's no overlap between include and exclude options
+    if (
+        args.include_offliner_definition_versions
+        and args.exclude_offliner_definition_versions
+        and set(args.include_offliner_definition_versions)
+        & set(args.exclude_offliner_definition_versions)
+    ):
+        raise ValueError(
+            "Overlap between included offliner definition versions and excluded "
+            "offliner definition versions"
+        )
+
+    if (
+        args.include_contexts
+        and args.exclude_contexts
+        and set(args.include_contexts) & set(args.exclude_contexts)
+    ):
+        raise ValueError("Overlap between included and excluded contexts")
+
+    with Session() as session:
         offliner = get_offliner(session, args.offliner)
 
-        if args.offliner_definition_version:
+        if args.set_offliner_definition_version_to:
             offliner_definition = get_offliner_definition(
-                session, args.offliner, args.offliner_definition_version
+                session, args.offliner, args.set_offliner_definition_version_to
             )
         else:
             offliner_definition = None
+
+        changes: list[dict[str, Any]] = []
 
         nb_recipes_modified = update_recipes(
             session,
             offliner=offliner,
             offliner_definition=offliner_definition,
-            image_tag=args.image_tag,
-            name_mappings=args.name_mappings,
+            image_tag=args.set_image_tag_to,
+            flag_names=args.set_flag_names_to,
+            flag_values=args.set_flag_values_to,
+            exclude_offliner_defintion_versions=args.exclude_offliner_definition_versions,
+            include_offliner_definition_versions=args.include_offliner_definition_versions,
+            include_contexts=args.include_contexts,
+            exclude_contexts=args.exclude_contexts,
+            dry_run=args.dry_run,
+            changes=changes,
         )
         logger.info(f"updated {nb_recipes_modified} recipe(s) ")
 
@@ -269,9 +793,27 @@ if __name__ == "__main__":
             session,
             offliner=offliner,
             offliner_definition=offliner_definition,
-            image_tag=args.image_tag,
-            name_mappings=args.name_mappings,
+            image_tag=args.set_image_tag_to,
+            flag_names=args.set_flag_names_to,
+            flag_values=args.set_flag_values_to,
+            exclude_offliner_defintion_versions=args.exclude_offliner_definition_versions,
+            include_offliner_definition_versions=args.include_offliner_definition_versions,
+            include_contexts=args.include_contexts,
+            exclude_contexts=args.exclude_contexts,
+            dry_run=args.dry_run,
+            changes=changes,
         )
         logger.info(f"updated {nb_requested_tasks_modified} requested tasks ")
+
+        report = generate_markdown_report(
+            offliner=offliner.id,
+            image_tag=args.set_image_tag_to,
+            offliner_definition_version=args.set_offliner_definition_version_to,
+            flag_names=args.set_flag_names_to,
+            flag_values=args.set_flag_values_to,
+            changes=changes,
+        )
+        Path("update_scraper_version.md").write_text(report)
+        logger.info("written report to update_scraper_version.md")
 
     logger.info("FINISH!")
