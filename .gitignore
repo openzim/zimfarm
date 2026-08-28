@@ -140,3 +140,4 @@ Pipfile
 
 *.old
 id_ed25519*
+update_scraper_version.md
