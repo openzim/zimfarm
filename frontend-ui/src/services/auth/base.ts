@@ -3,6 +3,7 @@ import type { StoredToken } from '@/types/auth'
 
 export interface OAuthConfig {
   clientId: string
+  audience: string
   authorizeUrl: string
   tokenUrl: string
   userInfoUrl: string
@@ -17,6 +18,7 @@ export function getOAuthConfig(config: Config): OAuthConfig {
   const basePath = config.OAUTH_BASE_URL
   return {
     clientId: config.OAUTH_CLIENT_ID,
+    audience: config.OAUTH_AUDIENCE,
     authorizeUrl: `${basePath}/oauth2/auth`,
     tokenUrl: `${basePath}/oauth2/token`,
     userInfoUrl: `${basePath}/userinfo`,

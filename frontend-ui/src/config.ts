@@ -13,6 +13,7 @@ export interface Config {
   MONITORING_URL: string
   BLOB_MAX_SIZE: number
   OAUTH_CLIENT_ID: string
+  OAUTH_AUDIENCE: string
   OAUTH_BASE_URL: string
   OAUTH_MODE: 'oidc' | 'session'
   LOGIN_MODES: Array<string>

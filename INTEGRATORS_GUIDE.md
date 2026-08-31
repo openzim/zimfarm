@@ -113,7 +113,6 @@ be injected at runtime so the browser can read it. This is typically done via th
 - `ZIMFARM_ZIM_DOWNLOAD_URL`: The URL of the server where the ZIMs are stored
 - `MONITORING_URL`: The URL of the [Netdata server](https://www.netdata.cloud/) where
   monitoring statistics are stored
-- `OAUTH_CLIENT_ID`: Oauth client ID for authentication (currently backed by [Ory.sh](https://www.ory.com/))
 
 See the `dev/frontend-ui/public/config.json` for some reasonable defaults of these variables.
 
@@ -313,25 +312,57 @@ and other resources.
 
 ### Authentication Methods
 
+#### Backend
+
 The backend supports multiple authentication modes, controlled by the `AUTH_MODES`
-environment variable (comma-separated list):
+environment variable (comma-separated list, possible to activate as many modes as required):
 
 - **`local`**: Traditional username/password authentication.
 - **`oauth-oidc`**: OpenID Connect authentication flow.
-- **`oauth-session`**: OAuth session-based authentication.
+- **`oauth-session`**: OAuth session-based authentication (the frontend transform a cookie-based session on identity provider into a JWT, which is then sent to the API).
 
-Both `oauth-oidc` and `oauth-session` are backed by [Ory.sh](https://www.ory.com/)
+Both `oauth-oidc` and `oauth-session` are backed by [Ory.sh](https://www.ory.com/) ATM.
 
-When integrating with an external identity provider (like Kiwix SSO), configure:
+When `oauth-oidc` and/or `oauth-session` are activated, you need to configure:
 
 - `OAUTH_JWKS_URI`: The JWKS endpoint for token verification
 - `OAUTH_ISSUER`: The OAuth issuer URL
-- `OAUTH_OIDC_CLIENT_ID`: Your OAuth client identifier
-- `CREATE_NEW_OAUTH_ACCOUNT`: Set to `"true"` to automatically create viewer accounts
-  for new OAuth users on first login
+- `OAUTH_CREATE_NEW_ACCOUNT`: Set to `"true"` to automatically create accounts whenever a new valid JWT is presented to the backend ; new account while have `VIEWER` role (no more permission than when not authenticated) ; this is convenient to then let admins grant proper role to this user through the UI
 
-Users authenticated via OAuth are identified by their `idp_sub` (identity provider subject ID).
+For `oauth-oidc` you also need to configure:
+- `OAUTH_OIDC_AUDIENCE`: The audience the JWT received by the API must contain
+- `OAUTH_OIDC_LOGIN_REQUIRE_2FA`: Set to "False" if users can be logged-in without 2FA (default: True)
+
+And for `oauth-session` you also need to configure:
+- `OAUTH_SESSION_AUDIENCE`: The audience the JWT received by the API must contain
+- `OAUTH_SESSION_LOGIN_REQUIRE_2FA`: Set to "False" if users can be logged-in without 2FA (default: True)
+
+OAuth identities are matched by the `sub` JWT claim which must match the value in `idp_sub` (identity provider subject ID) DB column.
 Local users authenticate with username/password and workers authenticate using SSH keys.
+
+OAuth supports both humans and machine-to-machine identities. Humans are detected by the fact that the JWT misses the `client_id` claim (occurs in OAuth session) or has the `profile` value in `scp` claim (occurs in OAuth OIDC). Machines JWTs are expected to have the `sub` equal to the `client_id` (this is enforced in the backend).
+
+Enforcement of 2FA is of-course possible only on human identities, not on machine-to-machine.
+
+#### Frontend
+
+The frontedn supports two authentication modes, controlled by the `LOGIN_MODES`
+setting (comma-separated list, possible to activate as many modes as required):
+
+- **`local`**: Username/password authentication towards Zimfarm API
+- **`oauth`**: External authentication to an IdP provider
+
+Both modes can be active, letting user decides how we wanna authenticate.
+
+When `oauth` mode is activated, it is necessary to choose between session flows (exchange IdP session for a JWT) and OIDC flows (standard OIDC exchanges) and designate :
+
+- **`OAUTH_MODE`**: either `session` or `oidc`
+- **`OAUTH_BASE_URL`**: base URL to the IdP, e.g. `https://ory.login.kiwix.org`
+
+When `oidc` mode is activated, you also need to configure:
+
+- **`OAUTH_CLIENT_ID`**: the frontend client ID
+- **`OAUTH_AUDIENCE`**: the audience to sign JWT for, i.e. the backend client ID
 
 ### Roles & Permissions
 
