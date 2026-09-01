@@ -1,0 +1,11 @@
+{
+  "ZIMFARM_WEBAPI": "http://localhost:8000/v2",
+  "MONITORING_URL": "http://localhost:8004/v3",
+  "BLOB_MAX_SIZE": 1048576,
+  "DISABLE_WAREHOUSE_PATH": true,
+  "LOGIN_MODES": ["oauth"],
+  "OAUTH_MODE": "oidc",
+  "OAUTH_BASE_URL": "https://ory.login-staging.kiwix.org",
+  "OAUTH_CLIENT_ID": "1fec40e6-df3b-4633-9545-7a41612cb0d0",
+  "OAUTH_AUDIENCE": "c688aac9-df70-400b-9c1c-a08d6ae3d287"
+}

@@ -36,8 +36,6 @@ export class OAuthOIDCProvider extends AuthProvider {
     this.storePKCEParams(codeVerifier, state)
 
     // Build authorization URL with all required OAuth2 parameters
-    // Note: Only requesting 'openid' and 'offline_access' as these are the only
-    // scopes supported by this Kiwix auth instance (profile and email are not available)
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       response_type: 'code',
@@ -46,6 +44,7 @@ export class OAuthOIDCProvider extends AuthProvider {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       scope: 'openid profile offline_access',
+      audience: this.config.audience,
     })
 
     const authUrl = `${this.config.authorizeUrl}?${params.toString()}`
@@ -153,7 +152,7 @@ export class OAuthOIDCProvider extends AuthProvider {
     const response = await this.exchangeCodeForToken(code, pkceParams.verifier)
     const expiresTime = new Date(Date.now() + response.expires_in * 1000).toISOString()
     return {
-      access_token: response.id_token,
+      access_token: response.access_token,
       refresh_token: response.refresh_token,
       token_type: 'oauth',
       expires_time: expiresTime,

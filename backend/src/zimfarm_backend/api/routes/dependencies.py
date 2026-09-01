@@ -6,7 +6,7 @@ from jwt import exceptions as jwt_exceptions
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.constants import (
-    CREATE_NEW_OAUTH_ACCOUNT,
+    OAUTH_CREATE_NEW_ACCOUNT,
 )
 from zimfarm_backend.api.routes.http_errors import ForbiddenError, UnauthorizedError
 from zimfarm_backend.api.token import JWTClaims, token_decoder
@@ -74,17 +74,11 @@ def get_current_account_or_none_with_session(
         if claims is None:
             return None
         account = get_account_by_id_or_none(session, account_id=claims.sub)
-        # If this is a kiwix token, we create a new account account
-        if account is None and CREATE_NEW_OAUTH_ACCOUNT:
-            if not claims.name:
-                raise UnauthorizedError(
-                    "Logged in user is unknown in Zimfarm and it is impossible to "
-                    "automatically create a new user because token is missing profile "
-                    "scope."
-                )
+        # If this is token for a new account, consider creating it
+        if account is None and OAUTH_CREATE_NEW_ACCOUNT:
             create_account(
                 session,
-                display_name=claims.name,
+                display_name=claims.name or str(claims.sub),
                 role=RoleEnum.VIEWER,
                 idp_sub=claims.sub,
             )

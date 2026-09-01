@@ -3,7 +3,7 @@ import base64
 import binascii
 import datetime
 import uuid
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import jwt
 from jwt import PyJWKClient
@@ -20,9 +20,9 @@ from zimfarm_backend.api.constants import (
     JWT_TOKEN_ISSUER,
     OAUTH_ISSUER,
     OAUTH_JWKS_URI,
-    OAUTH_OIDC_CLIENT_ID,
+    OAUTH_OIDC_AUDIENCE,
     OAUTH_OIDC_LOGIN_REQUIRE_2FA,
-    OAUTH_SESSION_AUDIENCE_ID,
+    OAUTH_SESSION_AUDIENCE,
     OAUTH_SESSION_LOGIN_REQUIRE_2FA,
 )
 from zimfarm_backend.common import getnow
@@ -46,6 +46,28 @@ class JWTClaims(BaseModel):
     iat: datetime.datetime
     sub: uuid.UUID = Field(alias="subject")
     name: str | None = Field(exclude=True, default=None)
+
+
+def oauth_token_is_from_human(decoded_token: dict[str, Any]) -> bool:
+    # detect if token is coming from a human or from a machine
+
+    # session JWT from humans have no "client_id" claim
+    # OIDC JWT from humans have "openid" in their "scp" claim
+    is_human = not decoded_token.get("client_id") or "openid" in decoded_token.get(
+        "scp", []
+    )
+
+    # check machine requirements are met (sub == client_id)
+    if not is_human:
+        sub = decoded_token.get("sub")
+        client_id = decoded_token.get("client_id")
+        if not client_id:
+            raise ValueError("Oauth client ID should not be empty for a machine.")
+        if client_id != sub:
+            raise ValueError(
+                "Oauth client ID does not match sub, while it should for a machine."
+            )
+    return is_human
 
 
 class TokenDecoder(abc.ABC):
@@ -226,38 +248,26 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
             signing_key.key,
             algorithms=[signing_key.algorithm_name],
             issuer=OAUTH_ISSUER,
-            audience=OAUTH_OIDC_CLIENT_ID,
+            audience=OAUTH_OIDC_AUDIENCE,
             options={
                 "require": ["exp", "iat", "iss", "sub", "aud"],
             },
         )
 
+        # Check for 2FA requirement for human accounts.
         if (
-            client_id := decoded_token.get("client_id")
-        ) and client_id != decoded_token.get("sub"):
-            raise ValueError("Oauth client ID does not match.")
-
-        # Check for 2FA requirement only if client_id is not present in the token
-        # as those come from oauth2 clients and not real accounts.
-        # Ensure the account logged in with two authentication factors. As per Ory docs,
-        # "password", "code"  and "oidc" are categorized as first methods of login while
-        # "totp", "webauthn" and "lookup_secret" are second authentication methods
-        # https://www.ory.com/docs/kratos/mfa/overview#authenticator-assurance-level-aal
-        amr = set(decoded_token.get("amr", []))
-        if (
-            not decoded_token.get("client_id")
+            oauth_token_is_from_human(decoded_token)
             and OAUTH_OIDC_LOGIN_REQUIRE_2FA
-            and not (
-                {"password", "oidc", "code"} & amr
-                and {"webauthn", "lookup_secrets", "totp"} & amr
-            )
+            and decoded_token.get("ext", {}).get("kiwix-aal") != "aal2"
         ):
             raise ValueError(
                 "2FA authentication is mandatory on Zimfarm but it looks like you only "
                 "have one setup on Ory. Please, configure a second one on Ory at "
                 f"{OAUTH_ISSUER}/settings"
             )
-        return JWTClaims.model_validate(decoded_token)
+        claims = JWTClaims.model_validate(decoded_token)
+        claims.name = decoded_token.get("ext", {}).get("kiwix-name")
+        return claims
 
     @property
     def name(self) -> str:
@@ -279,9 +289,9 @@ class OAuthOIDCTokenDecoder(TokenDecoder):
         except Exception:
             return False
 
-        if payload.get(
-            "iss"
-        ) != OAUTH_ISSUER or OAUTH_OIDC_CLIENT_ID not in payload.get("aud", []):
+        if payload.get("iss") != OAUTH_ISSUER or OAUTH_OIDC_AUDIENCE not in payload.get(
+            "aud", []
+        ):
             return False
 
         return True
@@ -313,21 +323,15 @@ class OAuthSessionTokenDecoder(TokenDecoder):
             signing_key.key,
             algorithms=[signing_key.algorithm_name],
             issuer=OAUTH_ISSUER,
-            audience=OAUTH_SESSION_AUDIENCE_ID,
+            audience=OAUTH_SESSION_AUDIENCE,
             options={
                 "require": ["exp", "iat", "iss", "sub", "aud"],
             },
         )
 
+        # Check for 2FA requirement for human accounts.
         if (
-            client_id := decoded_token.get("client_id")
-        ) and client_id != decoded_token.get("sub"):
-            raise ValueError("Oauth client ID does not match.")
-
-        # Check for 2FA requirement only if client_id is not present in the token
-        # as those come from oauth2 clients and not real accounts
-        if (
-            not decoded_token.get("client_id")
+            oauth_token_is_from_human(decoded_token)
             and OAUTH_SESSION_LOGIN_REQUIRE_2FA
             and decoded_token.get("aal") != "aal2"
         ):
@@ -360,7 +364,7 @@ class OAuthSessionTokenDecoder(TokenDecoder):
 
         if payload.get(
             "iss"
-        ) != OAUTH_ISSUER or OAUTH_SESSION_AUDIENCE_ID not in payload.get("aud", []):
+        ) != OAUTH_ISSUER or OAUTH_SESSION_AUDIENCE not in payload.get("aud", []):
             return False
         return True
 

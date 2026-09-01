@@ -23,18 +23,18 @@ OAUTH_JWKS_URI = getenv(
     default="https://ory.login.kiwix.org/.well-known/jwks.json",
 )
 OAUTH_ISSUER = getenv("OAUTH_ISSUER", default="https://ory.login.kiwix.org")
-OAUTH_OIDC_CLIENT_ID = getenv(
-    "OAUTH_OIDC_CLIENT_ID", default="38302485-7f3d-4e88-b1b3-ec02fb92ec8c"
+OAUTH_OIDC_AUDIENCE = getenv(
+    "OAUTH_OIDC_AUDIENCE", default="38302485-7f3d-4e88-b1b3-ec02fb92ec8c"
 )
 OAUTH_OIDC_LOGIN_REQUIRE_2FA = parse_bool(
     getenv("OAUTH_OIDC_LOGIN_REQUIRE_2FA", default="true")
 )
-OAUTH_SESSION_AUDIENCE_ID = getenv(
-    "OAUTH_SESSION_AUDIENCE_ID", default="bada4130-5143-4524-a0bb-0d69671beee2"
+OAUTH_SESSION_AUDIENCE = getenv(
+    "OAUTH_SESSION_AUDIENCE", default="bada4130-5143-4524-a0bb-0d69671beee2"
 )
 OAUTH_SESSION_LOGIN_REQUIRE_2FA = parse_bool(
     getenv("OAUTH_SESSION_LOGIN_REQUIRE_2FA", default="true")
 )
-CREATE_NEW_OAUTH_ACCOUNT = parse_bool(
-    getenv("CREATE_NEW_OAUTH_ACCOUNT", default="true")
+OAUTH_CREATE_NEW_ACCOUNT = parse_bool(
+    getenv("OAUTH_CREATE_NEW_ACCOUNT", default="true")
 )

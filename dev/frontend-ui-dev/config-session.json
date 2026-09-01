@@ -3,5 +3,7 @@
   "MONITORING_URL": "http://localhost:8004/v3",
   "BLOB_MAX_SIZE": 1048576,
   "DISABLE_WAREHOUSE_PATH": true,
-  "LOGIN_MODES": ["local"]
+  "LOGIN_MODES": ["oauth"],
+  "OAUTH_MODE": "session",
+  "OAUTH_BASE_URL": "https://ory.login-staging.kiwix.org"
 }
