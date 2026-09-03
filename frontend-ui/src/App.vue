@@ -78,8 +78,8 @@ const navigationItems = computed<NavigationItem[]>(() => [
   },
 ])
 
-const handleSignOut = () => {
-  authStore.logout()
+const handleSignOut = async () => {
+  await authStore.logout()
   router.push({ name: 'home' })
 }
 </script>

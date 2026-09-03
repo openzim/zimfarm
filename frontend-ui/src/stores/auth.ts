@@ -235,7 +235,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (token.value?.token_type) {
       try {
         const provider = getAuthProvider(token.value?.token_type)
-        await provider.logout()
+        await provider.logout(token.value?.access_token)
       } catch (error) {
         console.error('Error revoking token:', error)
       }
