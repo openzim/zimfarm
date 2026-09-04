@@ -32,6 +32,7 @@ definitions, create SSH keys for authentication and more.
 - [Notifications](#notifications)
 - [External Dependencies & Requirements](#external-dependencies--requirements)
 - [Integrations](#integrations)
+- [Scraper Configurations](#scraper-configurations)
 
 ## Architecture & Components Overview
 
@@ -609,3 +610,155 @@ of Wikipedia articles. It is a separate application that integrates with Zimfarm
 build ZIMs of these selections.
 
 Visit [wp1](https://github.com/openzim/wp1) to see more about the project.
+
+## Scraper Configurations
+
+zimfarm is built on top of content-specific scrapers like [mwoffliner](https://github.com/openzim/mwoffliner),
+[youtube](https://github.com/openzim/youtube) and others. It uses recipe configurations
+to generate command-line arguments that are passed to workers for scraping. Since scrapers
+evolve over time, zimfarm maintains multiple versions of each scraper along with their
+version-specific flags. This allows editors to create recipes using different scraper
+versions.
+
+zimfarm stores these versions but doesn't control the flags themselves as those are scraper-specific. Instead, scrapers register their specifications through a RESTful API endpoint. These specifications are called offliner definitions and are defined in an
+`offliner-definition.json` file in each scraper repository.
+
+When the `offliner-definition.json` file is modified, a CI job automatically triggers a
+`POST` request to `/v2/{offliner_id}/versions`, where `{offliner_id}` is the scraper
+name (e.g., mwoffliner). The request payload has this shape:
+
+```sh
+{
+    "version": // the version of the offliner we are registering
+    "ci_secret": // the secret required to register an offliner definition
+    "spec": // the specification of the offliner definition
+}
+```
+
+The CI job populates `version` and `ci_secret`, while spec contains the actual contents of offliner-definition.json. The spec is a JSON document with top-level keys:
+
+- `offliner_id`: The name of the offliner/scraper. e.g `mwoffliner`
+
+- `flags` (**required**): A mapping of each scraper-specific flag to its definition.
+  The key is the flag name and **MUST** be a valid Python identifer while the value is a
+  flag-definition object as described in [Flag definitions](#flag-definitions) below. When
+  building command-line arguments for a requested task, the `alias` field in the flag defintion
+  is used. However, when no `alias` is specified, underscores in flag names are
+  transformed based on the offliner's `base_model`:
+  - `CamelModel` converts to camel case (e.g `long_description` → `longDescription`)
+  - `DashModel` converts to dash case (e.g `long_description` → `long-description`).
+
+- `stdOutput` (**optional**, default `false`): Declares how zimfarm tells the scraper
+  where to write its ZIM output. When set to a string (which must be a valid flag name
+  in `flags`), zimfarm injects a flag of that name pointing at the mounted output
+  directory. When set to `true`, it injects the conventional `output` flag and nothing
+  when set to `false`
+
+- `stdStats` (**optional**, default `false`): Declares how zimfarm tells the scraper
+  where to write its task-progress file (`task_progress.json`). When set to a string (
+  which must be a valid flag name in `flags`), zimfarm uses the value of the flag as
+  the task-progress file. When set to `true`, it injects the conventional
+  `stats-filename` flag and nothing when set to `false`
+
+- `modelValidators` (**optional**, default `[]`): A list of cross-field (model-level)
+  validators to apply to the generated recipe model. See
+  [Model validators](#model-validators).
+
+- `similarityData` (**optional**, default `[]`): A list of flag/transformer rules used
+  to derive a recipe's _similarity data_ for duplicate recipe detection. See
+  [Similarity data](#similarity-data).
+
+- `zimMetadata` (**optional**, default `[]`): A list mapping ZIM metadata entries (for
+  example `Name`, `Language`, `Illustration`) to the flags that populate them. See
+  [ZIM metadata](#zim-metadata).
+
+### Flag definitions
+
+Each entry in `flags` describes how a single command-line flag is presented to editors,
+validated, and translated into the recipe model. Unknown keys in a flag definition are
+rejected , so a mistyped key fails fast at registration time rather than being silently ignored. The recognised keys are:
+
+- `type` (**required**): the flag's data type, one of `string`, `boolean`, `float`,
+  `integer`, `url`, `email`, `string-enum`, `list-of-integer`, `list-of-string`,
+  `list-of-boolean`, `list-of-string-enum`, `list-of-url`, `list-of-email`, `blob`, or
+  `color`.
+- `title` (**required**): the human-readable flag title shown to editors.
+- `description` (**required**): a longer explanation of the flag shown in the UI.
+- `required` (**optional**, default `false`): whether editors must provide a value.
+- `secret` (**optional**, default `false`): whether the value is sensitive and should be
+  stored and displayed as a secret (masked in the UI and in logs).
+- `default` (**optional**): a default value (string or boolean) used when the flag is
+  not set by the editor.
+- `frozen` (**optional**): when `true`, the flag's value is fixed and cannot be edited;
+  a frozen flag must also declare a `default`.
+- `alias` (**optional**): the command-line flag name to use instead of the transformation
+  logic defined by the `base_model` of the offliner. For example, a flag keyed `formats` can specify `"alias": "format"`.
+- `min` / `max` (**optional**): inclusive numeric bounds applied to numeric flag types.
+- `minGraphemes` / `maxGraphemes` (**optional**): inclusive length bounds (in Unicode
+  grapheme clusters) applied to string flag types.
+- `pattern` (**optional**): a regular expression that string values must match. The regular
+  expression defined must be acceptable to multiple programming languages and not use
+  esoteric features specific to any programming language.
+- `relaxedPattern`, `relaxedMin`, `relaxedMax`, `relaxedMinGraphemes`,
+  `relaxedMaxGraphemes` (**optional**): alternative ("relaxed") constraints that take
+  precedence over their non-relaxed counterparts when the offliner is run with its
+  relaxed-schema mode enabled (via the `{OFFLINER}_USE_RELAXED_SCHEMA` environment
+  variable).
+- `choices` (**optional**): used with the `string-enum` and `list-of-string-enum` types
+  (required for those types). Either a list of strings, or a list of objects each with a
+  `title` (human-readable value) and a `value` (the underlying value).
+- `customValidator` (**optional**): name of a registered per-field validator function
+  applied to the value. See [Validators](#validators).
+- `allowRemoteUrl` (**optional**, default `false`): only valid for `blob` types;
+  indicates the blob may be supplied as a remote URL.
+- `kind` (**optional**, only for `blob`): the blob's content kind, one of `image`, `css`,
+  `html`, `txt`, or `illustration`.
+- `isPublisher` (**optional**, default `false`): marks the flag as carrying the ZIM
+  publisher metadata. When set, zimfarm fills it with the default publisher if the
+  editor leaves it empty.
+
+Two cross-checks are enforced on every flag definition:
+
+- a `blob` must declare a `kind` and only `blob` types may declare `kind` or `allowRemoteUrl`
+- a `frozen` flag must declare a `default`.
+
+### Validators
+
+Two kinds of validators are supported:
+
+- **Field validators** are attached to a single flag via `customValidator`. The
+  registered field validators are:
+  - `language_code` (comma-separated ISO-639-3 language codes)
+  - `validate_ted_links` (comma-separated TED talk URLs) for `ted` offliner
+- **Model validators** are declared at the top level via `modelValidators` and operate
+  across several fields at once. Each entry is an object with a `name` and a `fields`
+  list of field names to pass to the validator. The registered model validators are:
+  - `check_exclusive_fields`, which requires that exactly one of the listed `fields` be
+    set.
+
+### Similarity data
+
+The `similarityData` list drives recipe duplicate detection. Each entry is an object
+with a `flag` (the flag whose value contributes similarity data) and a list of
+`transformers` applied in sequential order. Each transformer is an object with a `name`
+and an optional `operand`:
+
+- `split` uses `operand` as the separator to split the value into a list.
+- `hostname` extracts the hostname from a URL (the `operand` is unused).
+- an absent name (`null`) passes the value through unchanged.
+
+For example, an entry with `"flag": "mwUrl"` and a single `hostname` transformer turns
+the wiki URL into its hostname, so recipes scraping the same host are detected as
+similar.
+
+### ZIM metadata
+
+The `zimMetadata` list maps ZIM metadata entries to the flags that populate them. Each
+entry is an object with:
+
+- `metadata`: the name of the ZIM metadata entry (for example `Name`, `Title`,
+  `Description`, `Language`, `Illustration`).
+- `flag`: the flag (a key in `flags`) whose value generates that metadata entry.
+
+Every `flag` referenced here must also exist in the `flags` mapping otherwise, the specification
+is rejected.
