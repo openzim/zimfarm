@@ -96,6 +96,8 @@ export class OAuthOIDCProvider extends AuthProvider {
       grant_type: 'refresh_token',
       client_id: this.config.clientId,
       refresh_token: refreshToken,
+      audience: this.config.audience,
+      scope: 'openid profile offline_access',
     })
 
     const response = await service.post<URLSearchParams, OAuthOIDCTokenResponse>('', params, {
@@ -106,7 +108,7 @@ export class OAuthOIDCProvider extends AuthProvider {
     // Calculate expiry time from expires_in
     const expiresTime = new Date(Date.now() + response.expires_in * 1000).toISOString()
     const newToken: StoredToken = {
-      access_token: response.id_token,
+      access_token: response.access_token,
       refresh_token: response.refresh_token,
       token_type: 'oauth',
       expires_time: expiresTime,
