@@ -75,7 +75,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/ted",
-                    "tag": "3.1.0",
+                    "tag": "3.2.0",
                 },
                 "monitor": False,
                 "platform": "ted",
@@ -93,7 +93,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "ted-by-topic",
             ],
-            "version": "initial",
+            "version": "3.2.0",
             "archived": False,
             "context": "",
             "offliner": "ted",
@@ -108,6 +108,4 @@ def _get_clean_topic_name(ted_topic_name: str) -> str:
         clean_topic = clean_topic.replace("lgbtqia+", "lgbtqia")
     if "español" in clean_topic:
         clean_topic = clean_topic.replace("español", "espanol")
-    if "audacious-project" in clean_topic:
-        clean_topic = "audacious-project"
     return clean_topic

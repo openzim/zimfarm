@@ -14,6 +14,21 @@ overrides:
       config:
         offliner:
           tags: gaming
+  - name: ted_topic_medicine
+    overrides:
+      config:
+        offliner:
+          tags: medical
+  - name: ted_topic_medical-research
+    overrides:
+      config:
+        offliner:
+          tags: medical
+  - name: ted_topic_medical-imaging
+    overrides:
+      config:
+        offliner:
+          tags: medical
   - name: ted_topic_nasa
     overrides:
       config:
@@ -21,6 +36,6 @@ overrides:
           title: TED NASA
           description: A collection of TED videos about NASA
 do_not_create:
-  - ted_topic_artificial-intelligence # too few videos after removing the ones we fail to download
+  - ted_topic_artificial-intelligence # too few videos after removing the ones we fail to download + there is also an "AI" topic which is far more complete
 do_not_delete:
   - ted_topic_all
