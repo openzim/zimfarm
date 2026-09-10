@@ -140,6 +140,7 @@ def advertise_book_to_cms(session: OrmSession, task: TaskFullSchema, file_name: 
             url,
             json=get_openzimcms_payload(
                 file=file_data,
+                task_id=task.id,
                 warehouse_path=task.config.warehouse_path,
                 zimcheck_base_url=(
                     task.upload.check.upload_uri if task.upload.check else None
@@ -179,6 +180,7 @@ def get_openzimcms_payload(
     file: TaskFileSchema,
     zimcheck_base_url: str | None,
     warehouse_path: str,
+    task_id: UUID,
     recipe_id: UUID | None,
     recipe_name: str | None,
 ) -> dict[str, Any]:
@@ -202,6 +204,7 @@ def get_openzimcms_payload(
         ),
         "recipe_id": str(recipe_id),
         "recipe_name": recipe_name,
+        "task_id": str(task_id),
     }
     return payload
 
