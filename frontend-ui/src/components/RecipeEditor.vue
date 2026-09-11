@@ -1104,6 +1104,7 @@ const flagsFields = computed(() => {
         field.choices?.map((choice) => ({
           title: choice.title,
           value: choice.value,
+          dependents: choice.dependents,
         })) || undefined
     } else if (field.type === 'boolean') {
       component = 'switch'
