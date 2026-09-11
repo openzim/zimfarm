@@ -91,6 +91,7 @@ from zimfarm_backend.db.recipe import (
 )
 from zimfarm_backend.db.recipe import update_recipe as db_update_recipe
 from zimfarm_backend.utils.offliners import (
+    clear_unset_choices_dependents,
     expanded_config,
     get_image_name,
     get_image_prefix,
@@ -159,13 +160,19 @@ def create_recipe(
             ]
         )
 
+    offliner = get_offliner(session, offliner_definition.offliner)
+
+    data = clear_unset_choices_dependents(
+        offliner_definition.schema_, request.config["offliner"], offliner.base_model
+    )
+
     config = RecipeConfigSchema.model_validate(
         {
             **request.config,
             "offliner": create_offliner_instance(
-                offliner=get_offliner(session, offliner_definition.offliner),
+                offliner=offliner,
                 offliner_definition=offliner_definition,
-                data=request.config["offliner"],
+                data=data,
                 skip_validation=False,
                 extra="ignore",
             ),
@@ -174,7 +181,7 @@ def create_recipe(
 
     # We need to compare the raw offliner config with the validated offliner
     # config to ensure the caller didn't pass extra fields for the offliner config
-    raw_offliner_config = request.config.get("offliner", {})
+    raw_offliner_config = data
     validated_offliner_dump = config.offliner.model_dump(mode="json")
 
     if extra_keys := get_key_differences(raw_offliner_config, validated_offliner_dump):
@@ -413,6 +420,9 @@ def update_recipe(
         )
 
         # create a new recipe config for the new offliner validating the new flags
+        flags = clear_unset_choices_dependents(
+            offliner_definition.schema_, request.flags, offliner.base_model
+        )
         new_recipe_config = RecipeConfigSchema.model_validate(
             {
                 # reuse the existing config except for the offliner and image
@@ -428,7 +438,7 @@ def update_recipe(
                 "offliner": create_offliner_instance(
                     offliner=offliner,
                     offliner_definition=offliner_definition,
-                    data={**request.flags, "offliner_id": request.offliner},
+                    data={**flags, "offliner_id": request.offliner},
                     skip_validation=False,
                     extra="ignore",
                 ),
@@ -437,7 +447,7 @@ def update_recipe(
 
         # determine if the caller passed extra fields for the new offliner config
         if extra_keys := get_key_differences(
-            request.flags,
+            flags,
             new_recipe_config.offliner.model_dump(mode="json"),
         ):
             raise RequestValidationError(
@@ -472,6 +482,9 @@ def update_recipe(
                 session, recipe.offliner_definition_id
             )
 
+        flags = clear_unset_choices_dependents(
+            offliner_definition.schema_, request.flags, offliner.base_model
+        )
         new_recipe_config = RecipeConfigSchema.model_validate(
             {
                 **recipe_config.model_dump(
@@ -482,7 +495,7 @@ def update_recipe(
                 "offliner": create_offliner_instance(
                     offliner=offliner,
                     offliner_definition=offliner_definition,
-                    data={**request.flags, "offliner_id": offliner_definition.offliner},
+                    data={**flags, "offliner_id": offliner_definition.offliner},
                     skip_validation=False,
                     extra="ignore",
                 ),
@@ -491,7 +504,7 @@ def update_recipe(
 
         # determine if the caller passed extra fields for the offliner version
         if extra_keys := get_key_differences(
-            request.flags,
+            flags,
             new_recipe_config.offliner.model_dump(mode="json"),
         ):
             raise RequestValidationError(

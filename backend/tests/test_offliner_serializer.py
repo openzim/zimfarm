@@ -44,9 +44,15 @@ def test_mw_offliner_schema_to_flags(mwoffliner_schema_cls: type[BaseModel]):
         else:
             assert not flag.secret
 
-        if key in ("format",):
-            assert flag.type == "list-of-string-enum"
+        if key in ("format", "source"):
+            assert flag.type in ("list-of-string-enum", "string-enum")
             assert flag.choices is not None
+            if key == "source":
+                for choice in flag.choices:
+                    assert len(choice.dependents) > 1
+            elif key == "format":
+                for choice in flag.choices:
+                    assert len(choice.dependents) == 0
         elif key in ("customFlavour", "verbose", "forceRender"):
             assert flag.type == "string-enum"
             assert flag.choices is not None

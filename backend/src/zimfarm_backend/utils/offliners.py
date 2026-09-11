@@ -1,13 +1,20 @@
 import pathlib
 import shlex
+from copy import deepcopy
 from os import getenv
 from typing import Any
+
+from pydantic.alias_generators import to_camel
 
 from zimfarm_backend.common import constants
 from zimfarm_backend.common.schemas.models import (
     ExpandedRecipeConfigSchema,
     RecipeConfigSchema,
     ResourcesSchema,
+)
+from zimfarm_backend.common.schemas.offliners.models import (
+    FlagSchema,
+    OfflinerSpecSchema,
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 
@@ -214,3 +221,52 @@ def get_key_differences(d1: dict[str, Any], d2: dict[str, Any]) -> list[str]:
     This does not recurse into nested dictionaries.
     """
     return list(set(d1.keys()) - set(d2.keys()))
+
+
+def flag_alias(flag_name: str, flag: FlagSchema, base_model: str) -> str:
+    """Return the alias used in the database for a flag."""
+    if flag.alias:
+        return flag.alias
+    if base_model == "CamelModel":
+        return to_camel(flag_name)
+    elif base_model == "DashModel":
+        return flag_name.replace("_", "-")
+    else:
+        raise ValueError(
+            f"Cannot determine alias for unknown base model '{base_model}'"
+        )
+
+
+def clear_unset_choices_dependents(
+    spec: OfflinerSpecSchema, config: dict[str, Any], base_model: str
+) -> dict[str, Any]:
+    """Clear the values of the flags marked as dependents if choice wasn't selected"""
+    config = deepcopy(config)
+    for flag_name, flag in spec.flags.items():
+        if not flag.choices:
+            continue
+        selected_value = config.get(
+            flag_name, config.get(flag_alias(flag_name, flag, base_model))
+        )
+        if selected_value is None:
+            # Enum is an optional field and nothing was selected
+            continue
+
+        for choice in flag.choices:
+            if isinstance(choice, str):
+                continue
+
+            if choice.value == selected_value:
+                continue
+
+            # Clear the flags specified in the dependents as this choice option was
+            # not selected
+            for dependent in choice.dependents:
+                if dependent in config:
+                    del config[dependent]
+
+                alias = flag_alias(dependent, spec.flags[dependent], base_model)
+                if alias in config:
+                    del config[alias]
+
+    return config

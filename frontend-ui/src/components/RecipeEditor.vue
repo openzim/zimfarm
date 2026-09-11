@@ -327,7 +327,7 @@
     </v-row>
 
     <div v-if="flagsFields.length > 0">
-      <v-row v-for="field in flagsFields" :key="field.dataKey" no-gutters class="py-2">
+      <v-row v-for="field in visibleFlagsFields" :key="field.dataKey" no-gutters class="py-2">
         <v-col
           cols="12"
           md="3"
@@ -653,7 +653,7 @@ import { useRecipeStore } from '@/stores/recipe'
 import type { Resources } from '@/types/base'
 
 import type { Language } from '@/types/language'
-import type { OfflinerDefinition } from '@/types/offliner'
+import type { OfflinerDefinition, Choice } from '@/types/offliner'
 import type {
   EventNotification,
   Recipe,
@@ -674,9 +674,10 @@ interface FlagField {
   dataKey: string
   required: boolean
   description: string | null
+  key: string
   placeholder: string
   component: string
-  options?: Array<{ title: string; value: string | undefined }>
+  options?: Array<Choice>
   step?: number | null
   min: number | null
   max: number | null
@@ -1082,7 +1083,7 @@ const flagsFields = computed(() => {
 
   return props.flagsDefinition.map((field) => {
     let component = 'text'
-    let options: Array<{ title: string; value: string | undefined }> | undefined = undefined
+    let options: Array<Choice> | undefined = undefined
     let step = null
 
     if (field.type === 'color') {
@@ -1112,6 +1113,7 @@ const flagsFields = computed(() => {
         field.choices?.map((choice) => ({
           title: choice.title,
           value: choice.value,
+          dependents: choice.dependents,
         })) || undefined
     } else if (field.type === 'long-text') {
       component = 'textarea'
@@ -1356,6 +1358,50 @@ const handleInputWithGraphemeLimit = (field: FlagField, value: string) => {
   }
 }
 
+const dependentDataKeys = computed(() => {
+  const map = new Map<string, string>()
+  for (const field of props.flagsDefinition) {
+    map.set(field.key, field.data_key)
+    map.set(field.data_key, field.data_key)
+  }
+  return map
+})
+
+const enumFields = computed(() =>
+  props.flagsDefinition.filter(
+    (fieldDefintion) => fieldDefintion.type === 'string-enum' && !!fieldDefintion.choices,
+  ),
+)
+
+const isFieldVisible = (field: FlagField): boolean => {
+  let isDependent = false
+
+  for (const enumField of enumFields.value) {
+    if (!enumField.choices) continue
+    const selectedValue = editFlags.value[enumField.data_key]
+
+    for (const choice of enumField.choices) {
+      const dependsOnField = choice.dependents.some(
+        (dependent) => dependentDataKeys.value.get(dependent) === field.dataKey,
+      )
+      if (!dependsOnField) continue
+
+      isDependent = true
+      if (choice.value === selectedValue) {
+        // A selected choice depends on this field, so show it.
+        return true
+      }
+    }
+  }
+
+  // Only visible when it is not a dependent of any choice.
+  return !isDependent
+}
+
+const visibleFlagsFields = computed(() =>
+  flagsFields.value.filter((field) => isFieldVisible(field)),
+)
+
 const languageNames = computed(() => props.languages.map((language) => language.name))
 
 const languagesOptions = computed(() => {
@@ -1499,6 +1545,28 @@ const processArtifactsGlobs = (artifactsGlobsStr: string | undefined): string[] 
     : []
 }
 
+const clearUnsetChoicesDependents = (flags: Record<string, unknown>): Record<string, unknown> => {
+  for (const field of props.flagsDefinition) {
+    if (field.type !== 'string-enum' || !field.choices?.length) continue
+
+    const selectedValue = flags[field.data_key]
+    if (selectedValue === null || selectedValue === undefined) continue
+
+    for (const choice of field.choices) {
+      if (choice.value === selectedValue) continue
+
+      // This choice was not selected, so its dependents must be cleared. Dependents
+      // reference flags by name, so resolve them to the data_key used in the config.
+      for (const dependent of choice.dependents) {
+        const dataKey = dependentDataKeys.value.get(dependent)
+        delete flags[dataKey ?? dependent]
+      }
+    }
+  }
+
+  return flags
+}
+
 const buildPayload = (): RecipeUpdateSchema | null => {
   const payload: Partial<RecipeUpdateSchema> = {}
 
@@ -1599,7 +1667,9 @@ const buildPayload = (): RecipeUpdateSchema | null => {
   }
 
   // Flags
-  const flags = cleanFlagsPayload(JSON.parse(JSON.stringify(editFlags.value)))
+  const flags = cleanFlagsPayload(
+    clearUnsetChoicesDependents(JSON.parse(JSON.stringify(editFlags.value))),
+  )
   // remove the offliner_id from the flags as it is not used by the server and the schema is strict
   // server-side
   delete flags.offliner_id
