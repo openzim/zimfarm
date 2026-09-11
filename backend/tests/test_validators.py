@@ -15,7 +15,10 @@ from zimfarm_backend.common.schemas.fields import (
     SkipableUrl,
 )
 from zimfarm_backend.common.schemas.offliners.builder import generate_field_type
-from zimfarm_backend.common.schemas.offliners.models import FlagSchema
+from zimfarm_backend.common.schemas.offliners.models import (
+    FlagSchema,
+    OfflinerSpecSchema,
+)
 
 
 class SkipableBoolModel(BaseModel):
@@ -450,3 +453,207 @@ def test_grapheme_length_validation_on_list_of_strings(
         model.model_validate(
             {"title": grapheme}, context={"skip_validation": skip_validation}
         )
+
+
+@pytest.mark.parametrize(
+    "flags_schema,expected",
+    [
+        ####################################
+        pytest.param(
+            r"""
+{
+    "title": "source",
+    "type": "string-enum",
+    "description": "source"
+}
+""",
+            pytest.raises(ValidationError, match="Choices are required"),
+            id="string-enum-no-choices",
+        ),
+        ####################################
+        pytest.param(
+            r"""
+{
+    "title": "source",
+    "type": "boolean",
+    "choices": ["yes", "no"],
+    "description": "source"
+}
+""",
+            pytest.raises(
+                ValidationError, match=r"Only string-enum .* should specify choices"
+            ),
+            id="boolean-type-with-choices",
+        ),
+        ####################################
+        pytest.param(
+            r"""
+{
+    "title": "source",
+    "type": "string-enum",
+    "choices": ["yes", "no"],
+    "description": "source"
+}
+""",
+            does_not_raise(),
+            id="string-enum-type-with-unique-choices",
+        ),
+        ####################################
+        pytest.param(
+            r"""
+{
+    "title": "source",
+    "type": "string-enum",
+    "choices": ["yes", "yes"],
+    "description": "source"
+}
+""",
+            pytest.raises(
+                ValidationError, match=r"Choice titles and values must be unique"
+            ),
+            id="string-enum-type-with-duplicate-choices",
+        ),
+        ####################################
+        pytest.param(
+            r"""
+{
+    "title": "source",
+    "type": "string-enum",
+    "choices": [
+    { "title": "Books",   "value": "books", "dependents": [ "bookId", "bookFormat" ] },
+    { "title": "Authors", "value": "authors", "dependents": ["bookId", "authorNationality" ] }
+    ],
+    "description": "source"
+}
+""",
+            pytest.raises(
+                ValidationError,
+                match=r"Dependents must be unique and mutually exclusive",
+            ),
+            id="string-enum-type-with-overlapping-dependents",
+        ),
+        ####################################
+        pytest.param(
+            r"""
+{
+    "title": "source",
+    "type": "string-enum",
+    "choices": [
+    { "title": "Books",   "value": "books", "dependents": [ "bookId", "bookFormat" ] },
+    { "title": "Authors", "value": "authors", "dependents": ["authorName", "authorNationality" ] }
+    ],
+    "description": "source"
+}
+""",
+            does_not_raise(),
+            id="string-enum-type-with-mutually-exclusive-dependents",
+        ),
+        ####################################
+    ],
+)
+def test_flag_schema_enum_types_validation(
+    flags_schema: str, expected: RaisesExc[Exception]
+):
+    """Test that schema for enum fields meets/fails constraints"""
+    with expected:
+        FlagSchema.model_validate_json(flags_schema)
+
+
+@pytest.mark.parametrize(
+    "spec,expected",
+    [
+        ####################################
+        pytest.param(
+            r"""
+{
+    "stdOutput": true,
+    "stdStats": false,
+    "flags": {
+        "source": {
+            "label": "Source",
+            "type": "string-enum",
+            "description": "...",
+            "choices": [
+                { "title": "Books",   "value": "books", "dependents": [ "bookId", "bookFormat" ] },
+                { "title": "Authors", "value": "authors", "dependents": ["authorName", "authorNationality"] }
+            ]
+        },
+        "bookId": { "type": "string", "label": "Book ID", "description": "..." },
+        "bookFormat": { "type": "string", "label": "Format", "description": "..." },
+        "authorName": { "type": "string", "label": "Name", "description": "..." },
+        "authorNationality": { "type": "string", "label": "Nationality", "description": "..." },
+        "zimName": { "type": "string", "label": "ZIM Name", "description": "..." }
+    }
+}
+""",
+            does_not_raise(),
+            id="all-dependents-are-flags",
+        ),
+        ####################################
+        pytest.param(
+            r"""
+{
+    "stdOutput": true,
+    "stdStats": false,
+    "flags": {
+        "source": {
+            "label": "Source",
+            "type": "string-enum",
+            "description": "...",
+            "choices": [
+                { "title": "Books",   "value": "books", "dependents": [ "source", "bookFormat" ] },
+                { "title": "Authors", "value": "authors", "dependents": ["authorName", "authorNationality"] }
+            ]
+        },
+        "bookId": { "type": "string", "label": "Book ID", "description": "..." },
+        "bookFormat": { "type": "string", "label": "Format", "description": "..." },
+        "authorName": { "type": "string", "label": "Name", "description": "..." },
+        "authorNationality": { "type": "string", "label": "Nationality", "description": "..." },
+        "zimName": { "type": "string", "label": "ZIM Name", "description": "..." }
+    }
+}
+""",
+            pytest.raises(
+                ValidationError, match=r"Flag 'source' cannot depend on itself"
+            ),
+            id="include-self-as-dependent",
+        ),
+        ####################################
+        pytest.param(
+            r"""
+{
+    "stdOutput": true,
+    "stdStats": false,
+    "flags": {
+        "source": {
+            "label": "Source",
+            "type": "string-enum",
+            "description": "...",
+            "choices": [
+                { "title": "Books",   "value": "books", "dependents": [ "country", "bookFormat" ] },
+                { "title": "Authors", "value": "authors", "dependents": ["authorName", "authorNationality"] }
+            ]
+        },
+        "bookId": { "type": "string", "label": "Book ID", "description": "..." },
+        "bookFormat": { "type": "string", "label": "Format", "description": "..." },
+        "authorName": { "type": "string", "label": "Name", "description": "..." },
+        "authorNationality": { "type": "string", "label": "Nationality", "description": "..." },
+        "zimName": { "type": "string", "label": "ZIM Name", "description": "..." }
+    }
+}
+""",
+            pytest.raises(
+                ValidationError,
+                match=r"Dependents .* for choice field 'source' are not valid flag names",
+            ),
+            id="unknown-flag-specified-as-dependent",
+        ),
+        ####################################
+    ],
+)
+def test_dependents_are_valid_flags_in_offliner_spec(
+    spec: str, expected: RaisesExc[Exception]
+):
+    """Test that values specified in dependents are actual flags"""
+    with expected:
+        OfflinerSpecSchema.model_validate_json(spec)

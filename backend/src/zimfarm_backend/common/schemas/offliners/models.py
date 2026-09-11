@@ -3,11 +3,13 @@ from typing import Literal, Self
 from pydantic import ConfigDict, Field, model_validator
 
 from zimfarm_backend.common.schemas import BaseModel, CamelModel
+from zimfarm_backend.common.schemas.fields import NotEmptyString
 
 
 class Choice(BaseModel):
     title: str
     value: str
+    dependents: list[NotEmptyString] = Field(default_factory=list)
 
 
 class BaseFlagSchema(BaseModel):
@@ -78,7 +80,7 @@ class FlagSchema(BaseFlagSchema):
         return self
 
     @model_validator(mode="after")
-    def check_type(self) -> Self:
+    def check_blob_type(self) -> Self:
         """Validate that only blob types have a kind"""
         if self.type == "blob" and not self.kind:
             raise ValueError("Blob types must specify a kind")
@@ -88,6 +90,74 @@ class FlagSchema(BaseFlagSchema):
 
         if self.allow_remote_url and self.type != "blob":
             raise ValueError("Only blob types should specify allow_remote_url")
+
+        return self
+
+    @model_validator(mode="after")
+    def check_enum_types(self) -> Self:
+        """Validate that only string-enum/list-of-string fields can have  choices.
+
+        In addition, ensure that only string-enum types can have dependents set
+        """
+        enum_types = ("string-enum", "list-of-string-enum")
+        if self.type not in enum_types and self.choices:
+            raise ValueError(
+                "Only string-enum and list-of-string-enum types should specify choices"
+            )
+
+        if self.type in enum_types and not self.choices:
+            raise ValueError(
+                "Choices are required for string-enum and list-of-string-enum types"
+            )
+
+        if self.type == "list-of-string-enum" and self.choices:
+            dependent = next(
+                (
+                    dependent
+                    for choice in self.choices
+                    if not isinstance(choice, str)
+                    for dependent in choice.dependents
+                ),
+                None,
+            )
+            if dependent:
+                raise ValueError("Only string-enum types can set dependents.")
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_choice_dependents(self) -> Self:
+        """Validate that the dependents for a choice field are mutually exclusive."""
+
+        if self.choices:
+            all_dependents = [
+                dependent
+                for choice in self.choices
+                if not isinstance(choice, str)
+                for dependent in choice.dependents
+            ]
+            if len(set(all_dependents)) != len(all_dependents):
+                raise ValueError("Dependents must be unique and mutually exclusive")
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_unique_choices(self) -> Self:
+        """Validate that the choice values and titles are unique"""
+
+        if self.choices:
+            titles: list[str] = []
+            values: list[str] = []
+            for choice in self.choices:
+                if isinstance(choice, str):
+                    titles.append(choice)
+                    values.append(choice)
+                else:
+                    titles.append(choice.title)
+                    values.append(choice.value)
+
+            if len(set(titles)) != len(titles) or len(set(values)) != len(values):
+                raise ValueError("Choice titles and values must be unique")
 
         return self
 
@@ -144,4 +214,29 @@ class OfflinerSpecSchema(CamelModel):
         for entry in self.zim_metadata:
             if entry.flag not in self.flags:
                 raise ValueError(f"{entry.flag} is not a in the flags dictionary")
+        return self
+
+    @model_validator(mode="after")
+    def check_choice_fields(self) -> Self:
+        """Ensure dependent values for choice fields are valid fields."""
+        flag_names = set(self.flags.keys())
+        for flag_name, flag in self.flags.items():
+            if not flag.choices:
+                continue
+
+            for choice in flag.choices:
+                if isinstance(choice, str):
+                    continue
+
+                dependents = set(choice.dependents)
+                if flag_name in dependents:
+                    raise ValueError(f"Flag '{flag_name}' cannot depend on itself")
+
+                differences = dependents - flag_names
+                if differences:
+                    raise ValueError(
+                        f"Dependents ({','.join(differences)}) for choice field "
+                        f"'{flag_name}' are not valid flag names"
+                    )
+
         return self

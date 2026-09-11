@@ -245,6 +245,20 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
         { "title": "NODET_NOPIC", "value": "nodet,nopic" }
       ]
     },
+    "source": {
+      "label": "Source",
+      "description": "...",
+      "type": "string-enum",
+        "choices": [
+          { "title": "Books",   "value": "books", "dependents": [ "bookId", "bookFormat" ] },
+          { "title": "Authors", "value": "authors", "dependents": ["authorName", "authorNationality"] }
+        ]
+    },
+    "bookId": { "type": "string", "label": "Book ID", "description": "..." },
+    "bookFormat": { "type": "string", "label": "Format", "description": "..." },
+    "authorName": { "type": "string", "label": "Name", "description": "..." },
+    "authorNationality": { "type": "string", "label": "Nationality", "description": "..." },
+    "zimName": { "type": "string", "label": "ZIM Name", "description": "..." },
     "customFlavour": {
       "type": "string-enum",
       "required": false,

@@ -59,7 +59,6 @@ from pathlib import Path
 from typing import Any, cast
 
 import sqlalchemy as sa
-from pydantic.alias_generators import to_camel
 from sqlalchemy import and_
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm.attributes import flag_modified
@@ -87,6 +86,7 @@ from zimfarm_backend.db.offliner_definition import (
 )
 from zimfarm_backend.db.recipe import create_recipe_full_schema, update_recipe
 from zimfarm_backend.db.requested_task import create_requested_task_full_schema
+from zimfarm_backend.utils.offliners import flag_alias
 
 
 def parse_name_mappings(value: str) -> dict[str, str]:
@@ -139,21 +139,12 @@ def parse_field_values(value: str | None) -> dict[str, Any]:
     return field_values
 
 
-def _flag_alias(flag_name: str, flag: FlagSchema, base_model: str) -> str:
-    """Return the alias used in the database for a flag."""
-    if flag.alias:
-        return flag.alias
-    if base_model == "CamelModel":
-        return to_camel(flag_name)
-    return flag_name.replace("_", "-")
-
-
 def _find_flag(
     spec: OfflinerSpecSchema, offliner: OfflinerSchema, name: str
 ) -> FlagSchema | None:
     """Find a flag in the spec by its database alias or flag name."""
     for flag_name, flag in spec.flags.items():
-        if _flag_alias(flag_name, flag, offliner.base_model) == name:
+        if flag_alias(flag_name, flag, offliner.base_model) == name:
             return flag
         if flag_name == name:
             return flag
