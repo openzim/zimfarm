@@ -122,6 +122,11 @@ def generate_field_type(offliner: str, flag: FlagSchema, label: str):
             if all(type(choice) is Choice for choice in flag.choices):
                 # map the identifiers to the human-readbale values for the enum
                 choices = {v.title: v.value for v in cast(list[Choice], flag.choices)}
+                if flag.type == "string-enum":
+                    json_schema_extra["dependents"] = {
+                        choice.value: choice.dependents
+                        for choice in cast(list[Choice], flag.choices)
+                    }
 
             else:
                 # for strings, use each string as the identifier and human

@@ -331,10 +331,12 @@ When `oauth-oidc` and/or `oauth-session` are activated, you need to configure:
 - `OAUTH_CREATE_NEW_ACCOUNT`: Set to `"true"` to automatically create accounts whenever a new valid JWT is presented to the backend ; new account while have `VIEWER` role (no more permission than when not authenticated) ; this is convenient to then let admins grant proper role to this user through the UI
 
 For `oauth-oidc` you also need to configure:
+
 - `OAUTH_OIDC_AUDIENCE`: The audience the JWT received by the API must contain
 - `OAUTH_OIDC_LOGIN_REQUIRE_2FA`: Set to "False" if users can be logged-in without 2FA (default: True)
 
 And for `oauth-session` you also need to configure:
+
 - `OAUTH_SESSION_AUDIENCE`: The audience the JWT received by the API must contain
 - `OAUTH_SESSION_LOGIN_REQUIRE_2FA`: Set to "False" if users can be logged-in without 2FA (default: True)
 
@@ -705,8 +707,26 @@ rejected , so a mistyped key fails fast at registration time rather than being s
   relaxed-schema mode enabled (via the `{OFFLINER}_USE_RELAXED_SCHEMA` environment
   variable).
 - `choices` (**optional**): used with the `string-enum` and `list-of-string-enum` types
-  (required for those types). Either a list of strings, or a list of objects each with a
-  `title` (human-readable value) and a `value` (the underlying value).
+  (required for those types). Either a list of strings, or a list of objects each with
+  the following properties:
+  - `title` (string): a human-readable value for the option that is displayed to users
+  - `value` (string): the the underlying value.
+  - `dependents` (list of strings): A list of valid field names that should only become
+    active or visible when this particular choice is selected. Dependent fields are
+    ignored until their parent choice is selected. Example
+    ```sh
+    "choices": [
+        { "title": "Basic", "value": "basic" },
+        { "title": "Advanced", "value": "advanced", "dependents": ["apiKey", "timeout"] }
+      ]
+    ```
+    In this example. the `apiKey` and `timeout` fields would only be considered when
+    "Advanced" is selected.
+    The `dependents` introduces the following restrictions:
+    - they can only be set for `string-enum` types
+    - the dependents for a particular choice must be unique
+    - the dependents across all choices must be mutually exclusive
+    - each field must be a valid flag name as used in the top-level `flags` mapping
 - `customValidator` (**optional**): name of a registered per-field validator function
   applied to the value. See [Validators](#validators).
 - `allowRemoteUrl` (**optional**, default `false`): only valid for `blob` types;
