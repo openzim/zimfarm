@@ -986,8 +986,7 @@ const recipeDifferences = computed(() => {
   const currentRecipe = JSON.parse(JSON.stringify(props.recipe))
   const editedRecipe = JSON.parse(JSON.stringify(editRecipe.value))
 
-  // Update the offliner config with the edited flags
-  editedRecipe.config.offliner = JSON.parse(JSON.stringify(editFlags.value))
+  editedRecipe.config.offliner = diffFlags.value
 
   // Generate diff
   const differences = diff(currentRecipe, editedRecipe)
@@ -1069,7 +1068,7 @@ const hasChanges = computed<boolean>(() => {
   // Check notifications
   if (!notificationsEqual(editRecipe.value.notification, props.recipe.notification)) return true
 
-  let changes = diff(props.recipe.config.offliner, editFlags.value)
+  let changes = diff(props.recipe.config.offliner, diffFlags.value)
 
   if (!changes) return false
 
@@ -1559,14 +1558,24 @@ const clearUnsetChoicesDependents = (flags: Record<string, unknown>): Record<str
       // This choice was not selected, so its dependents must be cleared. Dependents
       // reference flags by name, so resolve them to the data_key used in the config.
       for (const dependent of choice.dependents) {
-        const dataKey = dependentDataKeys.value.get(dependent)
-        delete flags[dataKey ?? dependent]
+        const dataKey = dependentDataKeys.value.get(dependent) ?? dependent
+        const value = flags[dataKey]
+
+        // Only remove dependents that are actually set, so unset fields are not
+        // reported as changes.
+        if (value === null || value === undefined || value === '') continue
+
+        delete flags[dataKey]
       }
     }
   }
 
   return flags
 }
+
+const diffFlags = computed(() =>
+  clearUnsetChoicesDependents(JSON.parse(JSON.stringify(editFlags.value))),
+)
 
 const buildPayload = (): RecipeUpdateSchema | null => {
   const payload: Partial<RecipeUpdateSchema> = {}
