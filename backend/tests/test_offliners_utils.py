@@ -7,6 +7,7 @@ from pytest import MonkeyPatch
 from zimfarm_backend.common.schemas.models import RecipeConfigSchema
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.utils.offliners import (
+    clear_unset_choices_dependents,
     command_for,
     compute_flags,
     constants,
@@ -301,3 +302,60 @@ def test_command_for_std_stats_unset(
         mount_point=Path("test"),
     )
     assert "--stats-filename=" not in result
+
+
+@pytest.mark.parametrize(
+    "config,expected",
+    [
+        pytest.param(
+            {
+                "mwUrl": "https://www.example.com",
+                "adminEmail": "admin@example.com",
+                "source": "books",
+                "bookId": "hello",
+                "bookFormat": "pdf",
+                "authorName": "admin",
+                "authorNationality": "france",
+            },
+            {
+                "mwUrl": "https://www.example.com",
+                "adminEmail": "admin@example.com",
+                "source": "books",
+                "bookId": "hello",
+                "bookFormat": "pdf",
+            },
+        ),
+        pytest.param(
+            {
+                "mwUrl": "https://www.example.com",
+                "adminEmail": "admin@example.com",
+                "source": "authors",
+                "bookId": "hello",
+                "bookFormat": "pdf",
+                "authorName": "admin",
+                "authorNationality": "france",
+            },
+            {
+                "mwUrl": "https://www.example.com",
+                "adminEmail": "admin@example.com",
+                "source": "authors",
+                "authorName": "admin",
+                "authorNationality": "france",
+            },
+        ),
+    ],
+)
+def test_clear_unset_flag_values_for_unchosen_choice_options(
+    *,
+    mwoffliner_definition: OfflinerDefinitionSchema,
+    mwoffliner: OfflinerSchema,
+    config: dict[str, Any],
+    expected: dict[str, Any],
+) -> None:
+    """Test that when a choice is chosen, unchosen dependent flags are cleared"""
+    assert (
+        clear_unset_choices_dependents(
+            mwoffliner_definition.schema_, config, mwoffliner.base_model
+        )
+        == expected
+    )

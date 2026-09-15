@@ -188,6 +188,10 @@ def schema_to_flags(schema_class: type[BaseModel]) -> list[Flag]:
 
         # Add choices if available
         if choices:
+            # Re-inject dependent flags if any was set
+            if json_schema_extra.get("dependents"):
+                for choice in choices:
+                    choice.dependents = json_schema_extra["dependents"][choice.value]
             flag_obj.choices = choices
 
         # retrieve minGraphmes, maxGraphemes, pattern, ge, le, etc from metadata
