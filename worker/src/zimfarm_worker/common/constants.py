@@ -133,6 +133,7 @@ OFFLINER_DEVDOCS = "devdocs"
 OFFLINER_MINDTOUCH = "mindtouch"
 OFFLINER_MAPS = "maps"
 OFFLINER_ZIMWRIGHT = "zimwright"
+OFFLINER_PAPERS = "papers"
 
 ALL_OFFLINERS = [
     OFFLINER_MWOFFLINER,
@@ -152,6 +153,7 @@ ALL_OFFLINERS = [
     OFFLINER_MINDTOUCH,
     OFFLINER_MAPS,
     OFFLINER_ZIMWRIGHT,
+    OFFLINER_PAPERS,
 ]
 # Get offliners from environment variable
 offliners_env: str = getenv("OFFLINERS", default="")
@@ -172,6 +174,7 @@ PROGRESS_CAPABLE_OFFLINERS = [
     OFFLINER_WIKIHOW,
     OFFLINER_MAPS,
     OFFLINER_ZIMWRIGHT,
+    OFFLINER_PAPERS,
 ]
 
 ALL_PLATFORMS = [
