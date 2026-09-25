@@ -8,7 +8,7 @@
 set -e
 
 # List of offliners to register
-OFFLINERS=("devdocs" "freecodecamp" "gutenberg" "ifixit" "kolibri" "maps" "mindtouch" "mwoffliner" "nautilus" "openedx" "phet" "sotoki" "ted" "youtube" "zimit" "zimwright")
+OFFLINERS=("devdocs" "freecodecamp" "papers" "ifixit" "kolibri" "maps" "mindtouch" "mwoffliner" "nautilus" "openedx" "phet" "sotoki" "ted" "youtube" "zimit" "zimwright")
 
 # Base URL for offliner definitions
 BASE_URL="https://raw.githubusercontent.com/openzim"
@@ -22,6 +22,7 @@ setup_offliner_configs() {
     offliner_configs["devdocs"]='{"base_model":"DashModel","docker_image_name":"openzim/devdocs","command_name":"devdocs2zim"}'
     offliner_configs["freecodecamp"]='{"base_model":"DashModel","docker_image_name":"openzim/freecodecamp","command_name":"fcc2zim"}'
     offliner_configs["gutenberg"]='{"base_model":"DashModel","docker_image_name":"openzim/gutenberg","command_name":"gutenberg2zim"}'
+    offliner_configs["papers"]='{"base_model":"DashModel","docker_image_name":"openzim/papers","command_name":"papers2zim"}'
     offliner_configs["sotoki"]='{"base_model":"DashModel","docker_image_name":"openzim/sotoki","command_name":"sotoki"}'
     offliner_configs["wikihow"]='{"base_model":"DashModel","docker_image_name":"openzim/wikihow","command_name":"wikihow2zim"}'
     offliner_configs["ifixit"]='{"base_model":"DashModel","docker_image_name":"openzim/ifixit","command_name":"ifixit2zim"}'
