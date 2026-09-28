@@ -419,9 +419,7 @@ class WatcherRunner:
 
         parser = XMLtoDict()
         files = (
-            parser.parse(resp.text)
-            .get("files", {})
-            .get("file", [])  # pyright: ignore[reportOptionalMemberAccess]
+            parser.parse(resp.text).get("files", {}).get("file", [])  # pyright: ignore[reportOptionalMemberAccess]
         )
 
         return [
@@ -543,9 +541,7 @@ class WatcherRunner:
 
         if self.s3_storage.has_object(key):
             logger.info(f"{prefix} Removing object in S3")
-            obsolete = self.s3_storage.get_object_stat(
-                key
-            ).meta.get(  # pyright: ignore[reportOptionalMemberAccess]
+            obsolete = self.s3_storage.get_object_stat(key).meta.get(  # pyright: ignore[reportOptionalMemberAccess]
                 "lastmodified"
             )
             self.s3_storage.delete_object(key)
