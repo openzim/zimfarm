@@ -7,7 +7,7 @@ from zimfarm_backend.api.routes.dependencies import gen_dbsession
 from zimfarm_backend.api.routes.models import ListResponse
 from zimfarm_backend.common.schemas.fields import LimitFieldMax200, SkipField
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
-from zimfarm_backend.db.tags import get_tags as db_get_tags
+from zimfarm_backend.db import tags as db_tags
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
@@ -19,7 +19,7 @@ def get_tags(
     limit: Annotated[LimitFieldMax200, Query()] = 200,
 ):
     """Get a list of recipe tags"""
-    result = db_get_tags(session, skip, limit)
+    result = db_tags.get_tags(session, skip, limit)
     return ListResponse(
         items=result.tags,
         meta=calculate_pagination_metadata(

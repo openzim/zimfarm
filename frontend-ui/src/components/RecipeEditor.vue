@@ -16,6 +16,53 @@
 
     <v-divider class="my-4" />
 
+    <div class="d-flex align-center justify-space-between mb-2">
+      <h2>Team settings</h2>
+      <v-btn
+        size="small"
+        variant="outlined"
+        color="primary"
+        prepend-icon="mdi-plus"
+        :disabled="!canAddTeam"
+        @click="addTeam"
+      >
+        Add team
+      </v-btn>
+    </div>
+
+    <div class="text-caption text-medium-emphasis mb-4">
+      The recipe belongs to these teams. At least one team is required.
+    </div>
+
+    <div
+      v-for="(teamName, index) in editTeams"
+      :key="`team-${index}`"
+      class="d-flex align-center ga-2 mb-2"
+    >
+      <v-select
+        :model-value="teamName"
+        :items="teamItemsFor(index)"
+        label="Team"
+        density="compact"
+        variant="outlined"
+        hide-details="auto"
+        class="flex-grow-1"
+        :error-messages="teamError(index) ? [teamError(index)] : []"
+        :menu-props="{ maxHeight: '200px' }"
+        @update:model-value="editTeams[index] = $event"
+      />
+      <v-btn
+        icon="mdi-delete"
+        variant="text"
+        color="error"
+        :disabled="editTeams.length <= 1"
+        :title="editTeams.length <= 1 ? 'At least one team is required' : 'Remove team'"
+        @click="removeTeam(index)"
+      />
+    </div>
+
+    <v-divider class="my-4" />
+
     <v-row>
       <v-col cols="9">
         <h2>Content settings</h2>
@@ -692,6 +739,7 @@ export interface Props {
   recipe: Recipe
   languages: Language[]
   tags: string[]
+  teams: string[]
   contexts: string[]
   offliners: string[]
   platforms: string[]
@@ -722,6 +770,8 @@ const recipeStore = useRecipeStore()
 const notificationStore = useNotificationStore()
 const { smAndDown } = useDisplay()
 const editRecipe = ref<Recipe>(JSON.parse(JSON.stringify(props.recipe)))
+
+const editTeams = ref<string[]>(props.recipe.teams.map((team) => team.name))
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const editFlags = ref<Record<string, any>>(JSON.parse(JSON.stringify(props.recipe.config.offliner)))
@@ -773,6 +823,7 @@ watch(
     if (newRecipe) {
       editRecipe.value = JSON.parse(JSON.stringify(newRecipe))
       editFlags.value = JSON.parse(JSON.stringify(newRecipe.config.offliner))
+      editTeams.value = newRecipe.teams.map((team) => team.name)
       // Initialize lastEmittedImageName with current recipe's image name
       lastEmittedImageName.value = newRecipe.config.image.name
     }
@@ -987,6 +1038,9 @@ const recipeDifferences = computed(() => {
   const editedRecipe = JSON.parse(JSON.stringify(editRecipe.value))
 
   editedRecipe.config.offliner = diffFlags.value
+  // reflect team edits by comparing team names only (order-insensitive)
+  currentRecipe.teams = props.recipe.teams.map((team) => team.name).sort()
+  editedRecipe.teams = [...editTeams.value].sort()
 
   // Generate diff
   const differences = diff(currentRecipe, editedRecipe)
@@ -995,8 +1049,30 @@ const recipeDifferences = computed(() => {
   return differences.filter((change) => !isNoopDiff(change))
 })
 
+const teamsOptions = computed(() => {
+  const names = new Set(props.teams)
+  for (const team of props.recipe.teams) {
+    names.add(team.name)
+  }
+  return [...names].sort()
+})
+
+const teamItemsFor = (index: number): string[] => {
+  const selectedElsewhere = new Set(editTeams.value.filter((team, i) => i !== index && !!team))
+  return teamsOptions.value.filter((team) => !selectedElsewhere.has(team))
+}
+
+const canAddTeam = computed(() => editTeams.value.length < teamsOptions.value.length)
+
+const teamsValid = computed(() => {
+  // at least one team must be set, with no empty or duplicate entries
+  if (editTeams.value.length === 0) return false
+  if (editTeams.value.some((team) => !team)) return false
+  return new Set(editTeams.value).size === editTeams.value.length
+})
+
 const canSubmit = computed(() => {
-  return hasChanges.value && areAllFieldsValid.value
+  return hasChanges.value && areAllFieldsValid.value && teamsValid.value
 })
 
 const hasChanges = computed<boolean>(() => {
@@ -1033,6 +1109,15 @@ const hasChanges = computed<boolean>(() => {
 
   // Check tags
   if (!stringArrayEqual(editRecipe.value.tags, props.recipe.tags)) return true
+
+  // Check teams
+  if (
+    !stringArrayEqual(
+      editTeams.value,
+      props.recipe.teams.map((team) => team.name),
+    )
+  )
+    return true
 
   // Check language
   if (editRecipe.value.language.code !== props.recipe.language.code) return true
@@ -1505,9 +1590,28 @@ const handleReset = () => {
   if (props.recipe) {
     editRecipe.value = JSON.parse(JSON.stringify(props.recipe))
     editFlags.value = JSON.parse(JSON.stringify(props.recipe.config.offliner))
+    editTeams.value = props.recipe.teams.map((team) => team.name)
     // reset the flags and fields
     handleOfflinerVersionChange(props.recipe.config.offliner.offliner_id, props.recipe.version)
   }
+}
+
+const addTeam = () => {
+  editTeams.value.push('')
+}
+
+const removeTeam = (index: number) => {
+  if (editTeams.value.length <= 1) return
+  editTeams.value.splice(index, 1)
+}
+
+const teamError = (index: number): string => {
+  const value = editTeams.value[index]
+  if (!value) return 'Please select a team'
+  if (editTeams.value.filter((team) => team === value).length > 1) {
+    return 'Team already selected'
+  }
+  return ''
 }
 
 const handleConfirmUpdate = async () => {
@@ -1621,6 +1725,16 @@ const buildPayload = (): RecipeUpdateSchema | null => {
   // Tags
   if (!stringArrayEqual(editRecipe.value.tags, props.recipe.tags)) {
     payload.tags = editRecipe.value.tags
+  }
+
+  // Teams
+  if (
+    !stringArrayEqual(
+      editTeams.value,
+      props.recipe.teams.map((team) => team.name),
+    )
+  ) {
+    payload.teams = editTeams.value
   }
 
   // Language

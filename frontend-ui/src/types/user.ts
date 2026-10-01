@@ -7,6 +7,8 @@ export interface BaseUser {
 
 export interface JWTUser extends BaseUser {
   scope: Record<string, Record<string, boolean>>
+  role?: string
+  teams?: string[]
 }
 
 export interface JWTPayload {
@@ -18,6 +20,7 @@ export interface JWTPayload {
 
 export interface User extends JWTUser {
   role: string
+  teams?: string[]
   idp_sub?: string
 }
 

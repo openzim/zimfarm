@@ -43,6 +43,8 @@
         class="elevation-1"
         item-value="name"
         :show-select="showSelection"
+        :item-selectable="isRecipeInEditScope"
+        :row-props="recipeRowProps"
         :model-value="selectedRecipes"
         @update:model-value="handleSelectionChange"
         @update:options="onUpdateOptions"
@@ -64,6 +66,15 @@
               {{ item.name }}
               <v-icon v-if="!item.enabled" size="small" color="orange" class="ml-1">
                 mdi-pause
+              </v-icon>
+              <v-icon
+                v-if="!isRecipeInEditScope(item)"
+                size="small"
+                color="grey"
+                class="ml-1"
+                title="Read-only recipe: belongs to a team you are not a member of"
+              >
+                mdi-lock-outline
               </v-icon>
             </span>
           </router-link>
@@ -108,6 +119,8 @@
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import StatusDisplay from '@/components/StatusDisplay.vue'
 import type { Paginator } from '@/types/base'
+import constants from '@/constants'
+import { useAuthStore } from '@/stores/auth'
 import type { RecipeLight } from '@/types/recipe'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -139,6 +152,7 @@ const props = withDefaults(defineProps<Props>(), {
 const router = useRouter()
 const route = useRoute()
 const { smAndDown } = useDisplay()
+const authStore = useAuthStore()
 
 // Define emits
 const emit = defineEmits<{
@@ -151,6 +165,32 @@ const limits = [10, 20, 50, 100]
 
 const selectedRecipes = computed(() => props.selectedRecipes)
 const showClearConfirm = ref(false)
+
+// Team-scoped accounts can only act on recipes owned by one of their teams. Global
+// roles (i.e. not in TEAM_ROLES) can act on any recipe.
+const userTeams = computed(() => authStore.user?.teams ?? [])
+const isTeamScopedUser = computed(() =>
+  (constants.TEAM_ROLES as readonly string[]).includes(authStore.user?.role ?? ''),
+)
+
+function isRecipeInEditScope(recipe: RecipeLight): boolean {
+  if (!isTeamScopedUser.value) return true
+  return recipe.teams?.some((team) => userTeams.value.includes(team.name)) ?? false
+}
+
+function recipeRowProps({
+  internalItem,
+  item,
+}: {
+  internalItem?: { raw?: RecipeLight }
+  item?: RecipeLight
+}): Record<string, unknown> {
+  const recipe = internalItem?.raw ?? item
+  if (recipe && !isRecipeInEditScope(recipe)) {
+    return { class: 'recipe-readonly-row' }
+  }
+  return {}
+}
 
 function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
   const query = { ...route.query }
@@ -170,7 +210,15 @@ function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
 }
 
 function handleSelectionChange(selection: string[]) {
-  emit('selectionChanged', selection)
+  // Team-scoped accounts can only act on recipes owned by one of their teams, so
+  // drop the non-editable names of the current page from the selection.
+  const readOnlyNames = new Set(
+    props.recipes.filter((recipe) => !isRecipeInEditScope(recipe)).map((recipe) => recipe.name),
+  )
+  emit(
+    'selectionChanged',
+    selection.filter((name) => !readOnlyNames.has(name)),
+  )
 }
 
 function promptClearSelections() {
@@ -198,5 +246,9 @@ function clearSelections() {
 
 :deep(.v-data-table__tr--mobile > td) {
   grid-template-columns: 1fr 3fr !important;
+}
+
+:deep(.recipe-readonly-row) {
+  opacity: 0.6;
 }
 </style>

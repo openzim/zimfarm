@@ -40,25 +40,10 @@ from zimfarm_backend.common.schemas.orms import (
     WorkerLightSchema,
     WorkerMetricsSchema,
 )
-from zimfarm_backend.db.account import check_account_permission
-from zimfarm_backend.db.models import Account
-from zimfarm_backend.db.ssh_key import (
-    create_ssh_key,
-    create_ssh_key_read_schema,
-    delete_ssh_key,
-    get_ssh_key_by_fingerprint,
-)
-from zimfarm_backend.db.ssh_key import get_ssh_keys as db_get_ssh_keys
-from zimfarm_backend.db.worker import check_in_worker as db_check_in_worker
-from zimfarm_backend.db.worker import (
-    create_worker as db_create_worker,
-)
-from zimfarm_backend.db.worker import (
-    get_worker as db_get_worker,
-)
-from zimfarm_backend.db.worker import get_worker_metrics as db_get_worker_metrics
-from zimfarm_backend.db.worker import get_workers as db_get_workers
-from zimfarm_backend.db.worker import update_worker as db_update_worker
+from zimfarm_backend.db import account as db_account
+from zimfarm_backend.db import models as db_models
+from zimfarm_backend.db import ssh_key as db_ssh_key
+from zimfarm_backend.db import worker as db_worker
 from zimfarm_backend.utils.github_registry import (
     WorkerManagerVersion,
     get_latest_worker_manager_version,
@@ -76,13 +61,13 @@ def require_permission_if_not_worker_itself(namespace: str, name: str):
     def _require_permission_if_not_worker_owner(
         worker_name: Annotated[NotEmptyString, Path()],
         db_session: Annotated[OrmSession, Depends(gen_dbsession)],
-        current_account: Annotated[Account, Depends(get_current_account)],
+        current_account: Annotated[db_models.Account, Depends(get_current_account)],
     ):
-        worker = db_get_worker(db_session, worker_name=worker_name)
+        worker = db_worker.get_worker(db_session, worker_name=worker_name)
         if worker.account_id == current_account.id:
             return
 
-        if not check_account_permission(
+        if not db_account.check_account_permission(
             current_account, namespace=namespace, name=name
         ):
             raise ForbiddenError("You are not allowed to access this resource")
@@ -93,20 +78,22 @@ def require_permission_if_not_worker_itself(namespace: str, name: str):
 @router.get("")
 def get_workers(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
+    current_account: Annotated[
+        db_models.Account | None, Depends(get_current_account_or_none)
+    ],
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 20,
     *,
     hide_offlines: Annotated[bool, Query()] = False,
 ) -> ListResponse[WorkerLightSchema]:
     """Get a list of workers."""
-    results = db_get_workers(
+    results = db_worker.get_workers(
         session,
         skip=skip,
         limit=limit,
         hide_offlines=hide_offlines,
         show_secrets=current_account is not None
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="workers", name="secrets"
         ),
     )
@@ -129,7 +116,7 @@ def create_worker(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     request: WorkerCreateSchema,
 ):
-    db_create_worker(
+    db_worker.create_worker(
         session,
         worker_name=request.name,
         ssh_key=request.ssh_key,
@@ -147,7 +134,7 @@ def update_worker(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> Response:
     """Update a worker."""
-    worker = db_get_worker(session, worker_name=worker_name)
+    worker = db_worker.get_worker(session, worker_name=worker_name)
 
     if worker.deleted:
         raise BadRequestError("Worker has been marked as deleted")
@@ -155,7 +142,7 @@ def update_worker(
     if not request.model_dump(exclude_unset=True):
         raise BadRequestError("No changes made to worker because nothing was set.")
 
-    db_update_worker(
+    db_worker.update_worker(
         session,
         worker_name=worker_name,
         contexts=request.contexts if request.contexts is not None else {},
@@ -169,14 +156,16 @@ def update_worker(
 def get_worker(
     worker_name: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
+    current_account: Annotated[
+        db_models.Account | None, Depends(get_current_account_or_none)
+    ],
 ) -> WorkerMetricsSchema:
     """Get a single worker with full details and metrics."""
-    return db_get_worker_metrics(
+    return db_worker.get_worker_metrics(
         session,
         worker_name=worker_name,
         show_secrets=current_account is not None
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="workers", name="secrets"
         ),
     )
@@ -187,11 +176,11 @@ def check_in_worker(
     worker_name: Annotated[NotEmptyString, Path()],
     worker_checkin: WorkerCheckInSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_account: Annotated[Account, Depends(get_current_account)],
+    current_account: Annotated[db_models.Account, Depends(get_current_account)],
 ) -> WorkerCheckInResponse:
     """Check in a worker."""
 
-    worker = db_get_worker(session, worker_name=worker_name)
+    worker = db_worker.get_worker(session, worker_name=worker_name)
 
     if worker.deleted:
         raise BadRequestError("Worker has been marked as deleted")
@@ -208,7 +197,7 @@ def check_in_worker(
     else:
         docker_image_hash, docker_image_created_at = None, None
 
-    db_check_in_worker(
+    db_worker.check_in_worker(
         session,
         worker_name=worker_name,
         cpu=worker_checkin.cpu,
@@ -264,9 +253,9 @@ def create_worker_key(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> SshKeyRead:
     """Create a new SSH key for a worker"""
-    worker = db_get_worker(db_session, worker_name=worker_name)
-    return create_ssh_key_read_schema(
-        create_ssh_key(db_session, worker_id=worker.id, ssh_key=ssh_key)
+    worker = db_worker.get_worker(db_session, worker_name=worker_name)
+    return db_ssh_key.create_ssh_key_read_schema(
+        db_ssh_key.create_ssh_key(db_session, worker_id=worker.id, ssh_key=ssh_key)
     )
 
 
@@ -279,8 +268,8 @@ def get_worker_keys(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> ListResponse[SshKeyRead]:
     """Get a list of SSH keys for a worker"""
-    worker = db_get_worker(db_session, worker_name=worker_name)
-    results = db_get_ssh_keys(db_session, worker_id=worker.id)
+    worker = db_worker.get_worker(db_session, worker_name=worker_name)
+    results = db_ssh_key.get_ssh_keys(db_session, worker_id=worker.id)
     page_size = len(results.ssh_keys)
     return ListResponse(
         meta=calculate_pagination_metadata(
@@ -311,24 +300,26 @@ def get_ssh_key(
     with_permission: Annotated[list[str] | None, Query()] = None,
 ) -> BaseWorkerWithSshKeysSchema:
     """Get a specific SSH key for a worker"""
-    db_ssh_key = get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
+    key_record = db_ssh_key.get_ssh_key_by_fingerprint(
+        db_session, fingerprint=fingerprint
+    )
 
     if worker_name != "-":
-        db_get_worker(db_session, worker_name=worker_name)
+        db_worker.get_worker(db_session, worker_name=worker_name)
 
     requested_permissions = with_permission or []
     for permission in requested_permissions:
         namespace, perm_name = permission.split(".", 1)
-        if db_ssh_key.worker.account.scope and not db_ssh_key.worker.account.scope.get(
+        if key_record.worker.account.scope and not key_record.worker.account.scope.get(
             namespace, {}
         ).get(perm_name):
             raise UnauthorizedError(permission)
 
     return BaseWorkerWithSshKeysSchema(
-        worker_name=db_ssh_key.worker.name,
-        key=db_ssh_key.key,
-        name=db_ssh_key.name,
-        type=db_ssh_key.type,
+        worker_name=key_record.worker.name,
+        key=key_record.key,
+        name=key_record.name,
+        type=key_record.type,
     )
 
 
@@ -348,7 +339,7 @@ def delete_account_key(
     db_session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> Response:
     """Delete a specific SSH key for an account"""
-    worker = db_get_worker(db_session, worker_name=worker_name)
-    get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
-    delete_ssh_key(db_session, fingerprint=fingerprint, worker_id=worker.id)
+    worker = db_worker.get_worker(db_session, worker_name=worker_name)
+    db_ssh_key.get_ssh_key_by_fingerprint(db_session, fingerprint=fingerprint)
+    db_ssh_key.delete_ssh_key(db_session, fingerprint=fingerprint, worker_id=worker.id)
     return Response(status_code=HTTPStatus.NO_CONTENT)

@@ -109,11 +109,17 @@ function onUpdateOptions(options: { page: number; itemsPerPage: number }) {
 const getRoleColor = (role: string): string => {
   const colorMap: Record<string, string> = {
     admin: 'error',
-    editor: 'primary',
-    'editor-requester': 'info',
     manager: 'warning',
+    'global-editor': 'primary',
+    'team-editor': 'primary',
+    'global-editor-requester': 'info',
+    'team-editor-requester': 'info',
     processor: 'success',
+    'team-viewer': 'secondary',
+    'global-viewer': 'secondary',
+    'public-viewer': 'grey',
     worker: 'secondary',
+    custom: 'default',
   }
   return colorMap[role] || 'default'
 }

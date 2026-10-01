@@ -10,6 +10,7 @@ from zimfarm_backend.api.routes import (
     status,
     tags,
     tasks,
+    teams,
     workers,
 )
 
@@ -25,5 +26,6 @@ __all__ = [
     "status",
     "tags",
     "tasks",
+    "teams",
     "workers",
 ]

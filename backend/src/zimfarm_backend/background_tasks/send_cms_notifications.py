@@ -230,7 +230,7 @@ def notify_cms_for_checked_files(session: OrmSession):
 
     try:
         for file in results.files:
-            task_full = get_task_by_id(session, file.task_id)
+            task_full = get_task_by_id(session, file.task_id, accessible_team_ids=None)
             advertise_book_to_cms(session, task_full, file.filename)
             nb_notified += 1
 

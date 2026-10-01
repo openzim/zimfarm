@@ -1,6 +1,7 @@
 import base64
 import io
 import pathlib
+from collections.abc import Sequence
 from http import HTTPStatus
 from typing import Annotated
 from uuid import UUID
@@ -17,6 +18,8 @@ from zimfarm_backend.api.routes.blobs.models import (
 )
 from zimfarm_backend.api.routes.dependencies import (
     gen_dbsession,
+    get_editable_team_ids,
+    get_viewable_team_ids,
     require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import BadRequestError
@@ -30,15 +33,9 @@ from zimfarm_backend.common.schemas.offliners.transformers import (
     prepare_blob,
 )
 from zimfarm_backend.common.schemas.orms import BlobSchema, CreateBlobSchema
-from zimfarm_backend.db.blob import create_or_update_blob as db_create_or_update_blob
-from zimfarm_backend.db.blob import delete_blob as db_delete_blob
-from zimfarm_backend.db.blob import get_blob as db_get_blob
-from zimfarm_backend.db.blob import get_blob_by_id
-from zimfarm_backend.db.blob import get_blob_by_id as db_get_blob_by_id
-from zimfarm_backend.db.blob import get_blob_or_none as db_get_blob_or_none
-from zimfarm_backend.db.blob import get_blobs as db_get_blobs
+from zimfarm_backend.db import blob as db_blob
+from zimfarm_backend.db import recipe as db_recipe
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.recipe import get_recipe
 
 router = APIRouter(prefix="/blobs", tags=["blobs"])
 
@@ -51,10 +48,13 @@ def create_blob(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     request: CreateBlobRequest,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ) -> BlobSchema:
     "Create a blob for recipe"
 
-    recipe = get_recipe(session, recipe_identifier)
+    recipe = db_recipe.get_recipe(session, recipe_identifier, accessible_team_ids)
 
     if request.data.startswith("data:"):
         _, encoded_data = request.data.split(",", 1)
@@ -73,7 +73,7 @@ def create_blob(
         blob_data=blob_data, flag_name=request.flag_name, kind=request.kind
     )
 
-    if existing_blob := db_get_blob_or_none(
+    if existing_blob := db_blob.get_blob_or_none(
         session,
         recipe_id=recipe.id,
         flag_name=request.flag_name,
@@ -81,7 +81,7 @@ def create_blob(
     ):
         return existing_blob
 
-    db_create_or_update_blob(
+    db_blob.create_or_update_blob(
         session,
         recipe_id=recipe.id,
         request=CreateBlobSchema(
@@ -92,7 +92,7 @@ def create_blob(
             content=prepared_blob.data,
         ),
     )
-    return db_get_blob(
+    return db_blob.get_blob(
         session,
         recipe_id=recipe.id,
         flag_name=request.flag_name,
@@ -110,7 +110,7 @@ def get_blobs(
     params: Annotated[BlobsGetSchema, Query()],
 ):
     """Get a list of all available blobs for recipe"""
-    result = db_get_blobs(
+    result = db_blob.get_blobs(
         session,
         skip=params.skip,
         limit=params.limit,
@@ -141,14 +141,14 @@ def update_blob(
         raise BadRequestError(
             "No changes were made to the blob because no fields being set"
         )
-    blob = db_get_blob_by_id(session, blob_id=blob_id)
+    blob = db_blob.get_blob_by_id(session, blob_id=blob_id)
     if blob.recipe_id is None:
         raise RecordDoesNotExistError("Blob does not belong to any recipe.")
 
     if blob.content is None:
         raise RecordDoesNotExistError("Blob does not have any data.")
 
-    db_create_or_update_blob(
+    db_blob.create_or_update_blob(
         session,
         recipe_id=blob.recipe_id,
         request=CreateBlobSchema(
@@ -160,7 +160,7 @@ def update_blob(
         ),
     )
 
-    return db_get_blob(
+    return db_blob.get_blob(
         session,
         recipe_id=blob.recipe_id,
         flag_name=blob.flag_name,
@@ -178,7 +178,7 @@ def delete_blob(
 ):
     "Delete a blob"
 
-    if db_delete_blob(session=session, blob_id=blob_id):
+    if db_blob.delete_blob(session=session, blob_id=blob_id):
         return Response(status_code=HTTPStatus.NO_CONTENT)
     raise RecordDoesNotExistError("Blob does not exist.")
 
@@ -192,9 +192,10 @@ def get_blob(
     flag_name: Annotated[NotEmptyString, Path()],
     checksum: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    viewable_team_ids: Annotated[Sequence[UUID] | None, Depends(get_viewable_team_ids)],
 ) -> BlobSchema:
-    recipe = get_recipe(session, recipe_identifier)
-    return db_get_blob(
+    recipe = db_recipe.get_recipe(session, recipe_identifier, viewable_team_ids)
+    return db_blob.get_blob(
         session, recipe_id=recipe.id, flag_name=flag_name, checksum=checksum
     )
 
@@ -209,7 +210,7 @@ def download_blob(
     except ValueError as exc:
         raise RecordDoesNotExistError("Blob does not exist.") from exc
 
-    blob = get_blob_by_id(session, blob_id=blob_id)
+    blob = db_blob.get_blob_by_id(session, blob_id=blob_id)
     if get_extension_from_kind(blob.kind) != ext or blob.content is None:
         raise RecordDoesNotExistError("Blob does not exist")
     byte_stream = io.BytesIO(blob.content)

@@ -1,8 +1,10 @@
-from typing import Any
+from collections.abc import Sequence
+from typing import Any, cast
 from uuid import UUID
 
 from psycopg.errors import UniqueViolation
-from sqlalchemy import Integer, func, select
+from pydantic import Field
+from sqlalchemy import Integer, exists, func, select, update
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import JSONPATH, insert
 from sqlalchemy.exc import IntegrityError
@@ -16,6 +18,7 @@ from zimfarm_backend.common.enums import (
     TaskStatus,
 )
 from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas.fields import NotEmptyString
 from zimfarm_backend.common.schemas.models import (
     RecipeConfigSchema,
     RecipeNotificationSchema,
@@ -24,6 +27,7 @@ from zimfarm_backend.common.schemas.offliners.builder import generate_similarity
 from zimfarm_backend.common.schemas.orms import (
     ConfigOfflinerOnlySchema,
     LanguageSchema,
+    ListResult,
     MostRecentTaskSchema,
     OfflinerDefinitionSchema,
     OfflinerSchema,
@@ -31,6 +35,7 @@ from zimfarm_backend.common.schemas.orms import (
     RecipeFullSchema,
     RecipeHistorySchema,
     RecipeLightSchema,
+    TeamLightSchema,
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import (
@@ -45,12 +50,16 @@ from zimfarm_backend.db.models import (
     RecipeHistory,
     RequestedTask,
     Task,
+    Team,
+    TeamRecipe,
 )
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
+    create_offliner_definition_schema,
     create_offliner_instance,
     get_offliner_definition,
 )
+from zimfarm_backend.db.team import get_team_by_name
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -64,17 +73,39 @@ DEFAULT_RECIPE_DURATION = RecipeDurationSchema(
 )
 
 
-class RecipeListResult(BaseModel):
-    nb_records: int
-    recipes: list[RecipeLightSchema | RecipeFullSchema]
+class RecipeCreateSchema(BaseModel):
+    name: str
+    language: LanguageSchema
+    config: RecipeConfigSchema
+    tags: list[str]
+    enabled: bool
+    notification: RecipeNotificationSchema | None
+    periodicity: RecipePeriodicity
+    context: str | None = None
+    comment: str | None = None
+    teams: list[str] = Field(min_length=1)
 
 
-class RecipeHistoryListResult(BaseModel):
-    nb_records: int
-    history_entries: list[RecipeHistorySchema]
+class RecipeUpdateSchema(BaseModel):
+    offliner_definition: OfflinerDefinitionSchema
+    config: RecipeConfigSchema | None = None
+    language: LanguageSchema | None = None
+    name: NotEmptyString | None = None
+    is_valid: bool | None = None
+    tags: list[NotEmptyString] | None = None
+    teams: list[NotEmptyString] | None = Field(default=None, min_length=1)
+    enabled: bool | None = None
+    periodicity: RecipePeriodicity | None = None
+    context: str | None = None
+    comment: str | None = None
+    notification: RecipeNotificationSchema | None = None
 
 
-def count_enabled_recipes(session: OrmSession, recipe_names: list[str]) -> int:
+def count_enabled_recipes(
+    session: OrmSession,
+    recipe_names: list[str],
+    accessible_team_ids: None | Sequence[UUID],
+) -> int:
     """Count all enabled recipes that match the given names"""
     return count_from_stmt(
         session,
@@ -83,28 +114,52 @@ def count_enabled_recipes(session: OrmSession, recipe_names: list[str]) -> int:
                 Recipe.enabled.is_(True),
                 Recipe.archived.is_(False),
                 Recipe.name.in_(recipe_names),
+                exists().where(
+                    TeamRecipe.recipe_id == Recipe.id,
+                    TeamRecipe.team_id.in_(accessible_team_ids or []),
+                )
+                | (accessible_team_ids is None),
             )
         ),
     )
 
 
-def get_recipe_or_none(session: OrmSession, recipe_identifier: str) -> Recipe | None:
-    """Get a recipe for the by id or name if possible else None"""
+def get_recipe_or_none(
+    session: OrmSession,
+    recipe_identifier: str,
+    accessible_team_ids: None | Sequence[UUID],
+) -> Recipe | None:
+    """Get a recipe by id or name if accessible else None"""
     if is_valid_uuid(recipe_identifier):
         where_clause = Recipe.id == recipe_identifier
     else:
         where_clause = Recipe.name == recipe_identifier
     return session.scalars(
         select(Recipe)
-        .where(where_clause)
+        .where(
+            where_clause,
+            exists().where(
+                TeamRecipe.recipe_id == Recipe.id,
+                TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (accessible_team_ids is None),
+        )
         .options(selectinload(Recipe.offliner_definition))
     ).one_or_none()
 
 
-def get_recipe(session: OrmSession, recipe_identifier: str) -> Recipe:
+def get_recipe(
+    session: OrmSession,
+    recipe_identifier: str,
+    accessible_team_ids: None | Sequence[UUID],
+) -> Recipe:
     """Get a recipe for the given recipe name if possible else raise an exception"""
-    if (recipe := get_recipe_or_none(session, recipe_identifier)) is None:
-        raise RecordDoesNotExistError(f"Recipe {recipe_identifier} does not exist")
+    if (
+        recipe := get_recipe_or_none(session, recipe_identifier, accessible_team_ids)
+    ) is None:
+        raise RecordDoesNotExistError(
+            f"Recipe {recipe_identifier} does not exist or is not accessible to you."
+        )
     return recipe
 
 
@@ -129,12 +184,18 @@ def get_duration_for_recipe(recipe: Recipe, worker_name: str) -> RecipeDurationS
 
 
 def get_recipe_duration(
-    session: OrmSession, *, recipe_identifier: str | None, worker_name: str
+    session: OrmSession,
+    *,
+    recipe_identifier: str | None,
+    worker_name: str,
+    accessible_team_ids: None | Sequence[UUID],
 ) -> RecipeDurationSchema:
     """get duration for a recipe and worker (or default one)"""
     if recipe_identifier is None:
         return DEFAULT_RECIPE_DURATION
-    recipe = get_recipe_or_none(session, recipe_identifier)
+    recipe = get_recipe_or_none(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
     if recipe is None:
         return DEFAULT_RECIPE_DURATION
     return get_duration_for_recipe(recipe, worker_name)
@@ -144,9 +205,12 @@ def update_recipe_duration(
     session: OrmSession,
     *,
     recipe_identifier: str,
+    accessible_team_ids: None | Sequence[UUID],
 ):
     """Update the duration for a recipe and worker"""
-    recipe = get_recipe(session, recipe_identifier)
+    recipe = get_recipe(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
     # retrieve tasks that completed the resources intensive part
     # we don't mind to retrieve all of them because they are regularly purged
     tasks = session.execute(
@@ -226,6 +290,7 @@ def get_recipes(
     *,
     skip: int,
     limit: int,
+    accessible_team_ids: Sequence[UUID] | None,
     name: str | None = None,
     lang: list[str] | None = None,
     tags: list[str] | None = None,
@@ -233,7 +298,8 @@ def get_recipes(
     omit_names: list[str] | None = None,
     similarity_data: list[str] | None = None,
     offliners: list[str] | None = None,
-) -> RecipeListResult:
+    teams: list[str] | None = None,
+) -> ListResult[RecipeLightSchema]:
     """Get a list of recipes"""
     subquery = (
         select(
@@ -244,9 +310,27 @@ def get_recipes(
         .subquery("requested_task_count")
     )
 
+    teams_subquery = (
+        select(
+            func.jsonb_agg(
+                func.jsonb_build_object(
+                    "name",
+                    Team.name,
+                    "is_private",
+                    Team.is_private,
+                )
+            )
+        )
+        .select_from(TeamRecipe)
+        .join(Team, Team.id == TeamRecipe.team_id)
+        .where(TeamRecipe.recipe_id == Recipe.id)
+        .correlate(Recipe)
+        .scalar_subquery()
+        .label("teams")
+    )
+
     stmt = (
         select(
-            func.count().over().label("total_records"),
             Recipe.id.label("recipe_id"),
             Recipe.name.label("recipe_name"),
             Recipe.enabled,
@@ -259,7 +343,11 @@ def get_recipes(
             func.coalesce(subquery.c.nb_requested_tasks, 0).label("nb_requested_tasks"),
             Recipe.archived,
             Recipe.context,
+            teams_subquery,
         )
+        .distinct()
+        .join(TeamRecipe, TeamRecipe.recipe_id == Recipe.id)
+        .join(Team, Team.id == TeamRecipe.team_id)
         .join(OfflinerDefinition, Recipe.offliner_definition)
         .join(Task, Recipe.most_recent_task, isouter=True)
         .join(subquery, subquery.c.recipe_id == Recipe.id, isouter=True)
@@ -283,45 +371,26 @@ def get_recipes(
             (Recipe.name.not_in(omit_names or []) | (omit_names is None)),
             (Recipe.config["offliner"]["offliner_id"].astext.in_(offliners or []))
             | (offliners is None),
+            (Team.name.in_(teams or []) | (teams is None)),
+            TeamRecipe.team_id.in_(accessible_team_ids or [])
+            | (accessible_team_ids is None),
         )
-        .offset(skip)
-        .limit(limit)
     )
 
-    results = RecipeListResult(nb_records=0, recipes=[])
-
-    for (
-        nb_records,
-        recipe_id,
-        recipe_name,
-        enabled,
-        language_code,
-        offliner,
-        task_id,
-        task_status,
-        task_updated_at,
-        task_timestamp,
-        nb_requested_tasks,
-        _archived,
-        context,
-    ) in session.execute(stmt).all():
-        # Because the SQL window function returns the total_records
-        # for every row, assign that value to the nb_records
-        try:
-            language = get_language_from_code(language_code)
-        except RecordDoesNotExistError:
-            language = LanguageSchema.model_validate(
-                {"code": language_code, "name": language_code},
-                context={"skip_validation": True},
-            )
-
-        results.nb_records = nb_records
-        results.recipes.append(
+    return ListResult[RecipeLightSchema](
+        nb_records=count_from_stmt(session, stmt),
+        records=[
             RecipeLightSchema(
                 id=recipe_id,
                 name=recipe_name,
                 enabled=enabled,
-                language=language,
+                language=get_language_from_code(
+                    language_code,
+                    fallback=LanguageSchema.model_validate(
+                        {"code": language_code, "name": language_code},
+                        context={"skip_validation": True},
+                    ),
+                ),
                 config=ConfigOfflinerOnlySchema(
                     offliner=offliner,
                 ),
@@ -338,10 +407,31 @@ def get_recipes(
                 nb_requested_tasks=nb_requested_tasks,
                 context=context,
                 archived=_archived,
+                teams=sorted(
+                    [
+                        TeamLightSchema.model_validate(team)
+                        for team in cast("list[dict[str, Any]]", teams_json or [])
+                    ],
+                    key=lambda team: team.name,
+                ),
             )
-        )
-
-    return results
+            for (
+                recipe_id,
+                recipe_name,
+                enabled,
+                language_code,
+                offliner,
+                task_id,
+                task_status,
+                task_updated_at,
+                task_timestamp,
+                nb_requested_tasks,
+                _archived,
+                context,
+                teams_json,
+            ) in session.execute(stmt.offset(skip).limit(limit)).all()
+        ],
+    )
 
 
 def _create_recipe_notification_schema(
@@ -359,30 +449,25 @@ def create_recipe(
     session: OrmSession,
     *,
     author_id: UUID,
-    name: str,
-    language: LanguageSchema,
-    config: RecipeConfigSchema,
+    payload: RecipeCreateSchema,
     offliner_definition: OfflinerDefinitionSchema,
-    tags: list[str],
-    enabled: bool,
-    notification: RecipeNotificationSchema | None,
-    periodicity: RecipePeriodicity,
-    context: str | None = None,
-    comment: str | None = None,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> Recipe:
     """Create a new recipe"""
     offliner = get_offliner(session, offliner_definition.offliner)
     recipe = Recipe(
-        name=name,
-        language_code=language.code,
-        config=config.model_dump(mode="json", context={"show_secrets": True}),
-        tags=tags,
-        enabled=enabled,
-        notification=notification.model_dump(mode="json") if notification else None,
-        periodicity=periodicity,
-        context=context or "",
+        name=payload.name,
+        language_code=payload.language.code,
+        config=payload.config.model_dump(mode="json", context={"show_secrets": True}),
+        tags=payload.tags,
+        enabled=payload.enabled,
+        notification=payload.notification.model_dump(mode="json")
+        if payload.notification
+        else None,
+        periodicity=payload.periodicity,
+        context=payload.context or "",
         similarity_data=generate_similarity_data(
-            config.offliner.model_dump(mode="json", exclude={"offliner_id"}),
+            payload.config.offliner.model_dump(mode="json", exclude={"offliner_id"}),
             offliner,
             offliner_definition.schema_,
         ),
@@ -396,21 +481,22 @@ def create_recipe(
     )
     recipe.durations.append(recipe_duration)
 
-    history_entry = RecipeHistory(
-        created_at=getnow(),
-        comment=comment,
-        config=config.model_dump(mode="json"),
-        name=recipe.name,
-        enabled=recipe.enabled,
-        language_code=recipe.language_code,
-        tags=recipe.tags,
-        periodicity=recipe.periodicity,
-        context=recipe.context,
-        offliner_definition_version=offliner_definition.version,
-        notification=recipe.notification,
+    for team_name in payload.teams:
+        team = get_team_by_name(
+            session, team_name, accessible_team_ids=accessible_team_ids
+        )
+        team_recipe = TeamRecipe()
+        team_recipe.team = team
+        team_recipe.recipe = recipe
+        session.add(team_recipe)
+
+    create_recipe_history_entry(
+        session,
+        recipe=recipe,
+        offliner_definition=offliner_definition,
+        comment=payload.comment,
+        author_id=author_id,
     )
-    history_entry.author_id = author_id
-    recipe.history_entries.append(history_entry)
 
     session.add(recipe)
     try:
@@ -418,7 +504,7 @@ def create_recipe(
     except IntegrityError as exc:
         if isinstance(exc.orig, UniqueViolation):
             raise RecordAlreadyExistsError(
-                f"Recipe with name {name} already exists"
+                f"Recipe with name {payload.name} already exists"
             ) from exc
         logger.exception("Unknown exception encountered while creating recipe")
         raise
@@ -432,13 +518,13 @@ def create_recipe_full_schema(
     recipe: Recipe, offliner: OfflinerSchema, *, skip_validation: bool = True
 ) -> RecipeFullSchema:
     """Create a full recipe schema"""
-    try:
-        language = get_language_from_code(recipe.language_code)
-    except RecordDoesNotExistError:
-        language = LanguageSchema.model_validate(
+    language = get_language_from_code(
+        recipe.language_code,
+        fallback=LanguageSchema.model_validate(
             {"code": recipe.language_code, "name": recipe.language_code},
             context={"skip_validation": skip_validation},
-        )
+        ),
+    )
     return RecipeFullSchema(
         id=recipe.id,
         language=language,
@@ -486,22 +572,38 @@ def create_recipe_full_schema(
         version=recipe.offliner_definition.version,
         offliner=recipe.offliner_definition.offliner,
         archived=recipe.archived,
+        teams=[
+            TeamLightSchema(name=entry.team.name, is_private=entry.team.is_private)
+            for entry in recipe.teams
+        ],
     )
 
 
-def get_all_recipes(session: OrmSession, *, archived: bool = False) -> RecipeListResult:
+def get_all_recipes(
+    session: OrmSession,
+    *,
+    accessible_team_ids: Sequence[UUID] | None,
+    archived: bool = False,
+) -> ListResult[RecipeFullSchema]:
     """Get all recipes"""
-    result = RecipeListResult(nb_records=0, recipes=[])
+    result = ListResult[RecipeFullSchema](nb_records=0, records=[])
     for recipe in session.scalars(
-        select(Recipe).where(Recipe.archived == archived).order_by(Recipe.name)
+        select(Recipe)
+        .join(TeamRecipe, TeamRecipe.recipe_id == Recipe.id)
+        .where(
+            Recipe.archived == archived,
+            TeamRecipe.team_id.in_(accessible_team_ids or [])
+            | (accessible_team_ids is None),
+        )
+        .order_by(Recipe.name)
     ).all():
-        result.recipes.append(
+        result.records.append(
             create_recipe_full_schema(
                 recipe,
                 get_offliner(session, recipe.config["offliner"]["offliner_id"]),
             )
         )
-    result.nb_records = len(result.recipes)
+    result.nb_records = len(result.records)
     return result
 
 
@@ -511,6 +613,7 @@ def toggle_archive_status(
     actor_id: UUID,
     recipe_identifier: str,
     archived: bool,
+    accessible_team_ids: Sequence[UUID] | None,
     comment: str | None = None,
 ) -> Recipe:
     """Toggle the archive status of a recipe"""
@@ -519,27 +622,21 @@ def toggle_archive_status(
 
     # Since we are toggling the archive status, the recipe in question must
     # be the opposite of the current archive status
-    recipe = get_recipe(session, recipe_identifier)
+    recipe = get_recipe(session, recipe_identifier, accessible_team_ids)
     if recipe.archived == archived:
         raise RecordAlreadyExistsError(
             f"Recipe  {recipe_identifier} already has archive status {archived}"
         )
     recipe.archived = archived
-    history_entry = RecipeHistory(
-        created_at=getnow(),
+    create_recipe_history_entry(
+        session,
+        recipe=recipe,
+        offliner_definition=create_offliner_definition_schema(
+            recipe.offliner_definition
+        ),
         comment=comment,
-        config=recipe.config,
-        name=recipe.name,
-        enabled=recipe.enabled,
-        language_code=recipe.language_code,
-        tags=recipe.tags,
-        periodicity=recipe.periodicity,
-        context=recipe.context,
-        archived=recipe.archived,
-        offliner_definition_version=recipe.offliner_definition.version,
+        author_id=actor_id,
     )
-    history_entry.author_id = actor_id
-    recipe.history_entries.append(history_entry)
     session.add(recipe)
     session.flush()
     return recipe
@@ -567,6 +664,13 @@ def create_recipe_history_entry(
         archived=recipe.archived,
         offliner_definition_version=offliner_definition.version,
         notification=recipe.notification,
+        teams=[
+            {
+                "name": rt.team.name,
+                "is_private": rt.team.is_private,
+            }
+            for rt in recipe.teams
+        ],
     )
     history_entry.author_id = author_id
     recipe.history_entries.append(history_entry)
@@ -580,71 +684,101 @@ def update_recipe(
     *,
     author_id: UUID,
     recipe_identifier: str,
-    offliner_definition: OfflinerDefinitionSchema,
-    new_recipe_config: RecipeConfigSchema | None = None,
-    language: LanguageSchema | None = None,
-    name: str | None = None,
-    is_valid: bool | None = None,
-    tags: list[str] | None = None,
-    enabled: bool | None = None,
-    periodicity: RecipePeriodicity | None = None,
-    context: str | None = None,
-    comment: str | None = None,
-    notification: RecipeNotificationSchema | None = None,
+    accessible_team_ids: Sequence[UUID] | None,
+    payload: RecipeUpdateSchema,
 ) -> Recipe:
     """Update a recipe with the given values that are set."""
-    recipe = get_recipe(session, recipe_identifier)
+    recipe = get_recipe(session, recipe_identifier, accessible_team_ids)
 
     if recipe.archived:
         raise RecordDoesNotExistError(f"Recipe  {recipe_identifier} is archived")
 
-    if new_recipe_config:
-        recipe.config = new_recipe_config.model_dump(
+    update_data = {
+        key: value
+        for key, value in payload.model_dump(
+            exclude_unset=True,
+            mode="json",
+            exclude={
+                "offliner_definition",
+                "config",
+                "language",
+                "comment",
+                "teams",
+            },
+        ).items()
+        if value is not None
+    }
+
+    if payload.config:
+        update_data["config"] = payload.config.model_dump(
             mode="json", context={"show_secrets": True}
         )
-        recipe.similarity_data = generate_similarity_data(
-            new_recipe_config.offliner.model_dump(mode="json", exclude={"offliner_id"}),
-            get_offliner(session, offliner_definition.offliner),
-            offliner_definition.schema_,
+        update_data["similarity_data"] = generate_similarity_data(
+            payload.config.offliner.model_dump(mode="json", exclude={"offliner_id"}),
+            get_offliner(session, payload.offliner_definition.offliner),
+            payload.offliner_definition.schema_,
         )
-    if language:
-        recipe.language_code = language.code
+    if payload.language:
+        update_data["language_code"] = payload.language.code
 
-    recipe.offliner_definition_id = offliner_definition.id
-    recipe.name = name if name is not None else recipe.name
-    recipe.tags = tags if tags is not None else recipe.tags
-    recipe.enabled = enabled if enabled is not None else recipe.enabled
-    recipe.periodicity = periodicity if periodicity is not None else recipe.periodicity
-    recipe.is_valid = is_valid if is_valid is not None else recipe.is_valid
-    recipe.notification = (
-        notification.model_dump(mode="json") if notification else recipe.notification
-    )
+    # Return early if no update data
+    updated = False
+    if update_data:
+        update_data["offliner_definition_id"] = payload.offliner_definition.id
+        try:
+            recipe = session.scalars(
+                update(Recipe)
+                .where(Recipe.id == recipe.id)
+                .values(**update_data)
+                .returning(Recipe)
+            ).one()
+        except IntegrityError as exc:
+            raise RecordAlreadyExistsError(
+                f"Recipe with name '{payload.name}' already exists"
+            ) from exc
+        updated = True
 
-    recipe.context = context if context is not None else recipe.context
-    session.add(recipe)
+    if payload.teams is not None:
+        current_team_names = {team_recipe.team.name for team_recipe in recipe.teams}
+        new_team_names = set(payload.teams)
+
+        for team_recipe in list(recipe.teams):
+            if team_recipe.team.name not in new_team_names:
+                recipe.teams.remove(team_recipe)
+                session.delete(team_recipe)
+
+        for team_name in new_team_names - current_team_names:
+            team = get_team_by_name(
+                session, team_name, accessible_team_ids=accessible_team_ids
+            )
+            team_recipe = TeamRecipe()
+            team_recipe.team = team
+            team_recipe.recipe = recipe
+            session.add(team_recipe)
+        updated = True
+
+    if not updated:
+        return recipe
+
     create_recipe_history_entry(
         session,
         recipe=recipe,
-        offliner_definition=offliner_definition,
-        comment=comment,
+        offliner_definition=payload.offliner_definition,
+        comment=payload.comment,
         author_id=author_id,
     )
-    try:
-        session.flush()
-    except IntegrityError as exc:
-        if isinstance(exc.orig, UniqueViolation):
-            raise RecordAlreadyExistsError(
-                f"Recipe with name {name} already exists"
-            ) from exc
-        logger.exception("Unknown exception encountered while updating recipe")
-        raise
+    session.flush()
     session.refresh(recipe)
     return recipe
 
 
-def delete_recipe(session: OrmSession, recipe_identifier: str) -> None:
+def delete_recipe(
+    session: OrmSession,
+    recipe_identifier: str,
+    accessible_team_ids: Sequence[UUID] | None,
+) -> None:
     """Delete a recipe"""
-    recipe = get_recipe(session, recipe_identifier)
+    recipe = get_recipe(session, recipe_identifier, accessible_team_ids)
     # first unset most recent task to avoid circular dependency
     recipe.most_recent_task = None
     session.delete(recipe)
@@ -669,35 +803,51 @@ def create_recipe_history_schema(
         archived=history_entry.archived,
         offliner_definition_version=history_entry.offliner_definition_version,
         notification=history_entry.notification,
+        teams=[
+            TeamLightSchema(name=entry["name"], is_private=bool(entry["is_private"]))
+            for entry in history_entry.teams
+        ],
     )
 
 
 def get_recipe_history(
-    session: OrmSession, *, recipe_id: UUID, skip: int, limit: int
-) -> RecipeHistoryListResult:
+    session: OrmSession,
+    *,
+    recipe_identifier: str,
+    accessible_team_ids: Sequence[UUID] | None,
+    skip: int,
+    limit: int,
+) -> ListResult[RecipeHistorySchema]:
     """Get a recipe's history"""
+    recipe = get_recipe(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
     stmt = (
         select(
             func.count().over().label("nb_records"),
             RecipeHistory,
         )
-        .where(RecipeHistory.recipe_id == recipe_id)
+        .where(RecipeHistory.recipe_id == recipe.id)
         .order_by(RecipeHistory.created_at.desc())
         .offset(skip)
         .limit(limit)
     )
-    results = RecipeHistoryListResult(nb_records=0, history_entries=[])
+    results = ListResult[RecipeHistorySchema](nb_records=0, records=[])
     for nb_records, history_entry in session.execute(stmt).all():
         results.nb_records = nb_records
-        results.history_entries.append(create_recipe_history_schema(history_entry))
+        results.records.append(create_recipe_history_schema(history_entry))
     return results
 
 
 def get_recipe_history_entry_or_none(
-    session: OrmSession, *, recipe_identifier: str, history_id: UUID
+    session: OrmSession,
+    *,
+    recipe_identifier: str,
+    history_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RecipeHistory | None:
     """Get a recipe's history entry or None if it does not exist"""
-    recipe = get_recipe(session, recipe_identifier)
+    recipe = get_recipe(session, recipe_identifier, accessible_team_ids)
     return session.scalars(
         select(RecipeHistory).where(
             RecipeHistory.id == history_id, RecipeHistory.recipe_id == recipe.id
@@ -706,11 +856,18 @@ def get_recipe_history_entry_or_none(
 
 
 def get_recipe_history_entry(
-    session: OrmSession, *, recipe_identifier: str, history_id: UUID
+    session: OrmSession,
+    *,
+    recipe_identifier: str,
+    history_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RecipeHistory:
     """Get a recipe's history entry"""
     if history_entry := get_recipe_history_entry_or_none(
-        session, recipe_identifier=recipe_identifier, history_id=history_id
+        session,
+        recipe_identifier=recipe_identifier,
+        history_id=history_id,
+        accessible_team_ids=accessible_team_ids,
     ):
         return history_entry
     raise RecordDoesNotExistError(
@@ -724,6 +881,7 @@ def restore_recipes(
     *,
     actor_id: UUID,
     recipe_identifiers: list[str],
+    accessible_team_ids: Sequence[UUID] | None,
     comment: str | None = None,
 ) -> None:
     """Restore a list of archived recipes"""
@@ -733,6 +891,7 @@ def restore_recipes(
             actor_id=actor_id,
             recipe_identifier=recipe_identifier,
             archived=False,
+            accessible_team_ids=accessible_team_ids,
             comment=comment,
         )
 
@@ -743,15 +902,15 @@ def revert_recipe(
     recipe_identifier: str,
     history_id: UUID,
     author_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
     comment: str | None = None,
 ) -> Recipe:
     """Revert the recipe configuration and settings to those defined in history_id"""
-    recipe = get_recipe(session, recipe_identifier)
-    if recipe.archived:
-        raise RecordDoesNotExistError(f"Recipe {recipe_identifier} is archived")
-
     history_entry = get_recipe_history_entry(
-        session, recipe_identifier=recipe_identifier, history_id=history_id
+        session,
+        recipe_identifier=recipe_identifier,
+        history_id=history_id,
+        accessible_team_ids=accessible_team_ids,
     )
     if history_entry.offliner_definition_version is None:
         raise ValueError(
@@ -776,46 +935,36 @@ def revert_recipe(
             ),
         }
     )
-    # Copy over the attributes from the history entry to the recipe as both db
-    # models are the same.
-    recipe.config = old_recipe_config.model_dump(
-        mode="json", context={"show_secrets": True}
+    language = get_language_from_code(
+        history_entry.language_code,
+        fallback=LanguageSchema.model_validate(
+            {"code": history_entry.language_code, "name": history_entry.language_code},
+            context={"skip_validation": True},
+        ),
     )
-    recipe.similarity_data = generate_similarity_data(
-        old_recipe_config.model_dump(mode="json", exclude={"offliner_id"}),
-        offliner,
-        offliner_definition.schema_,
-    )
-    recipe.language_code = history_entry.language_code
-    recipe.offliner_definition_id = offliner_definition.id
-    recipe.name = history_entry.name
-    recipe.tags = history_entry.tags
-    recipe.enabled = history_entry.enabled
-    recipe.periodicity = history_entry.periodicity
-    recipe.notification = history_entry.notification
-    recipe.context = history_entry.context
-    session.add(recipe)
+    team_names = [team["name"] for team in history_entry.teams]
 
-    create_recipe_history_entry(
+    recipe = update_recipe(
         session,
-        recipe=recipe,
-        offliner_definition=offliner_definition,
         author_id=author_id,
-        comment=comment,
+        recipe_identifier=recipe_identifier,
+        accessible_team_ids=accessible_team_ids,
+        payload=RecipeUpdateSchema(
+            offliner_definition=offliner_definition,
+            config=old_recipe_config,
+            language=language,
+            name=history_entry.name,
+            is_valid=True,
+            tags=history_entry.tags,
+            teams=team_names or None,
+            enabled=history_entry.enabled,
+            periodicity=RecipePeriodicity(history_entry.periodicity),
+            context=history_entry.context,
+            comment=comment,
+            notification=_create_recipe_notification_schema(history_entry.notification),
+        ),
     )
 
     # Ensure that the recipe is valid
     create_recipe_full_schema(recipe, offliner, skip_validation=False)
-
-    try:
-        session.flush()
-    except IntegrityError as exc:
-        if isinstance(exc.orig, UniqueViolation):
-            raise RecordAlreadyExistsError(
-                f"Recipe with name {recipe.name} already exists"
-            ) from exc
-        logger.exception("Unknown exception encountered while updating recipe")
-        raise
-    session.refresh(recipe)
-
     return recipe

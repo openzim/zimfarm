@@ -16,7 +16,7 @@ from zimfarm_backend.common.schemas.orms import (
     RecipeDurationSchema,
 )
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task, Worker
+from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task, Team, Worker
 from zimfarm_backend.db.requested_task import (
     RequestedTaskWithDuration,
     RunningTask,
@@ -53,6 +53,7 @@ def test_request_task_nonexistent_recipe(dbsession: OrmSession, worker: Worker):
         session=dbsession,
         recipe_identifier="nonexistent",
         requested_by=uuid4(),
+        accessible_team_ids=None,
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -64,6 +65,7 @@ def test_request_task_nonexistent_worker(dbsession: OrmSession, recipe: Recipe):
         session=dbsession,
         recipe_identifier=recipe.name,
         requested_by=uuid4(),
+        accessible_team_ids=None,
         worker_name="nonexistent",
     )
     assert result.requested_task is None
@@ -81,6 +83,7 @@ def test_request_task_disabled_recipe(
         session=dbsession,
         recipe_identifier=recipe.name,
         requested_by=uuid4(),
+        accessible_team_ids=None,
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -98,6 +101,7 @@ def test_request_task_archived_recipe(
         session=dbsession,
         recipe_identifier=recipe.name,
         requested_by=uuid4(),
+        accessible_team_ids=None,
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -119,6 +123,7 @@ def test_request_task_already_requested(
         session=dbsession,
         recipe_identifier=recipe.name,
         requested_by=uuid4(),
+        accessible_team_ids=None,
         worker_name=worker.name,
     )
     assert result.requested_task is None
@@ -327,6 +332,7 @@ def test_request_task_for_worker(
         session=dbsession,
         recipe_identifier=recipe.name,
         requested_by=requested_by.id,
+        accessible_team_ids=None,
         worker_name=worker.name,
     )
     assert bool(result.requested_task) == result_bool
@@ -531,6 +537,7 @@ def test_get_requested_tasks(
         session=dbsession,
         skip=0,
         limit=limit,
+        accessible_team_ids=None,
         worker_name=worker_name,
         matching_offliners=matching_offliners,
         recipe_name=recipe_name,
@@ -541,7 +548,7 @@ def test_get_requested_tasks(
     )
     assert len(requested_tasks) == 3
     assert result.nb_records == expeted_nb_records
-    assert len(result.requested_tasks) <= limit
+    assert len(result.records) <= limit
 
     # simulate the filtering as it is done in the get_requested_tasks function
     if worker_name is not None:
@@ -592,9 +599,7 @@ def test_get_requested_tasks(
         reverse=True,
     )
 
-    for task, requested_task in zip(
-        result.requested_tasks, requested_tasks, strict=False
-    ):
+    for task, requested_task in zip(result.records, requested_tasks, strict=False):
         assert task.id == requested_task.id
         assert task.status == requested_task.status
         assert task.requested_by == requested_task.requested_by.username
@@ -603,31 +608,110 @@ def test_get_requested_tasks(
         )
 
 
+@pytest.mark.parametrize(
+    ("selected_teams", "expected_recipe_names"),
+    [
+        pytest.param(None, {"wikipedia_fr_all", "wikipedia_en_all"}, id="all-teams"),
+        pytest.param(("a",), {"wikipedia_fr_all"}, id="wikimedia-only"),
+        pytest.param(("b",), {"wikipedia_en_all"}, id="openzim-only"),
+        pytest.param(
+            ("a", "b"), {"wikipedia_fr_all", "wikipedia_en_all"}, id="both-teams"
+        ),
+        pytest.param((), set[str](), id="no-teams"),
+    ],
+)
+def test_get_requested_tasks_filters_by_accessible_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    create_requested_task: Callable[..., RequestedTask],
+    selected_teams: tuple[str, ...] | None,
+    expected_recipe_names: set[str],
+):
+    """Test that get_requested_tasks only returns requested tasks whose recipe
+    belongs to an accessible team."""
+    team_a = create_team(name="wikimedia")
+    team_b = create_team(name="openzim")
+
+    create_recipe(name="wikipedia_fr_all", teams=[team_a])
+    create_recipe(name="wikipedia_en_all", teams=[team_b])
+
+    create_requested_task(recipe_name="wikipedia_fr_all")
+    create_requested_task(recipe_name="wikipedia_en_all")
+
+    teams_by_key = {"a": team_a, "b": team_b}
+    accessible_team_ids = (
+        None
+        if selected_teams is None
+        else [teams_by_key[key].id for key in selected_teams]
+    )
+
+    results = get_requested_tasks(
+        session=dbsession,
+        skip=0,
+        limit=20,
+        accessible_team_ids=accessible_team_ids,
+    )
+
+    assert {record.recipe_name for record in results.records} == expected_recipe_names
+
+
+def test_get_requested_task_by_id_filters_by_accessible_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    create_requested_task: Callable[..., RequestedTask],
+):
+    """Test that get_requested_task_by_id does not return a requested task whose
+    recipe belongs to a team the caller cannot access."""
+    team_a = create_team(name="wikimedia")
+    team_b = create_team(name="openzim")
+
+    create_recipe(name="wikipedia_fr_all", teams=[team_a])
+    create_recipe(name="wikipedia_en_all", teams=[team_b])
+
+    requested_task_b = create_requested_task(recipe_name="wikipedia_en_all")
+
+    # The task is accessible when no team filter is applied.
+    result = get_requested_task_by_id(dbsession, requested_task_b.id, None)
+    assert result.id == requested_task_b.id
+
+    # But not accessible for a caller restricted to team A only.
+    with pytest.raises(RecordDoesNotExistError):
+        get_requested_task_by_id(dbsession, requested_task_b.id, [team_a.id])
+
+
 def test_get_requested_task_by_id_or_none(
     dbsession: OrmSession, requested_task: RequestedTask
 ):
     """Test that get_requested_task_by_id_or_none returns the task if it exists"""
-    result = get_requested_task_by_id_or_none(dbsession, requested_task.id)
+    result = get_requested_task_by_id_or_none(
+        dbsession, requested_task.id, accessible_team_ids=None
+    )
     assert result is not None
     assert result.id == requested_task.id
 
 
 def test_get_requested_task_by_id_or_none_not_found(dbsession: OrmSession):
     """Test that get_requested_task_by_id_or_none returns None if task doesn't exist"""
-    result = get_requested_task_by_id_or_none(dbsession, UUID(int=0))
+    result = get_requested_task_by_id_or_none(
+        dbsession, UUID(int=0), accessible_team_ids=None
+    )
     assert result is None
 
 
 def test_get_requested_task_by_id(dbsession: OrmSession, requested_task: RequestedTask):
     """Test that get_requested_task_by_id returns the task if it exists"""
-    result = get_requested_task_by_id(dbsession, requested_task.id)
+    result = get_requested_task_by_id(
+        dbsession, requested_task.id, accessible_team_ids=None
+    )
     assert result.id == requested_task.id
 
 
 def test_get_requested_task_by_id_not_found(dbsession: OrmSession):
     """Test that get_requested_task_by_id raises an exception if task doesn't exist"""
     with pytest.raises(RecordDoesNotExistError):
-        get_requested_task_by_id(dbsession, UUID(int=0))
+        get_requested_task_by_id(dbsession, UUID(int=0), accessible_team_ids=None)
 
 
 def test_compute_requested_task_rank(
@@ -649,8 +733,10 @@ def test_update_requested_task_priority(
 
 def test_delete_requested_task(dbsession: OrmSession, requested_task: RequestedTask):
     """Test that delete_requested_task deletes the task"""
-    delete_requested_task(dbsession, requested_task.id)
-    result = get_requested_task_by_id_or_none(dbsession, requested_task.id)
+    delete_requested_task(dbsession, requested_task.id, accessible_team_ids=None)
+    result = get_requested_task_by_id_or_none(
+        dbsession, requested_task.id, accessible_team_ids=None
+    )
     assert result is None
 
 
@@ -889,7 +975,9 @@ def test_get_tasks_doable_by_worker(
     dbsession.add(task)
     dbsession.flush()
 
-    doable_tasks = get_tasks_doable_by_worker(dbsession, create_worker_schema(worker))
+    doable_tasks = get_tasks_doable_by_worker(
+        dbsession, create_worker_schema(worker), accessible_team_ids=None
+    )
     assert bool(doable_tasks) == found
 
 
@@ -1060,6 +1148,7 @@ def test_find_requested_task_for_worker(
         avail_cpu=avail_cpu,
         avail_memory=avail_memory,
         avail_disk=avail_disk,
+        accessible_team_ids=None,
     ).requested_task
     if expect_found:
         assert found is not None
@@ -1258,6 +1347,7 @@ def test_diagnose_requested_task(
         session=dbsession,
         worker=create_worker_schema(worker),
         requested_task=task,
+        accessible_team_ids=None,
     )
 
     assert reason is not None
@@ -1345,6 +1435,7 @@ def test_find_requested_task_first_cannot_run_but_alternative_can(
         avail_cpu=1,
         avail_memory=500,
         avail_disk=2000,
+        accessible_team_ids=None,
     ).requested_task
 
     assert found_task is not None
@@ -1452,6 +1543,7 @@ def test_find_requested_task_first_cannot_run_alternative_by_duration(
         avail_cpu=1,
         avail_memory=500,
         avail_disk=2000,
+        accessible_team_ids=None,
     ).requested_task
 
     if expected_found:

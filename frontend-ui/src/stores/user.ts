@@ -27,6 +27,7 @@ export const useUserStore = defineStore('user', () => {
   const createUser = async (payload: {
     display_name: string
     role: string
+    teams?: string[]
     username?: string
     password?: string
     idp_sub?: string
@@ -37,6 +38,7 @@ export const useUserStore = defineStore('user', () => {
         {
           display_name: string
           role: string
+          teams?: string[]
           username?: string
           password?: string
           idp_sub?: string
@@ -126,6 +128,7 @@ export const useUserStore = defineStore('user', () => {
       display_name?: string
       role?: string
       scope?: Record<string, Record<string, boolean>>
+      teams?: string[]
       idp_sub?: string | null
     },
   ) => {
@@ -140,6 +143,7 @@ export const useUserStore = defineStore('user', () => {
           display_name?: string
           role?: string
           scope?: Record<string, Record<string, boolean>>
+          teams?: string[]
           idp_sub?: string | null
         },
         null

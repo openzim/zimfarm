@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from http import HTTPStatus
 from typing import Annotated, Any, cast
 from uuid import UUID
@@ -14,6 +15,8 @@ from zimfarm_backend.api.routes.dependencies import (
     gen_dbsession,
     get_current_account,
     get_current_account_or_none,
+    get_editable_team_ids,
+    get_viewable_team_ids,
     require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
@@ -52,44 +55,17 @@ from zimfarm_backend.common.schemas.models import (
 from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     RecipeConfigSchema,
-    RecipeFullSchema,
     RecipeHistorySchema,
     RecipeLightSchema,
 )
-from zimfarm_backend.db.account import check_account_permission
-from zimfarm_backend.db.exceptions import (
-    RecordDoesNotExistError,
-)
-from zimfarm_backend.db.language import get_language_from_code
-from zimfarm_backend.db.models import Account
-from zimfarm_backend.db.offliner import get_offliner
-from zimfarm_backend.db.offliner_definition import (
-    create_offliner_definition_schema,
-    create_offliner_instance,
-    get_offliner_definition,
-    get_offliner_definition_by_id,
-)
-from zimfarm_backend.db.recipe import create_recipe as db_create_recipe
-from zimfarm_backend.db.recipe import (
-    create_recipe_full_schema,
-    create_recipe_history_schema,
-    get_all_recipes,
-)
-from zimfarm_backend.db.recipe import delete_recipe as db_delete_recipe
-from zimfarm_backend.db.recipe import get_recipe as db_get_recipe
-from zimfarm_backend.db.recipe import get_recipe_history as db_get_recipe_history
-from zimfarm_backend.db.recipe import (
-    get_recipe_history_entry as db_get_recipe_history_entry,
-)
-from zimfarm_backend.db.recipe import get_recipes as db_get_recipes
-from zimfarm_backend.db.recipe import (
-    restore_recipes as db_restore_recipes,
-)
-from zimfarm_backend.db.recipe import revert_recipe as db_revert_recipe
-from zimfarm_backend.db.recipe import (
-    toggle_archive_status as db_toggle_archive_status,
-)
-from zimfarm_backend.db.recipe import update_recipe as db_update_recipe
+from zimfarm_backend.db import account as db_account
+from zimfarm_backend.db import language as db_language
+from zimfarm_backend.db import models as db_models
+from zimfarm_backend.db import offliner as db_offliner
+from zimfarm_backend.db import offliner_definition as db_offliner_definition
+from zimfarm_backend.db import recipe as db_recipe
+from zimfarm_backend.db import team as db_team
+from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.utils.offliners import (
     clear_unset_choices_dependents,
     expanded_config,
@@ -104,35 +80,38 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
 @router.get("")
 def get_recipes(
     params: Annotated[RecipesGetSchema, Query()],
-    current_account: Account | None = Depends(get_current_account_or_none),
+    current_account: db_models.Account | None = Depends(get_current_account_or_none),
     session: OrmSession = Depends(gen_dbsession),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
 ) -> ListResponse[RecipeLightSchema]:
     if params.archived and not (
         current_account
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="recipes", name="archive"
         )
     ):
         raise ForbiddenError("You are not allowed to view archived recipes.")
 
-    results = db_get_recipes(
+    results = db_recipe.get_recipes(
         session,
         skip=params.skip,
         limit=params.limit,
+        accessible_team_ids=accessible_team_ids,
         lang=params.lang,
         tags=params.tag,
         name=params.name,
         archived=params.archived,
         offliners=params.offliner,
+        teams=params.team,
     )
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,
             skip=params.skip,
             limit=params.limit,
-            page_size=len(results.recipes),
+            page_size=len(results.records),
         ),
-        items=cast(list[RecipeLightSchema], results.recipes),
+        items=results.records,
     )
 
 
@@ -142,11 +121,12 @@ def get_recipes(
 def create_recipe(
     request: RecipeCreateSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> JSONResponse:
     """Create a new recipe"""
     if offliner_id := request.config.get("offliner", {}).get("offliner_id"):
-        offliner_definition = get_offliner_definition(
+        offliner_definition = db_offliner_definition.get_offliner_definition(
             session, offliner_id, request.version
         )
     else:
@@ -160,7 +140,7 @@ def create_recipe(
             ]
         )
 
-    offliner = get_offliner(session, offliner_definition.offliner)
+    offliner = db_offliner.get_offliner(session, offliner_definition.offliner)
 
     data = clear_unset_choices_dependents(
         offliner_definition.schema_, request.config["offliner"], offliner.base_model
@@ -169,7 +149,7 @@ def create_recipe(
     config = RecipeConfigSchema.model_validate(
         {
             **request.config,
-            "offliner": create_offliner_instance(
+            "offliner": db_offliner_definition.create_offliner_instance(
                 offliner=offliner,
                 offliner_definition=offliner_definition,
                 data=data,
@@ -196,26 +176,32 @@ def create_recipe(
             ]
         )
 
-    language = get_language_from_code(request.language)
+    language = db_language.get_language_from_code(request.language)
 
-    db_recipe = db_create_recipe(
-        session,
-        author_id=current_account.id,
+    payload = db_recipe.RecipeCreateSchema(
         name=request.name,
-        offliner_definition=offliner_definition,
         language=language,
         config=config,
-        tags=request.tags,
+        tags=list(request.tags),
         enabled=request.enabled,
         notification=request.notification,
         periodicity=request.periodicity,
-        comment=request.comment,
         context=request.context.strip() if request.context else None,
+        comment=request.comment,
+        teams=request.teams,
+    )
+
+    recipe_model = db_recipe.create_recipe(
+        session,
+        author_id=current_account.id,
+        payload=payload,
+        offliner_definition=offliner_definition,
+        accessible_team_ids=accessible_team_ids,
     )
 
     return JSONResponse(
         content=RecipeCreateResponseSchema(
-            id=db_recipe.id,
+            id=recipe_model.id,
         ).model_dump(mode="json")
     )
 
@@ -223,7 +209,8 @@ def create_recipe(
 @router.get("/backup")
 def get_recipes_backup(
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account | None = Depends(get_current_account_or_none),
+    current_account: db_models.Account | None = Depends(get_current_account_or_none),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
     archived: Annotated[bool, Query()] = False,
@@ -231,7 +218,7 @@ def get_recipes_backup(
     """Get a list of recipes"""
     if not (
         current_account
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="recipes", name="secrets"
         )
     ):
@@ -243,7 +230,7 @@ def get_recipes_backup(
     # does not matter
     if not (
         current_account
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="recipes", name="secrets"
         )
     ):
@@ -251,8 +238,10 @@ def get_recipes_backup(
     else:
         show_secrets = not hide_secrets
 
-    results = get_all_recipes(session, archived=archived)
-    recipes = cast(list[RecipeFullSchema], results.recipes)
+    results = db_recipe.get_all_recipes(
+        session, archived=archived, accessible_team_ids=accessible_team_ids
+    )
+    recipes = results.records
     content: list[dict[str, Any]] = []
     for recipe in recipes:
         if exclude_notifications:
@@ -272,13 +261,15 @@ def get_recipes_backup(
 def restore_archived_recipes(
     request: RestoreRecipesSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> Response:
-    db_restore_recipes(
+    db_recipe.restore_recipes(
         session,
         recipe_identifiers=request.recipe_names
         or [str(recipe_id) for recipe_id in request.recipe_ids],
         actor_id=current_account.id,
+        accessible_team_ids=accessible_team_ids,
         comment=request.comment,
     )
     return Response(status_code=HTTPStatus.NO_CONTENT)
@@ -288,31 +279,36 @@ def restore_archived_recipes(
 def get_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account | None = Depends(get_current_account_or_none),
+    current_account: db_models.Account | None = Depends(get_current_account_or_none),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
-    db_recipe = db_get_recipe(session, recipe_identifier)
+    recipe_model = db_recipe.get_recipe(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
 
-    if current_account is None and db_recipe.archived:
+    if current_account is None and recipe_model.archived:
         raise UnauthorizedError(
             "You do not have permissions to view an archived recipe."
         )
 
-    offliner = get_offliner(session, db_recipe.config["offliner"]["offliner_id"])
+    offliner = db_offliner.get_offliner(
+        session, recipe_model.config["offliner"]["offliner_id"]
+    )
 
     try:
-        recipe = create_recipe_full_schema(db_recipe, offliner)
+        recipe = db_recipe.create_recipe_full_schema(recipe_model, offliner)
     except Exception as exc:
         logger.exception("error retrieving recipe")
         raise exc
-    offliner_definition = get_offliner_definition_by_id(
-        session, db_recipe.offliner_definition_id
+    offliner_definition = db_offliner_definition.get_offliner_definition_by_id(
+        session, recipe_model.offliner_definition_id
     )
 
     if not (
         current_account
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="recipes", name="secrets"
         )
     ):
@@ -320,7 +316,7 @@ def get_recipe(
 
     if not (
         current_account
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="recipes", name="secrets"
         )
     ):
@@ -331,7 +327,9 @@ def get_recipe(
     # validity field in DB might not reflect the actual validity of the recipe
     # as constraints evolve
     try:
-        create_recipe_full_schema(db_recipe, offliner, skip_validation=False)
+        db_recipe.create_recipe_full_schema(
+            recipe_model, offliner, skip_validation=False
+        )
     except ValidationError:
         recipe.is_valid = False
 
@@ -352,12 +350,16 @@ def get_similar_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     params: Annotated[RecipesGetSchema, Query()],
     session: OrmSession = Depends(gen_dbsession),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
 ) -> ListResponse[RecipeLightSchema]:
-    recipe = db_get_recipe(session, recipe_identifier)
-    results = db_get_recipes(
+    recipe = db_recipe.get_recipe(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
+    results = db_recipe.get_recipes(
         session,
         skip=params.skip,
         limit=params.limit,
+        accessible_team_ids=accessible_team_ids,
         lang=params.lang,
         tags=params.tag,
         archived=params.archived,
@@ -369,9 +371,9 @@ def get_similar_recipe(
             nb_records=results.nb_records,
             skip=params.skip,
             limit=params.limit,
-            page_size=len(results.recipes),
+            page_size=len(results.records),
         ),
-        items=cast(list[RecipeLightSchema], results.recipes),
+        items=results.records,
     )
 
 
@@ -383,13 +385,18 @@ def update_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     request: RecipeUpdateSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> JSONResponse:
-    db_recipe = db_get_recipe(session, recipe_identifier)
-    if db_recipe.archived:
+    recipe_model = db_recipe.get_recipe(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
+    if recipe_model.archived:
         raise BadRequestError("Cannot update an archived recipe")
-    offliner = get_offliner(session, db_recipe.config["offliner"]["offliner_id"])
-    recipe = create_recipe_full_schema(db_recipe, offliner)
+    offliner = db_offliner.get_offliner(
+        session, recipe_model.config["offliner"]["offliner_id"]
+    )
+    recipe = db_recipe.create_recipe_full_schema(recipe_model, offliner)
 
     recipe_config = cast(RecipeConfigSchema, recipe.config)
     if not request.model_dump(exclude_unset=True):
@@ -413,9 +420,9 @@ def update_recipe(
             raise BadRequestError(
                 "Flags definition version must be set when changing offliner"
             )
-        offliner = get_offliner(session, request.offliner)
+        offliner = db_offliner.get_offliner(session, request.offliner)
 
-        offliner_definition = get_offliner_definition(
+        offliner_definition = db_offliner_definition.get_offliner_definition(
             session, request.offliner, request.version
         )
 
@@ -435,7 +442,7 @@ def update_recipe(
                     "name": request.image.name,
                     "tag": request.image.tag,
                 },
-                "offliner": create_offliner_instance(
+                "offliner": db_offliner_definition.create_offliner_instance(
                     offliner=offliner,
                     offliner_definition=offliner_definition,
                     data={**flags, "offliner_id": request.offliner},
@@ -462,7 +469,7 @@ def update_recipe(
             )
     elif request.flags is not None:
         # Case 2: Attempting to change some flags but keep the offliner unchanged
-        offliner = get_offliner(
+        offliner = db_offliner.get_offliner(
             session,
             cast(
                 str,
@@ -471,14 +478,14 @@ def update_recipe(
         )
         if request.version:
             # Create the new config based on new version
-            offliner_definition = get_offliner_definition(
+            offliner_definition = db_offliner_definition.get_offliner_definition(
                 session,
                 offliner.id,
                 request.version,
             )
         else:
             # Reuse the existing definition to validate
-            offliner_definition = get_offliner_definition_by_id(
+            offliner_definition = db_offliner_definition.get_offliner_definition_by_id(
                 session, recipe.offliner_definition_id
             )
 
@@ -492,7 +499,7 @@ def update_recipe(
                     exclude={"offliner"},
                     context={"show_secrets": True},
                 ),
-                "offliner": create_offliner_instance(
+                "offliner": db_offliner_definition.create_offliner_instance(
                     offliner=offliner,
                     offliner_definition=offliner_definition,
                     data={**flags, "offliner_id": offliner_definition.offliner},
@@ -521,7 +528,7 @@ def update_recipe(
         # Case 3: Attempting to change a top level configuration that doesn't
         # affect the offliner
         new_recipe_config = recipe_config
-        offliner_definition = get_offliner_definition_by_id(
+        offliner_definition = db_offliner_definition.get_offliner_definition_by_id(
             session, recipe.offliner_definition_id
         )
 
@@ -559,7 +566,7 @@ def update_recipe(
 
     if request.language:
         try:
-            language = get_language_from_code(request.language)
+            language = db_language.get_language_from_code(request.language)
         except RecordDoesNotExistError as exc:
             raise BadRequestError(
                 f"Language code {request.language} not found."
@@ -567,25 +574,31 @@ def update_recipe(
     else:
         language = None
 
-    recipe = db_update_recipe(
-        session,
-        recipe_identifier=recipe_identifier,
-        author_id=current_account.id,
-        comment=request.comment,
-        new_recipe_config=new_recipe_config,
+    update_payload = db_recipe.RecipeUpdateSchema(
+        offliner_definition=offliner_definition,
+        config=new_recipe_config,
         language=language,
         name=request.name,
         tags=request.tags,
+        teams=request.teams,
         enabled=request.enabled,
         periodicity=request.periodicity,
         # recipe must be valid if it has not failed validation yet
         is_valid=True,
         context=request.context,
-        offliner_definition=offliner_definition,
+        comment=request.comment,
         notification=request.notification,
     )
 
-    recipe = create_recipe_full_schema(recipe, offliner)
+    recipe = db_recipe.update_recipe(
+        session,
+        recipe_identifier=recipe_identifier,
+        author_id=current_account.id,
+        accessible_team_ids=accessible_team_ids,
+        payload=update_payload,
+    )
+
+    recipe = db_recipe.create_recipe_full_schema(recipe, offliner)
     recipe.config = expanded_config(
         cast(RecipeConfigSchema, recipe.config),
         offliner=offliner,
@@ -604,9 +617,10 @@ def update_recipe(
 def delete_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> Response:
     """Delete a recipe"""
-    db_delete_recipe(session, recipe_identifier)
+    db_recipe.delete_recipe(session, recipe_identifier, accessible_team_ids)
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
@@ -615,8 +629,11 @@ def get_recipe_image_names(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     hub_name: Annotated[str, Query()],
     session: OrmSession = Depends(gen_dbsession),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
 ) -> ListResponse[Any]:
-    db_get_recipe(session, recipe_identifier)
+    db_recipe.get_recipe(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
     try:
         tags = get_recipe_image_tags(hub_name)
     except requests.HTTPError as exc:
@@ -639,6 +656,46 @@ def get_recipe_image_names(
     )
 
 
+def _resolve_clone_teams(
+    session: OrmSession,
+    *,
+    request_teams: list[str] | None,
+    source_team_names: list[str],
+    editable_team_ids: Sequence[UUID] | None,
+) -> list[str]:
+    """Determine which teams should own a cloned recipe.
+
+    - Global accounts may assign any team and default to the source recipe's teams.
+    - Team-scoped accounts may only assign teams they belong to.
+    """
+    # global roles can assign any team
+    if editable_team_ids is None:
+        return request_teams if request_teams else source_team_names
+
+    editable_team_names = db_team.get_team_names(session, editable_team_ids)
+
+    if request_teams:
+        if unowned_teams := set(request_teams) - set(editable_team_names):
+            raise ForbiddenError(
+                "You are not allowed to create a recipe for team(s): "
+                + ", ".join(sorted(unowned_teams))
+            )
+        return request_teams
+
+    if not editable_team_names:
+        raise ForbiddenError("You do not have any team to own the cloned recipe.")
+
+    if common_teams := sorted(set(source_team_names) & set(editable_team_names)):
+        return common_teams
+
+    if len(editable_team_names) == 1:
+        return editable_team_names
+
+    raise BadRequestError(
+        "You must select the teams that should own the cloned recipe."
+    )
+
+
 @router.post(
     "/{recipe_identifier}/clone",
     dependencies=[Depends(require_permission(namespace="recipes", name="create"))],
@@ -647,35 +704,39 @@ def clone_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     request: CloneSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
+    viewable_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
+    editable_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> RecipeCreateResponseSchema:
-    recipe = db_get_recipe(session, recipe_identifier)
+    recipe = db_recipe.get_recipe(
+        session, recipe_identifier, accessible_team_ids=viewable_team_ids
+    )
     if recipe.archived:
         raise BadRequestError("You cannot clone an archived recipe.")
 
     # Skip validation while cloning a recipe
     try:
-        language = get_language_from_code(recipe.language_code)
+        language = db_language.get_language_from_code(recipe.language_code)
     except RecordDoesNotExistError:
         language = LanguageSchema.model_validate(
             {"code": recipe.language_code, "name": recipe.language_code},
             context={"skip_validation": True},
         )
-    offliner = get_offliner(session, recipe.config["offliner"]["offliner_id"])
+    offliner = db_offliner.get_offliner(
+        session, recipe.config["offliner"]["offliner_id"]
+    )
+    offliner_definition = db_offliner_definition.create_offliner_definition_schema(
+        recipe.offliner_definition
+    )
 
-    new_recipe = db_create_recipe(
-        session,
-        author_id=current_account.id,
-        comment=request.comment,
+    payload = db_recipe.RecipeCreateSchema(
         name=request.name,
         config=RecipeConfigSchema.model_validate(
             {
                 **recipe.config,
-                "offliner": create_offliner_instance(
+                "offliner": db_offliner_definition.create_offliner_instance(
                     offliner=offliner,
-                    offliner_definition=create_offliner_definition_schema(
-                        recipe.offliner_definition
-                    ),
+                    offliner_definition=offliner_definition,
                     data=recipe.config["offliner"],
                     skip_validation=True,
                 ),
@@ -692,23 +753,38 @@ def clone_recipe(
         periodicity=RecipePeriodicity(recipe.periodicity),
         language=language,
         context=recipe.context,
-        offliner_definition=create_offliner_definition_schema(
-            recipe.offliner_definition
+        comment=request.comment,
+        teams=_resolve_clone_teams(
+            session,
+            request_teams=request.teams,
+            source_team_names=[team_recipe.team.name for team_recipe in recipe.teams],
+            editable_team_ids=editable_team_ids,
         ),
+    )
+
+    new_recipe = db_recipe.create_recipe(
+        session,
+        author_id=current_account.id,
+        payload=payload,
+        offliner_definition=offliner_definition,
+        accessible_team_ids=editable_team_ids,
     )
 
     # validate the new recipe as we skipped validation to allow accounts clone
     # an invalid recipe. If validation fails, mark as invalid
     try:
-        create_recipe_full_schema(new_recipe, offliner, skip_validation=False)
+        db_recipe.create_recipe_full_schema(new_recipe, offliner, skip_validation=False)
     except ValidationError:
-        db_update_recipe(
+        db_recipe.update_recipe(
             session,
             recipe_identifier=new_recipe.name,
             author_id=current_account.id,
-            is_valid=False,
-            offliner_definition=create_offliner_definition_schema(
-                new_recipe.offliner_definition
+            accessible_team_ids=editable_team_ids,
+            payload=db_recipe.RecipeUpdateSchema(
+                is_valid=False,
+                offliner_definition=db_offliner_definition.create_offliner_definition_schema(
+                    new_recipe.offliner_definition
+                ),
             ),
         )
 
@@ -725,14 +801,16 @@ def archive_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> JSONResponse:
     """Archive a recipe"""
-    db_toggle_archive_status(
+    db_recipe.toggle_archive_status(
         session,
         recipe_identifier=recipe_identifier,
         archived=True,
         actor_id=current_account.id,
+        accessible_team_ids=accessible_team_ids,
         comment=request.comment,
     )
     return JSONResponse(
@@ -749,14 +827,16 @@ def restore_archived_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     request: ToggleArchiveStatusSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> JSONResponse:
     """Restore an archived recipe"""
-    db_toggle_archive_status(
+    db_recipe.toggle_archive_status(
         session,
         recipe_identifier=recipe_identifier,
         archived=False,
         actor_id=current_account.id,
+        accessible_team_ids=accessible_team_ids,
         comment=request.comment,
     )
     return JSONResponse(
@@ -772,12 +852,17 @@ def restore_archived_recipe(
 def validate_recipe(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> JSONResponse:
-    recipe = db_get_recipe(session, recipe_identifier)
-    offliner = get_offliner(session, recipe.config["offliner"]["offliner_id"])
+    recipe = db_recipe.get_recipe(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
+    offliner = db_offliner.get_offliner(
+        session, recipe.config["offliner"]["offliner_id"]
+    )
 
     try:
-        create_recipe_full_schema(recipe, offliner, skip_validation=False)
+        db_recipe.create_recipe_full_schema(recipe, offliner, skip_validation=False)
     except ValidationError as exc:
         raise RequestValidationError(exc.errors()) from exc
 
@@ -791,21 +876,24 @@ def validate_recipe(
 def get_recipe_history(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     session: OrmSession = Depends(gen_dbsession),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
     skip: Annotated[SkipField, Query()] = 0,
     limit: Annotated[LimitFieldMax200, Query()] = 200,
 ) -> ListResponse[RecipeHistorySchema]:
-    recipe = db_get_recipe(session, recipe_identifier)
-
-    results = db_get_recipe_history(
-        session, recipe_id=recipe.id, skip=skip, limit=limit
+    results = db_recipe.get_recipe_history(
+        session,
+        recipe_identifier=recipe_identifier,
+        accessible_team_ids=accessible_team_ids,
+        skip=skip,
+        limit=limit,
     )
     return ListResponse(
-        items=results.history_entries,
+        items=results.records,
         meta=calculate_pagination_metadata(
             nb_records=results.nb_records,
             skip=skip,
             limit=limit,
-            page_size=len(results.history_entries),
+            page_size=len(results.records),
         ),
     )
 
@@ -818,11 +906,15 @@ def get_recipe_history_entry(
     recipe_identifier: Annotated[NotEmptyString, Path()],
     history_id: Annotated[UUID, Path()],
     session: OrmSession = Depends(gen_dbsession),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_viewable_team_ids),
 ) -> RecipeHistorySchema:
-    history_entry = db_get_recipe_history_entry(
-        session, recipe_identifier=recipe_identifier, history_id=history_id
+    history_entry = db_recipe.get_recipe_history_entry(
+        session,
+        recipe_identifier=recipe_identifier,
+        history_id=history_id,
+        accessible_team_ids=accessible_team_ids,
     )
-    return create_recipe_history_schema(history_entry)
+    return db_recipe.create_recipe_history_schema(history_entry)
 
 
 @router.patch(
@@ -834,14 +926,16 @@ def revert_recipe(
     history_id: Annotated[UUID, Path()],
     request: RevertRecipeSchema,
     session: OrmSession = Depends(gen_dbsession),
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ) -> JSONResponse:
     """Revert a recipe to a previous history."""
-    db_revert_recipe(
+    db_recipe.revert_recipe(
         session,
         recipe_identifier=recipe_identifier,
         history_id=history_id,
         author_id=current_account.id,
+        accessible_team_ids=accessible_team_ids,
         comment=request.comment,
     )
     return JSONResponse(

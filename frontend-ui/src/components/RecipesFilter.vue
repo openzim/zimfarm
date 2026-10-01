@@ -68,6 +68,25 @@
             @update:model-value="emitFilters"
           />
         </v-col>
+        <v-col cols="12" sm="6" md="3">
+          <v-autocomplete
+            v-model="localFilters.teams"
+            :items="teamsOptions"
+            label="Teams"
+            placeholder="Select teams"
+            variant="outlined"
+            density="compact"
+            hide-details
+            multiple
+            chips
+            closable-chips
+            clear-on-select
+            :custom-filter="
+              (value: string, query: string) => fuzzyFilter(value, query, props.teams)
+            "
+            @update:model-value="emitFilters"
+          />
+        </v-col>
         <v-col
           v-if="hasActiveFilters"
           cols="12"
@@ -95,10 +114,12 @@ interface Props {
     languages: string[]
     tags: string[]
     offliners: string[]
+    teams: string[]
   }
   languages: Language[]
   tags: string[]
   offliners: string[]
+  teams: string[]
 }
 
 const props = defineProps<Props>()
@@ -111,6 +132,7 @@ const emit = defineEmits<{
       languages: string[]
       tags: string[]
       offliners: string[]
+      teams: string[]
     },
   ]
   clearFilters: []
@@ -122,6 +144,7 @@ const localFilters = ref({
   languages: [...props.filters.languages],
   tags: [...props.filters.tags],
   offliners: [...props.filters.offliners],
+  teams: [...props.filters.teams],
 })
 
 // Watch for prop changes and update local state
@@ -133,6 +156,7 @@ watch(
       languages: [...newFilters.languages],
       tags: [...newFilters.tags],
       offliners: [...newFilters.offliners],
+      teams: [...newFilters.teams],
     }
   },
 )
@@ -162,12 +186,20 @@ const offlinersOptions = computed(() => {
   }))
 })
 
+const teamsOptions = computed(() => {
+  return props.teams.map((team) => ({
+    title: team,
+    value: team,
+  }))
+})
+
 const hasActiveFilters = computed(() => {
   return (
     props.filters.name.length > 0 ||
     props.filters.languages.length > 0 ||
     props.filters.tags.length > 0 ||
-    props.filters.offliners.length > 0
+    props.filters.offliners.length > 0 ||
+    props.filters.teams.length > 0
   )
 })
 
@@ -178,6 +210,7 @@ function emitFilters() {
     languages: localFilters.value.languages,
     tags: localFilters.value.tags,
     offliners: localFilters.value.offliners,
+    teams: localFilters.value.teams,
   })
 }
 

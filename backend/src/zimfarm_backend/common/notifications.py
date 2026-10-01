@@ -169,9 +169,11 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
         return
 
     if event == "requested":
-        task_safe = get_requested_task_by_id_or_none(session, task_id)
+        task_safe = get_requested_task_by_id_or_none(
+            session, task_id, accessible_team_ids=None
+        )
     else:
-        task_safe = get_task_by_id_or_none(session, task_id)
+        task_safe = get_task_by_id_or_none(session, task_id, accessible_team_ids=None)
 
     if not task_safe:
         return

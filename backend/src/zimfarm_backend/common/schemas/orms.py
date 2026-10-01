@@ -14,7 +14,11 @@ from zimfarm_backend.common.constants import (
 )
 from zimfarm_backend.common.enums import DockerImageName
 from zimfarm_backend.common.schemas import BaseModel
-from zimfarm_backend.common.schemas.fields import ZIMCPU, ZIMDisk, ZIMMemory
+from zimfarm_backend.common.schemas.fields import (
+    ZIMCPU,
+    ZIMDisk,
+    ZIMMemory,
+)
 from zimfarm_backend.common.schemas.models import (
     DockerImageVersionSchema,
     ExpandedRecipeConfigSchema,
@@ -36,6 +40,11 @@ def make_datetime_aware(dt: datetime.datetime) -> datetime.datetime:
 
 
 MadeAwareDateTime = Annotated[datetime.datetime, AfterValidator(make_datetime_aware)]
+
+
+class ListResult[T](BaseModel):
+    nb_records: int
+    records: list[T]
 
 
 class ConfigResourcesSchema(BaseModel):
@@ -264,6 +273,13 @@ class ConfigOfflinerOnlySchema(BaseModel):
     offliner: str
 
 
+class TeamLightSchema(BaseModel):
+    """Schema for reading few fields of team from database."""
+
+    name: str
+    is_private: bool
+
+
 class RecipeLightSchema(BaseModel):
     """
     Schema for reading a recipe model with some fields
@@ -278,6 +294,7 @@ class RecipeLightSchema(BaseModel):
     archived: bool
     nb_requested_tasks: int = Field(exclude=True)
     context: str
+    teams: list[TeamLightSchema]
 
     @computed_field
     @property
@@ -294,6 +311,10 @@ class RecipeDurationSchema(BaseModel):
     on: datetime.datetime
     worker_name: str | None
     default: bool
+
+
+class TeamFullSchema(TeamLightSchema):
+    id: UUID
 
 
 class RecipeHistorySchema(BaseModel):
@@ -318,6 +339,7 @@ class RecipeHistorySchema(BaseModel):
     # offliner schema evolves
     config: dict[str, Any]
     notification: dict[str, Any] | None = None
+    teams: list[TeamLightSchema]
 
 
 class RecipeFullSchema(BaseModel):
@@ -332,6 +354,7 @@ class RecipeFullSchema(BaseModel):
     config: RecipeConfigSchema | ExpandedRecipeConfigSchema
     enabled: bool
     tags: list[str]
+    teams: list[TeamLightSchema]
     periodicity: str
     notification: RecipeNotificationSchema | None
     most_recent_task: MostRecentTaskSchema | None
@@ -506,6 +529,7 @@ class AccountSchema(BaseAccountSchema):
 
     role: str | None
     scope: dict[str, dict[str, bool]]
+    teams: list[str]
     idp_sub: UUID | None
 
 
@@ -585,3 +609,16 @@ class WorkerMetricsSchema(WorkerLightSchema):
             memory=self.resources.total.memory - self.resources.available.memory,
             disk=self.resources.total.disk - self.resources.available.disk,
         )
+
+
+class TeamHistorySchema(BaseModel):
+    """
+    Schema for reading a collection history model
+    """
+
+    id: UUID
+    comment: str | None
+    author: str
+    name: str | None
+    created_at: datetime.datetime
+    is_private: bool

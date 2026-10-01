@@ -5,7 +5,7 @@
 <template>
   <v-container>
     <!-- Action Button Row -->
-    <v-row v-if="recipe">
+    <v-row v-if="recipe && isRecipeInEditScope">
       <v-col>
         <RecipeActionButton
           :enabled="recipe.enabled && !recipe.archived"
@@ -23,7 +23,7 @@
     </v-row>
 
     <!-- Title Row -->
-    <v-row v-if="ready && recipe">
+    <v-row v-if="ready && recipe" class="mb-4">
       <v-col>
         <h2 class="text-h6 text-md-h4">
           <code>{{ recipe.name }}</code>
@@ -39,6 +39,18 @@
 
     <!-- Content -->
     <div v-if="ready && recipe">
+      <v-alert
+        v-if="!isRecipeInEditScope"
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-4"
+        icon="mdi-eye-outline"
+      >
+        This recipe belongs to a team you are not a member of. You can view or clone it, but you
+        cannot edit it or request tasks for it.
+      </v-alert>
+
       <!-- Tabs -->
       <v-tabs
         v-model="currentTab"
@@ -84,7 +96,7 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canUpdateRecipes && !recipe?.archived"
+          v-if="canUpdateRecipe && !recipe?.archived"
           value="edit"
           :to="{
             name: 'recipe-detail-tab',
@@ -108,7 +120,7 @@
         </v-tab>
         <v-tab
           base-color="primary"
-          v-if="canArchiveRecipes"
+          v-if="canArchiveRecipe"
           value="archive"
           :to="{
             name: 'recipe-detail-tab',
@@ -135,7 +147,7 @@
 
         <v-tab
           base-color="error"
-          v-if="canDeleteRecipes && recipe?.archived"
+          v-if="canDeleteRecipe && recipe?.archived"
           value="delete"
           :to="{
             name: 'recipe-detail-tab',
@@ -170,6 +182,29 @@
                   </v-col>
                 </v-row>
                 <v-divider class="my-2"></v-divider>
+
+                <v-row v-if="recipe?.teams?.length" no-gutters class="py-2">
+                  <v-col cols="12" md="4">
+                    <div class="text-subtitle-2">Teams</div>
+                  </v-col>
+                  <v-col cols="12" md="8">
+                    <div class="d-flex flex-row flex-wrap">
+                      <v-chip
+                        v-for="team in recipe?.teams || []"
+                        :key="team.name"
+                        size="small"
+                        :color="team.is_private ? 'warning' : 'primary'"
+                        variant="outlined"
+                        density="comfortable"
+                        class="mr-2 mb-1"
+                      >
+                        <v-icon v-if="team.is_private" size="small" class="mr-1"> mdi-lock </v-icon>
+                        {{ team.name }}
+                      </v-chip>
+                    </div>
+                  </v-col>
+                </v-row>
+                <v-divider v-if="recipe?.teams?.length" class="my-2"></v-divider>
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
@@ -490,6 +525,7 @@
             :loading="loadingHistory"
             :paginator="recipeHistoryStore.paginator"
             :recipe-name="recipe.name"
+            :can-revert="canUpdateRecipe"
             @load="loadHistory"
             @revert="handleRevert"
           />
@@ -648,7 +684,7 @@
 
         <!-- Edit Tab -->
         <v-window-item value="edit">
-          <div v-if="canUpdateRecipes" class="pa-4">
+          <div v-if="canUpdateRecipe" class="pa-4">
             <!-- Validation Status -->
             <v-alert
               v-if="recipe"
@@ -674,6 +710,7 @@
               :platforms="platforms"
               :languages="languages"
               :tags="tags"
+              :teams="teams"
               :contexts="contexts"
               :flags-definition="flagsDefinition"
               :help-url="helpUrl"
@@ -696,7 +733,7 @@
 
         <!-- Archive Tab -->
         <v-window-item value="archive">
-          <div v-if="canArchiveRecipes" class="pa-4">
+          <div v-if="canArchiveRecipe" class="pa-4">
             <ArchiveItem
               :name="recipe.name"
               :is-archived="recipe?.archived || false"
@@ -708,7 +745,7 @@
 
         <!-- Delete Tab -->
         <v-window-item value="delete">
-          <div v-if="canDeleteRecipes" class="pa-4">
+          <div v-if="canDeleteRecipe" class="pa-4">
             <DeleteItem
               :name="recipe.name"
               description="recipe"
@@ -775,11 +812,18 @@ import { useRecipeStore } from '@/stores/recipe'
 import { useRecipeHistoryStore } from '@/stores/recipeHistory'
 import { useTagStore } from '@/stores/tag'
 import { useTasksStore } from '@/stores/tasks'
+import { useTeamStore } from '@/stores/team'
 import { useWorkersStore } from '@/stores/workers'
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
-import type { ExpandedRecipeConfig, Recipe, RecipeLight, RecipeUpdateSchema } from '@/types/recipe'
+import type {
+  CloneRecipePayload,
+  ExpandedRecipeConfig,
+  Recipe,
+  RecipeLight,
+  RecipeUpdateSchema,
+} from '@/types/recipe'
 import type { TaskLight } from '@/types/tasks'
 import type { Worker } from '@/types/workers'
 import { formatDt, formatDurationBetween, fromNow } from '@/utils/format'
@@ -820,6 +864,7 @@ const contextStore = useContextStore()
 const languageStore = useLanguageStore()
 const offlinerStore = useOfflinerStore()
 const platformStore = usePlatformStore()
+const teamStore = useTeamStore()
 
 // Config
 const appConfig = inject<Config>(constants.config)
@@ -835,6 +880,7 @@ const error = ref<string | null>(null)
 const workingText = ref<string | null>(null)
 const imageTags = ref<string[]>([])
 const tags = ref<string[]>([])
+const teams = ref<string[]>([])
 const contexts = ref<string[]>([])
 const languages = ref<Language[]>([])
 const offliners = ref<string[]>([])
@@ -889,8 +935,24 @@ const totalDurationDict = computed(() => {
 const canRequestTasks = computed(() => authStore.hasPermission('requested_tasks', 'create'))
 const canUpdateRecipes = computed(() => authStore.hasPermission('recipes', 'update'))
 const canCreateRecipes = computed(() => authStore.hasPermission('recipes', 'create'))
-const canArchiveRecipes = computed(() => authStore.hasPermission('recipes', 'archive'))
-const canDeleteRecipes = computed(() => authStore.hasPermission('recipes', 'delete'))
+
+const currentUserTeams = computed(() => authStore.user?.teams ?? [])
+const isTeamScopedUser = computed(() =>
+  (constants.TEAM_ROLES as readonly string[]).includes(authStore.user?.role ?? ''),
+)
+const isRecipeInEditScope = computed(() => {
+  if (!recipe.value) return false
+  if (!isTeamScopedUser.value) return true
+  return recipe.value.teams?.some((team) => currentUserTeams.value.includes(team.name)) ?? false
+})
+
+const canUpdateRecipe = computed(() => canUpdateRecipes.value && isRecipeInEditScope.value)
+const canArchiveRecipe = computed(
+  () => authStore.hasPermission('recipes', 'archive') && isRecipeInEditScope.value,
+)
+const canDeleteRecipe = computed(
+  () => authStore.hasPermission('recipes', 'delete') && isRecipeInEditScope.value,
+)
 
 // History-related computed properties
 const canLoadMoreHistory = computed(() => {
@@ -1092,13 +1154,13 @@ const unrequestTask = async () => {
   workingText.value = null
 }
 
-const cloneRecipe = async (newName: string) => {
-  const response = await recipeStore.cloneRecipe(props.recipeName, newName)
+const cloneRecipe = async (payload: CloneRecipePayload) => {
+  const response = await recipeStore.cloneRecipe(props.recipeName, payload.name, payload.teams)
   if (response) {
     notificationStore.showSuccess(
-      `Recipe <code>${newName}</code> has been created off <code>${props.recipeName}</code>.`,
+      `Recipe <code>${payload.name}</code> has been created off <code>${props.recipeName}</code>.`,
     )
-    router.push({ name: 'recipe-detail', params: { recipeName: newName } })
+    router.push({ name: 'recipe-detail', params: { recipeName: payload.name } })
   } else {
     for (const error of recipeStore.errors) {
       notificationStore.showError(error)
@@ -1332,6 +1394,7 @@ onMounted(async () => {
   // Or we fetch again here (if for some reason, say network connection is slow)
   // and we couldn't fetch on app mount.
   tags.value = (await tagStore.fetchTags()) || []
+  teams.value = (await teamStore.fetchTeams({ limit: 200 }))?.map((team) => team.name) || []
   contexts.value = (await contextStore.fetchContexts()) || []
   languages.value = (await languageStore.fetchLanguages()) || []
   offliners.value = (await offlinerStore.fetchOffliners()) || []
@@ -1353,6 +1416,11 @@ onMounted(async () => {
       await validateRecipe()
     }
   }
+
+  // Redirect away from edit-only tabs when the account cannot edit this recipe
+  if (['edit', 'archive', 'delete'].includes(props.selectedTab) && !isRecipeInEditScope.value) {
+    router.push({ name: 'recipe-detail', params: { recipeName: props.recipeName } })
+  }
 })
 
 onUnmounted(() => {
@@ -1368,6 +1436,15 @@ watch(
     // Only refresh data if we don't have any data yet, or if not cloning or archiving
     if (!recipe.value || !['clone', 'archive', 'delete'].includes(newTab)) {
       await refreshData(newTab === 'edit', newTab === 'history')
+    }
+    // Redirect away from edit-only tabs when the account cannot edit this recipe
+    if (
+      recipe.value &&
+      ['edit', 'archive', 'delete'].includes(newTab) &&
+      !isRecipeInEditScope.value
+    ) {
+      router.push({ name: 'recipe-detail', params: { recipeName: props.recipeName } })
+      return
     }
     if (newTab === 'similar' && recipe.value) {
       await loadSimilar(recipeStore.paginator.limit, recipeStore.paginator.skip)

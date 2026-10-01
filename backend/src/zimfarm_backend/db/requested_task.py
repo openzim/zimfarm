@@ -1,14 +1,15 @@
 import datetime
+from collections.abc import Sequence
 from typing import cast
 from uuid import UUID
 
 from humanfriendly import format_size, format_timespan
-from sqlalchemy import BigInteger, delete, func, or_, select, update
+from sqlalchemy import BigInteger, delete, exists, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
 
 from zimfarm_backend import logger
-from zimfarm_backend.common import getnow, is_valid_uuid, to_naive_utc
+from zimfarm_backend.common import getnow, to_naive_utc
 from zimfarm_backend.common.constants import (
     ARTIFACTS_EXPIRATION,
     ARTIFACTS_UPLOAD_URI,
@@ -33,6 +34,7 @@ from zimfarm_backend.common.schemas.orms import (
     BaseRequestedTaskSchema,
     ConfigResourcesSchema,
     ConfigWithOnlyOfflinerAndResourcesSchema,
+    ListResult,
     OfflinerDefinitionSchema,
     OfflinerSchema,
     RecipeDurationSchema,
@@ -43,7 +45,13 @@ from zimfarm_backend.common.schemas.orms import (
 )
 from zimfarm_backend.db import count_from_stmt
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
-from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Worker
+from zimfarm_backend.db.models import (
+    Account,
+    Recipe,
+    RequestedTask,
+    TeamRecipe,
+    Worker,
+)
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
     create_offliner_instance,
@@ -66,11 +74,6 @@ from zimfarm_backend.utils.timestamp import (
 MAX_BIG_INT_VAL = 2**63 - 1
 
 RecipeOrTask = Recipe | RequestedTask
-
-
-class RequestedTaskListResult(BaseModel):
-    nb_records: int
-    requested_tasks: list[RequestedTaskLightSchema]
 
 
 class RequestedTaskWithDuration(BaseRequestedTaskSchema):
@@ -196,37 +199,26 @@ def _create_new_requested_task(
 
 
 def _validate_recipe_request_uniqueness(
-    session: OrmSession, *, recipe_identifier: str, worker_name: str | None
+    session: OrmSession, *, recipe: Recipe, worker_name: str | None
 ):
-    if is_valid_uuid(recipe_identifier):
-        recipe_where_clause = Recipe.id == recipe_identifier
-    else:
-        recipe_where_clause = Recipe.name == recipe_identifier
 
-    query = (
-        select(RequestedTask, Recipe)
-        .join(Recipe, RequestedTask.recipe)
-        .where(recipe_where_clause)
-    )
+    query = select(RequestedTask, Recipe).join(Recipe, RequestedTask.recipe)
     if worker_name is not None:
         query = query.join(Worker, RequestedTask.worker).where(
             Worker.name == worker_name
         )
 
     if count_from_stmt(session, query) > 0:
-        return f"Recipe '{recipe_identifier}' already requested"
+        return f"Recipe '{recipe.name}' already requested"
     return None
 
 
 def _validate_recipe_state(
-    session: OrmSession, recipe_identifier: str
-) -> tuple[Recipe | None, str | None]:
-    recipe = get_recipe_or_none(session, recipe_identifier)
-    if recipe is None or not recipe.enabled:
-        return None, f"Recipe '{recipe_identifier}' not found or disabled"
+    recipe: Recipe,
+) -> str | None:
     if recipe.archived:
-        return None, f"Recipe '{recipe_identifier}' is archived"
-    return recipe, None
+        return f"Recipe '{recipe.name}' is archived"
+    return None
 
 
 def _validate_worker_context(
@@ -291,6 +283,7 @@ def request_task(
     *,
     recipe_identifier: str,
     requested_by: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
     worker_name: str | None = None,
     priority: int = 0,
 ) -> RequestTaskResult:
@@ -301,13 +294,22 @@ def request_task(
     Recipe can't be requested if worker does not have appropriate context.
     """
 
+    recipe = get_recipe_or_none(
+        session, recipe_identifier, accessible_team_ids=accessible_team_ids
+    )
+    if recipe is None or not recipe.enabled:
+        return RequestTaskResult(
+            requested_task=None,
+            error=f"Recipe '{recipe_identifier}' not found or disabled",
+        )
+
     if error := _validate_recipe_request_uniqueness(
-        session, recipe_identifier=recipe_identifier, worker_name=worker_name
+        session, recipe=recipe, worker_name=worker_name
     ):
         return RequestTaskResult(requested_task=None, error=error)
 
-    recipe, error = _validate_recipe_state(session, recipe_identifier)
-    if recipe is None:
+    error = _validate_recipe_state(recipe)
+    if error is not None:
         return RequestTaskResult(requested_task=None, error=error)
 
     worker: WorkerLightSchema | None = None
@@ -357,13 +359,14 @@ def get_requested_tasks(
     worker_name: str | None = None,
     skip: int,
     limit: int,
+    accessible_team_ids: Sequence[UUID] | None,
     matching_offliners: list[str] | None = None,
     recipe_name: list[str] | None = None,
     priority: int | None = None,
     cpu: int | None = None,
     memory: int | None = None,
     disk: int | None = None,
-) -> RequestedTaskListResult:
+) -> ListResult[RequestedTaskLightSchema]:
     """Get a paginated list of requested tasks filtered by various criteria.
 
     Tasks are sorted by priority (descending), reserved timestamp, and
@@ -416,6 +419,11 @@ def get_requested_tasks(
             (Worker.name == worker_name)
             | (RequestedTask.worker is None)  # pyright: ignore[reportUnnecessaryComparison]
             | (worker_name is None),
+            exists().where(
+                TeamRecipe.recipe_id == RequestedTask.recipe_id,
+                TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (accessible_team_ids is None),
         )
         .order_by(
             RequestedTask.priority.desc(),
@@ -427,7 +435,7 @@ def get_requested_tasks(
 
     query = query.offset(skip).limit(limit)
 
-    results = RequestedTaskListResult(nb_records=0, requested_tasks=[])
+    results = ListResult[RequestedTaskLightSchema](nb_records=0, records=[])
 
     for (
         nb_records,
@@ -447,7 +455,7 @@ def get_requested_tasks(
         # Because the SQL window function returns the total_records
         # for every row, assign that value to the nb_records
         results.nb_records = nb_records
-        results.requested_tasks.append(
+        results.records.append(
             RequestedTaskLightSchema(
                 id=requested_task_id,
                 status=status,
@@ -475,7 +483,11 @@ def get_requested_tasks(
 
 
 def create_requested_task_with_duration(
-    session: OrmSession, *, task: RequestedTask, worker: WorkerLightSchema
+    session: OrmSession,
+    *,
+    task: RequestedTask,
+    worker: WorkerLightSchema,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RequestedTaskWithDuration:
     return RequestedTaskWithDuration(
         id=task.id,
@@ -504,6 +516,7 @@ def create_requested_task_with_duration(
             session,
             recipe_identifier=task.recipe.name if task.recipe else None,
             worker_name=worker.name,
+            accessible_team_ids=accessible_team_ids,
         ),
         updated_at=task.updated_at,
     )
@@ -512,6 +525,7 @@ def create_requested_task_with_duration(
 def get_tasks_doable_by_worker(
     session: OrmSession,
     worker: WorkerLightSchema,
+    accessible_team_ids: Sequence[UUID] | None,
     requested_task_id: UUID | None = None,
 ) -> list[RequestedTaskWithDuration]:
     """list of tasks that a worker can do with its total resources.
@@ -587,7 +601,12 @@ def get_tasks_doable_by_worker(
 
     return sorted(
         [
-            create_requested_task_with_duration(session, task=task, worker=worker)
+            create_requested_task_with_duration(
+                session,
+                task=task,
+                worker=worker,
+                accessible_team_ids=accessible_team_ids,
+            )
             for task in filter(
                 lambda task: (
                     filter_req_task_for_ip_issues(task)
@@ -730,6 +749,7 @@ def diagnose_requested_task(
     *,
     worker: WorkerLightSchema,
     requested_task: RequestedTask,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> str:
     """Diagnose why a requested task isn't running on worker"""
     if reason := _validate_worker_availability(worker):
@@ -757,7 +777,10 @@ def diagnose_requested_task(
     ]
 
     task = create_requested_task_with_duration(
-        session, task=requested_task, worker=worker
+        session,
+        task=requested_task,
+        worker=worker,
+        accessible_team_ids=accessible_team_ids,
     )
 
     if reason := does_platform_allow_worker_to_run(
@@ -868,6 +891,7 @@ def find_requested_task_for_worker(
     avail_cpu: int,
     avail_memory: int,
     avail_disk: int,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RequestedTaskWithDurationResult:
     """Find optimal task to run for a given worker with given resources.
 
@@ -891,7 +915,9 @@ def find_requested_task_for_worker(
     # filter-out requested tasks that are not doable now due to platform limitations
     tasks_worker_could_do = (
         task
-        for task in get_tasks_doable_by_worker(session=session, worker=worker)
+        for task in get_tasks_doable_by_worker(
+            session=session, worker=worker, accessible_team_ids=accessible_team_ids
+        )
         if does_platform_allow_worker_to_run(
             worker=worker,
             all_running_tasks=all_running_tasks,
@@ -976,7 +1002,9 @@ def create_requested_task_full_schema(
 
 
 def get_raw_requested_task_or_none(
-    session: OrmSession, requested_task_id: UUID
+    session: OrmSession,
+    requested_task_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RequestedTask | None:
     return session.scalars(
         select(RequestedTask)
@@ -984,32 +1012,49 @@ def get_raw_requested_task_or_none(
             selectinload(RequestedTask.offliner_definition),
             selectinload(RequestedTask.requested_by),
         )
-        .where(RequestedTask.id == requested_task_id)
+        .where(
+            RequestedTask.id == requested_task_id,
+            exists().where(
+                TeamRecipe.recipe_id == RequestedTask.recipe_id,
+                TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (accessible_team_ids is None),
+        )
     ).one_or_none()
 
 
 def get_requested_task_by_id_or_none(
-    session: OrmSession, requested_task_id: UUID
+    session: OrmSession,
+    requested_task_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RequestedTaskFullSchema | None:
-    if requested_task := get_raw_requested_task_or_none(session, requested_task_id):
+    if requested_task := get_raw_requested_task_or_none(
+        session, requested_task_id, accessible_team_ids
+    ):
         return create_requested_task_full_schema(session, requested_task)
     return None
 
 
 def get_raw_requested_task(
-    session: OrmSession, requested_task_id: UUID
+    session: OrmSession,
+    requested_task_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RequestedTask:
-    requested_task = get_raw_requested_task_or_none(session, requested_task_id)
+    requested_task = get_raw_requested_task_or_none(
+        session, requested_task_id, accessible_team_ids
+    )
     if requested_task is None:
         raise RecordDoesNotExistError(f"Requested task {requested_task_id} not found")
     return requested_task
 
 
 def get_requested_task_by_id(
-    session: OrmSession, requested_task_id: UUID
+    session: OrmSession,
+    requested_task_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> RequestedTaskFullSchema:
     return create_requested_task_full_schema(
-        session, get_raw_requested_task(session, requested_task_id)
+        session, get_raw_requested_task(session, requested_task_id, accessible_team_ids)
     )
 
 
@@ -1034,6 +1079,11 @@ def update_requested_task_priority(
     return create_requested_task_full_schema(session, requested_task)
 
 
-def delete_requested_task(session: OrmSession, requested_task_id: UUID) -> None:
+def delete_requested_task(
+    session: OrmSession,
+    requested_task_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
+) -> None:
     """Delete a requested task by ID."""
+    get_raw_requested_task(session, requested_task_id, accessible_team_ids)
     session.execute(delete(RequestedTask).where(RequestedTask.id == requested_task_id))

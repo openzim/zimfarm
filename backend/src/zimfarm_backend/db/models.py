@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     false,
+    func,
     text,
     true,
 )
@@ -24,6 +25,8 @@ from sqlalchemy.orm import (
     relationship,
 )
 from sqlalchemy.sql.schema import MetaData
+
+from zimfarm_backend.common import getnow
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -83,6 +86,10 @@ class Account(Base):
 
     workers: Mapped[list["Worker"]] = relationship(
         back_populates="account", cascade="all, delete-orphan", init=False
+    )
+
+    team_permissions: Mapped[list["TeamPermission"]] = relationship(
+        back_populates="account", init=False, default_factory=list
     )
 
 
@@ -323,6 +330,12 @@ class Recipe(Base):
         default_factory=list,
     )
 
+    teams: Mapped[list["TeamRecipe"]] = relationship(
+        back_populates="recipe",
+        cascade="all, delete-orphan",
+        init=False,
+    )
+
 
 class RecipeHistory(Base):
     __tablename__ = "recipe_history"
@@ -346,6 +359,9 @@ class RecipeHistory(Base):
     archived: Mapped[bool] = mapped_column(default=False, server_default=false())
     notification: Mapped[dict[str, Any] | None] = mapped_column(
         default_factory=dict, server_default="{}"
+    )
+    teams: Mapped[list[dict[str, Any]]] = mapped_column(
+        default_factory=list, server_default="[]"
     )
 
     recipe: Mapped["Recipe"] = relationship(
@@ -460,3 +476,73 @@ class Blob(Base):
     recipe: Mapped["Recipe | None"] = relationship(init=False, back_populates="blobs")
 
     __table_args__ = (UniqueConstraint("recipe_id", "flag_name", "checksum"),)
+
+
+class TeamRecipe(Base):
+    __tablename__ = "team_recipe"
+    recipe_id: Mapped[UUID] = mapped_column(
+        ForeignKey("recipe.id"), primary_key=True, init=False
+    )
+    team_id: Mapped[UUID] = mapped_column(
+        ForeignKey("team.id"), primary_key=True, init=False
+    )
+    recipe: Mapped["Recipe"] = relationship(back_populates="teams", init=False)
+    team: Mapped["Team"] = relationship(back_populates="recipes", init=False)
+
+
+class Team(Base):
+    __tablename__ = "team"
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    name: Mapped[str] = mapped_column(unique=True, index=True)
+    is_private: Mapped[bool] = mapped_column(default=False, server_default="false")
+
+    history_entries: Mapped[list["TeamHistory"]] = relationship(
+        back_populates="team",
+        cascade="all, delete",
+        passive_deletes=True,
+        init=False,
+        default_factory=list,
+        # return the history entries in descending order of created_at
+        order_by="TeamHistory.created_at.desc()",
+    )
+    recipes: Mapped[list["TeamRecipe"]] = relationship(
+        back_populates="team",
+        cascade="all, delete-orphan",
+        init=False,
+    )
+
+
+class TeamPermission(Base):
+    __tablename__ = "team_permission"
+    team_id: Mapped[UUID] = mapped_column(
+        ForeignKey("team.id", ondelete="CASCADE"), primary_key=True
+    )
+    account_id: Mapped[UUID] = mapped_column(
+        ForeignKey("account.id", ondelete="CASCADE"), primary_key=True
+    )
+
+    account: Mapped["Account"] = relationship(
+        back_populates="team_permissions", init=False
+    )
+    team: Mapped["Team"] = relationship(init=False)
+
+
+class TeamHistory(Base):
+    __tablename__ = "team_history"
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, server_default=text("uuid_generate_v4()")
+    )
+    team_id: Mapped[UUID] = mapped_column(
+        ForeignKey("team.id", ondelete="CASCADE"), init=False
+    )
+    author_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), init=False)
+    comment: Mapped[str | None]
+    name: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(
+        default_factory=getnow, server_default=func.now()
+    )
+    is_private: Mapped[bool] = mapped_column(default=False, server_default="false")
+    team: Mapped["Team"] = relationship(back_populates="history_entries", init=False)
+    author: Mapped["Account"] = relationship(init=False)

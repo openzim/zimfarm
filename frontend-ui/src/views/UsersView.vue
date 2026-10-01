@@ -93,6 +93,23 @@
                 />
               </v-col>
 
+              <v-col cols="12" v-if="isTeamRole">
+                <v-select
+                  v-model="form.teams"
+                  :items="teamsOptions"
+                  label="Teams"
+                  hint="Teams this account belongs to"
+                  multiple
+                  chips
+                  closable-chips
+                  variant="outlined"
+                  density="compact"
+                  persistent-hint
+                  :validate-on="'blur'"
+                  :rules="[rules.requiredArray]"
+                />
+              </v-col>
+
               <v-col cols="12" v-if="showLocalLogin">
                 <v-text-field
                   v-model="form.username"
@@ -192,10 +209,13 @@ import { useAuthStore } from '@/stores/auth'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
 import { useUserStore } from '@/stores/user'
+import { useTeamStore } from '@/stores/team'
 import type { User } from '@/types/user'
 import { generatePassword } from '@/utils/browsers'
 
+type CreatableRole = Exclude<(typeof constants.ROLES)[number], 'custom'>
 const roles = constants.ROLES.filter((role) => role !== 'custom')
+const teamRoles: readonly string[] = constants.TEAM_ROLES
 
 // Inject config
 const config = inject<Config>(constants.config)
@@ -213,6 +233,9 @@ const authStore = useAuthStore()
 const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
 const userStore = useUserStore()
+const teamStore = useTeamStore()
+
+const teamsOptions = computed(() => teamStore.teams.map((team) => team.name))
 
 // Form ref
 const formRef = ref()
@@ -237,8 +260,9 @@ const paginator = ref({
 const form = ref({
   display_name: '',
   username: '',
-  role: 'editor' as const,
+  role: 'public-viewer' as CreatableRole,
   password: '',
+  teams: [] as string[],
   idp_sub: '',
 })
 
@@ -254,8 +278,12 @@ const toggleText = computed(() => (showingViewers.value ? 'Hide Viewers' : 'Show
 
 const canCreateUsers = computed(() => authStore.hasPermission('accounts', 'create'))
 
+const isTeamRole = computed(() => teamRoles.includes(form.value.role))
+
 const isFormValid = computed(() => {
   if (!form.value.display_name || !form.value.role) return false
+
+  if (isTeamRole.value && form.value.teams.length === 0) return false
 
   if (showLocalLogin.value && !showOAuthLogin.value) {
     if (!form.value.username || !form.value.password) return false
@@ -280,6 +308,8 @@ const headers = [
 // Form validation rules
 const rules = {
   required: (value: string) => !!value || 'This field is required',
+  requiredArray: (value: unknown) =>
+    (Array.isArray(value) && value.length > 0) || 'This field is required',
   minLength: (min: number) => (value: string) =>
     value.length >= min || `This field must be at least ${min} characters long`,
 }
@@ -310,12 +340,16 @@ const createUser = async () => {
   const payload: {
     display_name: string
     role: string
+    teams?: string[]
     username?: string
     password?: string
     idp_sub?: string
   } = {
     display_name: form.value.display_name,
     role: form.value.role,
+  }
+  if (isTeamRole.value) {
+    payload.teams = form.value.teams
   }
   if (showLocalLogin.value) {
     payload.username = form.value.username
@@ -338,8 +372,9 @@ const createUser = async () => {
     form.value = {
       display_name: '',
       username: '',
-      role: 'editor' as const,
+      role: 'public-viewer',
       password: '',
+      teams: [],
       idp_sub: '',
     }
     formRef.value?.reset()
@@ -400,8 +435,9 @@ const closeCreateDialog = () => {
   form.value = {
     display_name: '',
     username: '',
-    role: 'editor' as const,
+    role: 'public-viewer',
     password: '',
+    teams: [],
     idp_sub: '',
   }
   formRef.value?.reset()
@@ -433,6 +469,7 @@ onMounted(async () => {
     error.value = 'You do not have permission to view users.'
     return
   }
+  teamStore.fetchTeams({ limit: 200 })
 })
 
 // Watch for dialog open to generate password

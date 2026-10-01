@@ -59,6 +59,7 @@ const currentFilters = ref({
   languages: [] as string[],
   tags: [] as string[],
   offliners: [] as string[],
+  teams: [] as string[],
 })
 const archivedCount = ref(0)
 const loadingArchivedCount = ref(false)
@@ -94,6 +95,7 @@ async function fetchArchivedCount(filters: typeof currentFilters.value) {
       filters.name || undefined,
       true, // archived
       filters.offliners.length > 0 ? filters.offliners : undefined,
+      filters.teams.length > 0 ? filters.teams : undefined,
     )
     archivedCount.value = recipeStore.paginator.count
   } catch (error) {
@@ -129,6 +131,11 @@ function navigateToArchives() {
     query.offliner = currentFilters.value.offliners[0]
   } else if (currentFilters.value.offliners.length > 1) {
     query.offliner = currentFilters.value.offliners
+  }
+  if (currentFilters.value.teams.length === 1) {
+    query.team = currentFilters.value.teams[0]
+  } else if (currentFilters.value.teams.length > 1) {
+    query.team = currentFilters.value.teams
   }
 
   router.push({

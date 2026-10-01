@@ -61,6 +61,7 @@
 
               <template v-slot:append>
                 <v-btn
+                  v-if="canRevert"
                   icon="mdi-restore"
                   variant="text"
                   size="small"
@@ -183,13 +184,19 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { EnhancedDiff } from '@/utils/diff'
 
-const props = defineProps<{
-  history: RecipeHistorySchema[]
-  hasMore: boolean
-  loading: boolean
-  paginator: Paginator
-  recipeName: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    history: RecipeHistorySchema[]
+    hasMore: boolean
+    loading: boolean
+    paginator: Paginator
+    recipeName: string
+    canRevert?: boolean
+  }>(),
+  {
+    canRevert: true,
+  },
+)
 
 const emit = defineEmits<{
   load: [{ limit: number; skip: number }]
@@ -236,13 +243,14 @@ const recipeDifferences = computed(
 
     const [item1, item2] = selectedItemsArray.value
 
-    // Extract the subset from both items (excluding id, author, comment, created_at)
-    const { id, author, comment, created_at, ...subset1 } = item1
+    // Extract the subset from both items (excluding id, author, comment, created_at),
+    const { id, author, comment, created_at, teams: teams1, ...subset1 } = item1
     const {
       id: _id,
       author: _author,
       comment: _comment,
       created_at: _created_at,
+      teams: teams2,
       ...subset2
     } = item2
 
@@ -256,7 +264,12 @@ const recipeDifferences = computed(
     void _comment
     void _created_at
 
-    return diff(subset1, subset2)
+    const toTeamNames = (teams: typeof teams1) => (teams ?? []).map((team) => team.name).sort()
+
+    return diff(
+      { ...subset1, teams: toTeamNames(teams1) },
+      { ...subset2, teams: toTeamNames(teams2) },
+    )
   },
 )
 

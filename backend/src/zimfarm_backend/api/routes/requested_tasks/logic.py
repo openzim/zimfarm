@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Annotated, cast
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from zimfarm_backend.api.routes.dependencies import (
     get_current_account,
     get_current_account_or_none,
     get_current_account_with_session,
+    get_editable_team_ids,
     require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
@@ -46,34 +48,12 @@ from zimfarm_backend.common.upload import (
     build_task_upload_uris,
 )
 from zimfarm_backend.common.utils import task_event_handler
+from zimfarm_backend.db import account as db_account
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
-from zimfarm_backend.db.account import check_account_permission
+from zimfarm_backend.db import recipe as db_recipe
+from zimfarm_backend.db import requested_task as db_requested_task
+from zimfarm_backend.db import worker as db_worker
 from zimfarm_backend.db.models import Account
-from zimfarm_backend.db.recipe import count_enabled_recipes
-from zimfarm_backend.db.requested_task import (
-    compute_requested_task_rank,
-    find_requested_task_for_worker,
-    get_raw_requested_task,
-    get_requested_task_by_id,
-    request_task,
-)
-from zimfarm_backend.db.requested_task import (
-    delete_requested_task as db_delete_requested_task,
-)
-from zimfarm_backend.db.requested_task import (
-    diagnose_requested_task as db_diagnose_requested_task,
-)
-from zimfarm_backend.db.requested_task import (
-    get_requested_tasks as db_get_requested_tasks,
-)
-from zimfarm_backend.db.requested_task import (
-    update_requested_task_priority as db_update_requested_task_priority,
-)
-from zimfarm_backend.db.worker import (
-    create_worker_schema,
-    get_worker,
-    update_worker,
-)
 
 router = APIRouter(prefix="/requested-tasks", tags=["requested-tasks"])
 
@@ -103,9 +83,15 @@ def create_request_task(
     new_requested_task: NewRequestedTaskSchema,
     session: OrmSession = Depends(gen_dbsession),
     current_account: Account = Depends(get_current_account),
+    accessible_team_ids: Sequence[UUID] | None = Depends(get_editable_team_ids),
 ):
     """Create requested task from a list of recipe_names"""
-    if count_enabled_recipes(session, new_requested_task.recipe_names) == 0:
+    if (
+        db_recipe.count_enabled_recipes(
+            session, new_requested_task.recipe_names, accessible_team_ids
+        )
+        == 0
+    ):
         raise NotFoundError(
             "No enabled recipes found for the given names",
         )
@@ -113,10 +99,11 @@ def create_request_task(
     requested_tasks: list[RequestedTaskFullSchema] = []
     errors: dict[str, str] = {}
     for recipe_identifier in new_requested_task.recipe_names:
-        result = request_task(
+        result = db_requested_task.request_task(
             session,
             recipe_identifier=recipe_identifier,
             requested_by=current_account.id,
+            accessible_team_ids=accessible_team_ids,
             worker_name=new_requested_task.worker,
             priority=new_requested_task.priority or 0,
         )
@@ -143,19 +130,23 @@ def get_requested_tasks(
     requested_task_schema: Annotated[RequestedTaskSchema, Query()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for account."""
     if current_account and requested_task_schema.worker:
-        update_worker(session, worker_name=requested_task_schema.worker)
+        db_worker.update_worker(session, worker_name=requested_task_schema.worker)
 
     skip = requested_task_schema.skip or 0
     limit = requested_task_schema.limit or 20
 
-    results = db_get_requested_tasks(
+    results = db_requested_task.get_requested_tasks(
         session,
         worker_name=requested_task_schema.worker,
         skip=skip,
         limit=limit,
+        accessible_team_ids=accessible_team_ids,
         matching_offliners=(
             requested_task_schema.matching_offliners
             if requested_task_schema.matching_offliners is not None
@@ -172,9 +163,9 @@ def get_requested_tasks(
             nb_records=results.nb_records,
             skip=skip,
             limit=limit,
-            page_size=len(results.requested_tasks),
+            page_size=len(results.records),
         ),
-        items=results.requested_tasks,
+        items=results.records,
     )
 
 
@@ -184,12 +175,16 @@ def get_requested_tasks_for_worker(
     query: Annotated[GetRequestedTaskSchema, Query()],
     session: Annotated[OrmSession, Depends(gen_manual_dbsession)],
     current_account: Annotated[
-        Account, Depends(get_current_account_with_session(session_type="manual"))
+        Account,
+        Depends(get_current_account_with_session(session_type="manual")),
+    ],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
     ],
 ) -> ListResponse[RequestedTaskLightSchema]:
     """Get list of requested tasks for a worker."""
 
-    worker = get_worker(session, worker_name=query.worker_name)
+    worker = db_worker.get_worker(session, worker_name=query.worker_name)
 
     fallback_ip = request.client.host if request.client else None
     x_forwarded_for = request.headers.get("X-Forwarded-For", fallback_ip)
@@ -202,7 +197,7 @@ def get_requested_tasks_for_worker(
                 f"{x_forwarded_for}"
             )
 
-        worker = update_worker(
+        worker = db_worker.update_worker(
             session,
             worker_name=query.worker_name,
             ip_address=x_forwarded_for if ip_changed else None,
@@ -239,12 +234,13 @@ def get_requested_tasks_for_worker(
             items=[],
         )
 
-    task = find_requested_task_for_worker(
+    task = db_requested_task.find_requested_task_for_worker(
         session=session,
-        worker=create_worker_schema(worker),
+        worker=db_worker.create_worker_schema(worker),
         avail_cpu=query.avail_cpu,
         avail_memory=query.avail_memory,
         avail_disk=query.avail_disk,
+        accessible_team_ids=accessible_team_ids,
     ).requested_task
 
     return ListResponse(
@@ -292,23 +288,30 @@ def get_requested_task(
     requested_task_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
     current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
     *,
     hide_secrets: Annotated[bool | None, Query()] = True,
 ) -> JSONResponse:
     """Get a requested task by ID."""
-    requested_task = get_requested_task_by_id(session, requested_task_id)
+    requested_task = db_requested_task.get_requested_task_by_id(
+        session, requested_task_id, accessible_team_ids
+    )
 
     # also fetch all requested tasks IDs to compute estimated task rank ; this is
     # only an indicator for zimit.kiwix.org where duration is unknown because
     # recipe is created on-demand and all tasks have access to same worker(s) ;
     # sorting by priority and updated_at won't give a good indicator in other cases
-    requested_task.rank = compute_requested_task_rank(session, requested_task_id)
+    requested_task.rank = db_requested_task.compute_requested_task_rank(
+        session, requested_task_id
+    )
 
     # exclude notification to not expose private information (privacy)
     # on anonymous requests and requests for accounts without recipes_update
     if not (
         current_account
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="requested_tasks", name="secrets"
         )
     ):
@@ -318,7 +321,7 @@ def get_requested_task(
     # does not matter
     if not (
         current_account
-        and check_account_permission(
+        and db_account.check_account_permission(
             current_account, namespace="requested_tasks", name="secrets"
         )
     ):
@@ -347,10 +350,15 @@ def update_requested_task_priority(
     requested_task_id: Annotated[UUID, Path()],
     update_requested_task_schema: UpdateRequestedTaskSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ) -> RequestedTaskFullSchema:
     """Update the priority of a requested task."""
-    get_requested_task_by_id(session, requested_task_id)
-    requested_task = db_update_requested_task_priority(
+    db_requested_task.get_requested_task_by_id(
+        session, requested_task_id, accessible_team_ids
+    )
+    requested_task = db_requested_task.update_requested_task_priority(
         session, requested_task_id, update_requested_task_schema.priority
     )
     return build_task_upload_uris(
@@ -367,9 +375,14 @@ def update_requested_task_priority(
 def delete_requested_task(
     requested_task_id: Annotated[UUID, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ) -> JSONResponse:
     """Delete a requested task by ID."""
-    db_delete_requested_task(session, requested_task_id)
+    db_requested_task.delete_requested_task(
+        session, requested_task_id, accessible_team_ids
+    )
     return JSONResponse(content={"deleted": 1})
 
 
@@ -383,13 +396,19 @@ def diagnose_requested_task(
     requested_task_id: Annotated[UUID, Path()],
     worker: Annotated[NotEmptyString, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ):
     """Diagnose why a requested task is not running on worker."""
-    reason = db_diagnose_requested_task(
+    reason = db_requested_task.diagnose_requested_task(
         session,
-        worker=create_worker_schema(get_worker(session, worker_name=worker)),
-        requested_task=get_raw_requested_task(
-            session, requested_task_id=requested_task_id
+        worker=db_worker.create_worker_schema(
+            db_worker.get_worker(session, worker_name=worker)
         ),
+        requested_task=db_requested_task.get_raw_requested_task(
+            session, requested_task_id, accessible_team_ids
+        ),
+        accessible_team_ids=accessible_team_ids,
     )
     raise BadRequestError(reason)

@@ -6,6 +6,7 @@ import type {
   RecipeDuration,
 } from '@/types/base'
 import type { Language } from '@/types/language'
+import type { TeamLight } from '@/types/team'
 
 export interface OfflinerFlags {
   offliner_id: string
@@ -29,6 +30,7 @@ export interface BaseRecipeHistorySchema {
   enabled: boolean
   language_code: string
   tags: string[]
+  teams: TeamLight[]
   periodicity: string
   context: string
   archived: boolean
@@ -50,6 +52,7 @@ export interface Recipe {
   config: ExpandedRecipeConfig
   enabled: boolean
   tags: string[]
+  teams: TeamLight[]
   periodicity: string
   notification: RecipeNotification | null
   most_recent_task: MostRecentTask | null
@@ -70,6 +73,7 @@ export interface RecipeLight {
   is_requested: boolean
   archived: boolean
   context: string
+  teams: TeamLight[]
 }
 
 export interface RecipeUpdateSchema {
@@ -77,6 +81,7 @@ export interface RecipeUpdateSchema {
   language: string | null
   periodicity: string | null
   tags: string[] | null
+  teams: string[] | null
   enabled: boolean | null
   offliner: string | null
   warehouse_path: string | null
@@ -96,6 +101,11 @@ export interface EventNotification {
   mailgun: string[] | null
   webhook: string[] | null
   slack: string[] | null
+}
+
+export interface CloneRecipePayload {
+  name: string
+  teams?: string[]
 }
 
 export interface RecipeNotification {

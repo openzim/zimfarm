@@ -23,20 +23,10 @@ from zimfarm_backend.common.schemas.models import (
 from zimfarm_backend.common.schemas.offliners.builder import build_offliner_model
 from zimfarm_backend.common.schemas.offliners.serializer import schema_to_flags
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema
-from zimfarm_backend.db.account import check_account_permission
-from zimfarm_backend.db.models import Account
-from zimfarm_backend.db.offliner import create_offliner as db_create_offliner
-from zimfarm_backend.db.offliner import get_all_offliners
-from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
-from zimfarm_backend.db.offliner_definition import (
-    create_offliner_definition as db_create_offliner_definition,
-)
-from zimfarm_backend.db.offliner_definition import (
-    get_offliner_definition as db_get_offliner_definition,
-)
-from zimfarm_backend.db.offliner_definition import (
-    get_offliner_versions as db_get_offliner_versions,
-)
+from zimfarm_backend.db import account as db_account
+from zimfarm_backend.db import models as db_models
+from zimfarm_backend.db import offliner as db_offliner
+from zimfarm_backend.db import offliner_definition as db_offliner_definition
 
 router = APIRouter(prefix="/offliners", tags=["offliners"])
 
@@ -46,7 +36,7 @@ def get_offliners(
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> ListResponse[str]:
     """Get a list of offliners"""
-    offliners = get_all_offliners(session)
+    offliners = db_offliner.get_all_offliners(session)
     return ListResponse(
         meta=calculate_pagination_metadata(
             nb_records=len(offliners),
@@ -62,15 +52,15 @@ def get_offliners(
 def create_offliner(
     request: OfflinerCreateSchema,
     session: Annotated[OrmSession, Depends(gen_dbsession)],
-    current_account: Account = Depends(get_current_account),
+    current_account: db_models.Account = Depends(get_current_account),
 ) -> Response:
     """Create an offliner"""
-    if not check_account_permission(
+    if not db_account.check_account_permission(
         current_account, namespace="offliners", name="create"
     ):
         raise UnauthorizedError("You do not have permissions to create an offliner.")
 
-    db_create_offliner(
+    db_offliner.create_offliner(
         session,
         offliner_id=request.offliner_id,
         base_model=request.base_model,
@@ -90,7 +80,7 @@ def get_offliner_versions(
     limit: Annotated[LimitFieldMax200, Query()] = 20,
 ) -> ListResponse[str]:
     """Get a list of versions for a specific offliner"""
-    offliner_versions = db_get_offliner_versions(
+    offliner_versions = db_offliner_definition.get_offliner_versions(
         session, offliner_id, skip=skip, limit=limit
     )
     return ListResponse(
@@ -111,7 +101,7 @@ def create_offliner_version(
     request: Annotated[OfflinerDefinitionCreateSchema, Body()],
 ) -> Response:
     """Create a new version for a specific offliner"""
-    offliner = db_get_offliner(session, offliner_id)
+    offliner = db_offliner.get_offliner(session, offliner_id)
     if offliner.ci_secret_hash is None:
         raise UnauthorizedError("CI secret is missing for offliner")
 
@@ -120,7 +110,9 @@ def create_offliner_version(
             "You are not authorized to create a new version for this offliner"
         )
 
-    db_create_offliner_definition(session, request.spec, offliner_id, request.version)
+    db_offliner_definition.create_offliner_definition(
+        session, request.spec, offliner_id, request.version
+    )
     return Response(status_code=HTTPStatus.CREATED)
 
 
@@ -133,8 +125,8 @@ def get_offliner(
     """Get a specific offliner"""
 
     # find the schema class that matches the offliner
-    offliner = db_get_offliner(session, offliner_id)
-    offliner_definition = db_get_offliner_definition(
+    offliner = db_offliner.get_offliner(session, offliner_id)
+    offliner_definition = db_offliner_definition.get_offliner_definition(
         session, offliner_id=offliner_id, version=version
     )
     schema_cls = build_offliner_model(offliner, offliner_definition.schema_)
@@ -157,4 +149,6 @@ def get_offliner_spec(
     version: Annotated[str, Path()],
     session: Annotated[OrmSession, Depends(gen_dbsession)],
 ) -> OfflinerDefinitionSchema:
-    return db_get_offliner_definition(session, offliner_id=offliner_id, version=version)
+    return db_offliner_definition.get_offliner_definition(
+        session, offliner_id=offliner_id, version=version
+    )

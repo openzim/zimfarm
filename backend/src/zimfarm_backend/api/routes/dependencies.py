@@ -1,4 +1,6 @@
+from collections.abc import Sequence
 from typing import Annotated, Literal
+from uuid import UUID
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -13,6 +15,7 @@ from zimfarm_backend.api.token import JWTClaims, token_decoder
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import AccountUpdateSchema
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
+from zimfarm_backend.db import team_permission as db_team_permission
 from zimfarm_backend.db.account import (
     check_account_permission,
     create_account,
@@ -79,7 +82,7 @@ def get_current_account_or_none_with_session(
             create_account(
                 session,
                 display_name=claims.name or str(claims.sub),
-                role=RoleEnum.VIEWER,
+                role=RoleEnum.PUBLIC_VIEWER,
                 idp_sub=claims.sub,
             )
             account = get_account_by_id_or_none(session, account_id=claims.sub)
@@ -149,3 +152,19 @@ def require_permission(*, namespace: str, name: str):
         return current_account
 
     return _check_permission
+
+
+def get_editable_team_ids(
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
+) -> Sequence[UUID] | None:
+    """Team IDs the account may edit/operate on (None means no scoping)."""
+    return db_team_permission.get_editable_team_ids(session, current_account)
+
+
+def get_viewable_team_ids(
+    session: Annotated[OrmSession, Depends(gen_dbsession)],
+    current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
+) -> Sequence[UUID] | None:
+    """Team IDs the account may view resources of (None means no scoping)."""
+    return db_team_permission.get_viewable_team_ids(session, current_account)

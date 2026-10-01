@@ -57,6 +57,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     name: string | undefined,
     archived: boolean | undefined,
     offliner: string[] | undefined,
+    team: string[] | undefined,
   ) => {
     const service = await authStore.getApiService('recipes')
     // filter out undefined values from params
@@ -69,6 +70,7 @@ export const useRecipeStore = defineStore('recipe', () => {
         name,
         archived,
         offliner,
+        team,
       }).filter(([, value]) => !!value),
     )
     try {
@@ -122,13 +124,14 @@ export const useRecipeStore = defineStore('recipe', () => {
     errors.value = []
   }
 
-  const cloneRecipe = async (recipeName: string, newRecipeName: string) => {
+  const cloneRecipe = async (recipeName: string, newRecipeName: string, teams?: string[]) => {
     const service = await authStore.getApiService('recipes')
     try {
-      const response = await service.post<{ name: string }, { id: string }>(
+      const response = await service.post<{ name: string; teams?: string[] }, { id: string }>(
         `/${recipeName}/clone`,
         {
           name: newRecipeName,
+          teams,
         },
       )
       return response

@@ -36,11 +36,14 @@ from zimfarm_backend.db.models import (
     RecipeHistory,
     RequestedTask,
     Task,
+    Team,
     Worker,
 )
 from zimfarm_backend.db.offliner_definition import create_offliner_instance
 from zimfarm_backend.db.recipe import (
     DEFAULT_RECIPE_DURATION,
+    RecipeCreateSchema,
+    RecipeUpdateSchema,
     count_enabled_recipes,
     create_recipe,
     create_recipe_full_schema,
@@ -62,19 +65,19 @@ from zimfarm_backend.db.recipe import (
 
 def test_get_recipe_or_none(dbsession: OrmSession):
     """Test that get_recipe_or_none returns None if the recipe does not exist"""
-    recipe = get_recipe_or_none(dbsession, "nonexistent")
+    recipe = get_recipe_or_none(dbsession, "nonexistent", accessible_team_ids=None)
     assert recipe is None
 
 
 def test_get_recipe_not_found(dbsession: OrmSession):
     """Test that get_recipe raises an exception if the recipe does not exist"""
     with pytest.raises(RecordDoesNotExistError):
-        get_recipe(dbsession, "nonexistent")
+        get_recipe(dbsession, "nonexistent", accessible_team_ids=None)
 
 
 def test_get_recipe(dbsession: OrmSession, recipe: Recipe):
     """Test that get_recipe returns the recipe if it exists"""
-    db_recipe = get_recipe(dbsession, str(recipe.id))
+    db_recipe = get_recipe(dbsession, str(recipe.id), accessible_team_ids=None)
     assert db_recipe is not None
     assert db_recipe.name == recipe.name
     assert db_recipe.id == recipe.id
@@ -91,14 +94,17 @@ def test_count_enabled_recipes(
     expected_count: int,
 ):
     """Test that count_enabled_recipes returns the correct count"""
-    count = count_enabled_recipes(dbsession, recipe_name)
+    count = count_enabled_recipes(dbsession, recipe_name, accessible_team_ids=None)
     assert count == expected_count
 
 
 def test_get_recipe_duration_default(dbsession: OrmSession, worker: Worker):
     """Test that returns default duration when no specific duration exists"""
     duration = get_recipe_duration(
-        dbsession, recipe_identifier="nonexistent", worker_name=worker.name
+        dbsession,
+        recipe_identifier="nonexistent",
+        worker_name=worker.name,
+        accessible_team_ids=None,
     )
     assert duration.value > 0
     assert duration.worker_name is None
@@ -113,7 +119,10 @@ def test_get_recipe_duration_with_worker(
     """Returns worker-specific duration when recipe exists"""
     recipe = create_recipe(worker=worker)
     duration = get_recipe_duration(
-        dbsession, recipe_identifier=str(recipe.id), worker_name=worker.name
+        dbsession,
+        recipe_identifier=str(recipe.id),
+        worker_name=worker.name,
+        accessible_team_ids=None,
     )
     assert duration.value == recipe.durations[0].value
     assert duration.worker_name is not None
@@ -126,21 +135,26 @@ def test_create_recipe(
     account: Account,
     create_recipe_config: Callable[..., RecipeConfigSchema],
     mwoffliner_definition: OfflinerDefinitionSchema,
+    team: Team,
 ):
     """Test that create_recipe creates a recipe with the correct duration"""
     recipe_config = create_recipe_config(cpu=1, memory=2**10, disk=2**10)
     recipe = create_recipe(
         session=dbsession,
-        name="test_recipe",
         author_id=account.id,
-        language=LanguageSchema(code="eng", name="English"),
-        config=recipe_config,
-        tags=["test"],
-        enabled=True,
-        notification=None,
-        periodicity=RecipePeriodicity.manually,
+        payload=RecipeCreateSchema(
+            name="test_recipe",
+            language=LanguageSchema(code="eng", name="English"),
+            config=recipe_config,
+            tags=["test"],
+            enabled=True,
+            notification=None,
+            periodicity=RecipePeriodicity.manually,
+            context="test",
+            teams=[team.name],
+        ),
         offliner_definition=mwoffliner_definition,
-        context="test",
+        accessible_team_ids=None,
     )
 
     assert recipe.name == "test_recipe"
@@ -159,6 +173,7 @@ def test_create_recipe(
     assert recipe.durations[0].worker is None
     assert recipe.durations[0].default
     assert len(recipe.history_entries) == 1
+    assert {entry["name"] for entry in recipe.history_entries[0].teams} == {team.name}
 
 
 def test_create_duplicate_recipe_with_existing_name(
@@ -166,44 +181,217 @@ def test_create_duplicate_recipe_with_existing_name(
     create_recipe_config: Callable[..., RecipeConfigSchema],
     create_account: Callable[..., Account],
     mwoffliner_definition: OfflinerDefinitionSchema,
+    team: Team,
 ):
     """Test that create_recipe creates a recipe with the correct duration"""
     recipe_config = create_recipe_config(cpu=1, memory=2**10, disk=2**10)
     recipe_name = "test_recipe"
     account = create_account(username="author")
-    create_recipe(
-        session=dbsession,
+    payload = RecipeCreateSchema(
         name=recipe_name,
-        author_id=account.id,
         language=LanguageSchema(code="eng", name="English"),
         config=recipe_config,
         tags=["test"],
         enabled=True,
         notification=None,
         periodicity=RecipePeriodicity.manually,
+        teams=[team.name],
+    )
+    create_recipe(
+        session=dbsession,
+        author_id=account.id,
+        payload=payload,
         offliner_definition=mwoffliner_definition,
+        accessible_team_ids=None,
     )
     with pytest.raises(RecordAlreadyExistsError):
         create_recipe(
             session=dbsession,
-            name=recipe_name,
             author_id=account.id,
-            language=LanguageSchema(code="eng", name="English"),
-            config=recipe_config,
-            tags=["test"],
-            enabled=True,
-            notification=None,
-            periodicity=RecipePeriodicity.manually,
+            payload=payload,
             offliner_definition=mwoffliner_definition,
+            accessible_team_ids=None,
         )
+
+
+@pytest.mark.parametrize(
+    "initial_teams,updated_teams,expected_teams",
+    [
+        pytest.param(["wikimedia"], ["openzim"], {"openzim"}, id="replace-team"),
+        pytest.param(
+            ["wikimedia"],
+            ["wikimedia", "openzim"],
+            {"wikimedia", "openzim"},
+            id="add-team",
+        ),
+        pytest.param(
+            ["wikimedia", "openzim"],
+            ["openzim"],
+            {"openzim"},
+            id="remove-team",
+        ),
+    ],
+)
+def test_update_recipe_teams(
+    dbsession: OrmSession,
+    account: Account,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    mwoffliner_definition: OfflinerDefinitionSchema,
+    initial_teams: list[str],
+    updated_teams: list[str],
+    expected_teams: set[str],
+):
+    """Test that update_recipe replaces teams and records them in history"""
+    teams = {name: create_team(name=name) for name in ("wikimedia", "openzim")}
+    recipe = create_recipe(
+        name="wikipedia_fr_all", teams=[teams[name] for name in initial_teams]
+    )
+    assert {team_recipe.team.name for team_recipe in recipe.teams} == set(initial_teams)
+
+    update_recipe(
+        dbsession,
+        author_id=account.id,
+        recipe_identifier=recipe.name,
+        accessible_team_ids=None,
+        payload=RecipeUpdateSchema(
+            offliner_definition=mwoffliner_definition,
+            teams=updated_teams,
+        ),
+    )
+
+    updated_recipe = get_recipe(dbsession, recipe.name, accessible_team_ids=None)
+    assert {
+        team_recipe.team.name for team_recipe in updated_recipe.teams
+    } == expected_teams
+    assert expected_teams in [
+        {entry["name"] for entry in history_entry.teams}
+        for history_entry in updated_recipe.history_entries
+    ]
 
 
 def test_get_all_recipes(dbsession: OrmSession, create_recipe: Callable[..., Recipe]):
     """Test that get_all_recipes returns all recipes"""
     recipe = create_recipe()
-    results = get_all_recipes(dbsession)
+    results = get_all_recipes(dbsession, accessible_team_ids=None)
     assert results.nb_records == 1
-    assert results.recipes[0].name == recipe.name
+    assert results.records[0].name == recipe.name
+
+
+@pytest.mark.parametrize(
+    "accessible_teams,expected_names",
+    [
+        pytest.param(None, {"wikipedia_fr_all", "wikipedia_en_all"}, id="all"),
+        pytest.param(["a"], {"wikipedia_fr_all"}, id="wikimedia"),
+        pytest.param(["b"], {"wikipedia_en_all"}, id="openzim"),
+        pytest.param(
+            ["a", "b"],
+            {"wikipedia_fr_all", "wikipedia_en_all"},
+            id="wikimedia-and-openzim",
+        ),
+        pytest.param([], set[str](), id="none"),
+    ],
+)
+def test_get_recipes_filters_by_accessible_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    accessible_teams: list[str] | None,
+    expected_names: set[str],
+):
+    """Test that get_recipes only returns recipes from accessible teams"""
+    team_a = create_team(name="wikimedia", is_private=True)
+    team_b = create_team(name="openzim", is_private=True)
+    create_recipe(name="wikipedia_fr_all", teams=[team_a])
+    create_recipe(name="wikipedia_en_all", teams=[team_b])
+
+    accessible_team_ids = (
+        None
+        if accessible_teams is None
+        else [{"a": team_a.id, "b": team_b.id}[key] for key in accessible_teams]
+    )
+
+    results = get_recipes(
+        dbsession,
+        skip=0,
+        limit=100,
+        accessible_team_ids=accessible_team_ids,
+    )
+    assert {record.name for record in results.records} == expected_names
+
+
+@pytest.mark.parametrize(
+    "accessible_teams,expected_names",
+    [
+        pytest.param(None, {"wikipedia_fr_all", "wikipedia_en_all"}, id="all"),
+        pytest.param(["a"], {"wikipedia_fr_all"}, id="wikimedia"),
+        pytest.param(["b"], {"wikipedia_en_all"}, id="openzim"),
+        pytest.param([], set[str](), id="none"),
+    ],
+)
+def test_get_all_recipes_filters_by_accessible_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    accessible_teams: list[str] | None,
+    expected_names: set[str],
+):
+    """Test that get_all_recipes only returns recipes from accessible teams"""
+    team_a = create_team(name="wikimedia", is_private=True)
+    team_b = create_team(name="openzim", is_private=True)
+    create_recipe(name="wikipedia_fr_all", teams=[team_a])
+    create_recipe(name="wikipedia_en_all", teams=[team_b])
+
+    accessible_team_ids = (
+        None
+        if accessible_teams is None
+        else [{"a": team_a.id, "b": team_b.id}[key] for key in accessible_teams]
+    )
+
+    results = get_all_recipes(dbsession, accessible_team_ids=accessible_team_ids)
+    assert {record.name for record in results.records} == expected_names
+
+
+@pytest.mark.parametrize(
+    "accessible_teams,is_accessible",
+    [
+        pytest.param(None, True, id="all"),
+        pytest.param(["b"], True, id="openzim"),
+        pytest.param(["a"], False, id="wikimedia"),
+        pytest.param([], False, id="none"),
+    ],
+)
+def test_get_recipe_or_none_filters_by_accessible_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    accessible_teams: list[str] | None,
+    *,
+    is_accessible: bool,
+):
+    """Test that get_recipe_or_none/get_recipe only resolve accessible recipes"""
+    team_a = create_team(name="wikimedia", is_private=True)
+    team_b = create_team(name="openzim", is_private=True)
+    create_recipe(name="wikipedia_fr_all", teams=[team_a])
+    create_recipe(name="wikipedia_en_all", teams=[team_b])
+
+    accessible_team_ids = (
+        None
+        if accessible_teams is None
+        else [{"a": team_a.id, "b": team_b.id}[key] for key in accessible_teams]
+    )
+
+    result = get_recipe_or_none(dbsession, "wikipedia_en_all", accessible_team_ids)
+    if is_accessible:
+        assert result is not None
+        assert result.name == "wikipedia_en_all"
+        assert get_recipe(dbsession, "wikipedia_en_all", accessible_team_ids).name == (
+            "wikipedia_en_all"
+        )
+    else:
+        assert result is None
+        with pytest.raises(RecordDoesNotExistError):
+            get_recipe(dbsession, "wikipedia_en_all", accessible_team_ids)
 
 
 def test_update_recipe(
@@ -226,9 +414,12 @@ def test_update_recipe(
             dbsession,
             author_id=account.id,
             recipe_identifier=str(old_recipe.id),
-            new_recipe_config=new_recipe_config,
-            name=old_recipe.name + "_updated",
-            offliner_definition=mwoffliner_definition,
+            accessible_team_ids=None,
+            payload=RecipeUpdateSchema(
+                offliner_definition=mwoffliner_definition,
+                config=new_recipe_config,
+                name=old_recipe.name + "_updated",
+            ),
         ),
         mwoffliner,
     )
@@ -242,8 +433,10 @@ def test_delete_recipe(dbsession: OrmSession, create_recipe: Callable[..., Recip
     """Test that delete_recipe deletes a recipe"""
     recipe = create_recipe()
     recipe_id = recipe.id
-    delete_recipe(dbsession, str(recipe.id))
-    assert get_recipe_or_none(dbsession, str(recipe_id)) is None
+    delete_recipe(dbsession, str(recipe.id), accessible_team_ids=None)
+    assert (
+        get_recipe_or_none(dbsession, str(recipe_id), accessible_team_ids=None) is None
+    )
     # assert that there is no recipe history entry
     assert (
         count_from_stmt(
@@ -257,7 +450,7 @@ def test_delete_recipe(dbsession: OrmSession, create_recipe: Callable[..., Recip
 def test_delete_recipe_not_found(dbsession: OrmSession):
     """Test that delete_recipe raises an exception if the recipe does not exist"""
     with pytest.raises(RecordDoesNotExistError):
-        delete_recipe(dbsession, "nonexistent")
+        delete_recipe(dbsession, "nonexistent", accessible_team_ids=None)
 
 
 @pytest.mark.parametrize(
@@ -324,13 +517,14 @@ def test_get_recipes(
         dbsession,
         skip=0,
         limit=limit,
+        accessible_team_ids=None,
         name=name,
         lang=lang,
         tags=tags,
     )
     assert results.nb_records == expected_count
-    assert len(results.recipes) <= limit
-    for result_recipe in results.recipes:
+    assert len(results.records) <= limit
+    for result_recipe in results.records:
         assert result_recipe.config is not None
         assert result_recipe.most_recent_task is not None
 
@@ -341,7 +535,9 @@ def test_update_recipe_duration_no_tasks(
     """Test that update_recipe_duration does nothing when no matching tasks exist"""
     recipe = create_recipe(name="test_recipe")
 
-    update_recipe_duration(dbsession, recipe_identifier=recipe.name)
+    update_recipe_duration(
+        dbsession, recipe_identifier=recipe.name, accessible_team_ids=None
+    )
 
     assert len(recipe.durations) == 1
     assert recipe.durations[0].default is True
@@ -375,11 +571,13 @@ def test_update_recipe_duration_with_completed_tasks(
     dbsession.add(task)
     dbsession.flush()
 
-    update_recipe_duration(dbsession, recipe_identifier=str(recipe.id))
+    update_recipe_duration(
+        dbsession, recipe_identifier=str(recipe.id), accessible_team_ids=None
+    )
 
     # Expire the recipe to force a reload of the recipe
     dbsession.expire(recipe)
-    updated_recipe = get_recipe(dbsession, recipe.name)
+    updated_recipe = get_recipe(dbsession, recipe.name, accessible_team_ids=None)
 
     assert len(updated_recipe.durations) == 2  # Default + worker-specific
 
@@ -421,11 +619,13 @@ def test_update_recipe_duration_with_failed_tasks(
     dbsession.add(task)
     dbsession.flush()
 
-    update_recipe_duration(dbsession, recipe_identifier=recipe.name)
+    update_recipe_duration(
+        dbsession, recipe_identifier=recipe.name, accessible_team_ids=None
+    )
 
     # Expire the recipe to force a reload of the recipe
     dbsession.expire(recipe)
-    updated_recipe = get_recipe(dbsession, recipe.name)
+    updated_recipe = get_recipe(dbsession, recipe.name, accessible_team_ids=None)
 
     # Verify no new durations were created (only the default remains)
     assert len(updated_recipe.durations) == 1
@@ -476,10 +676,12 @@ def test_update_recipe_duration_multiple_workers(
     dbsession.add_all([task1, task2])
     dbsession.flush()
 
-    update_recipe_duration(dbsession, recipe_identifier=recipe.name)
+    update_recipe_duration(
+        dbsession, recipe_identifier=recipe.name, accessible_team_ids=None
+    )
 
     dbsession.expire(recipe)
-    updated_recipe = get_recipe(dbsession, recipe.name)
+    updated_recipe = get_recipe(dbsession, recipe.name, accessible_team_ids=None)
 
     assert len(updated_recipe.durations) == 3  # Default + 2 worker-specific
 
@@ -498,7 +700,10 @@ def test_get_recipe_history_entry_or_none_not_found(
     dbsession: OrmSession, recipe: Recipe
 ):
     history_entry = get_recipe_history_entry_or_none(
-        dbsession, recipe_identifier=recipe.name, history_id=uuid4()
+        dbsession,
+        recipe_identifier=recipe.name,
+        history_id=uuid4(),
+        accessible_team_ids=None,
     )
     assert history_entry is None
 
@@ -508,6 +713,7 @@ def test_get_recipe_history_entry_or_none(dbsession: OrmSession, recipe: Recipe)
         dbsession,
         recipe_identifier=recipe.name,
         history_id=recipe.history_entries[0].id,
+        accessible_team_ids=None,
     )
     assert history_entry is not None
 
@@ -518,6 +724,7 @@ def test_get_recipe_history_entry(dbsession: OrmSession, recipe: Recipe):
             dbsession,
             recipe_identifier=recipe.name,
             history_id=uuid4(),
+            accessible_team_ids=None,
         )
 
 
@@ -547,6 +754,7 @@ def test_toggle_recipe_archive_status(
             recipe_identifier=recipe.name,
             archived=new_archive_status,
             actor_id=account.id,
+            accessible_team_ids=None,
         )
 
 
@@ -571,7 +779,12 @@ def test_restore_recipes(
     create_recipe(name="testrecipe", archived=True)
 
     with expected:
-        restore_recipes(dbsession, recipe_identifiers=recipe_names, actor_id=account.id)
+        restore_recipes(
+            dbsession,
+            recipe_identifiers=recipe_names,
+            actor_id=account.id,
+            accessible_team_ids=None,
+        )
 
 
 def test_revert_recipe_archived_recipe(
@@ -591,6 +804,7 @@ def test_revert_recipe_archived_recipe(
             recipe_identifier="archived_recipe",
             history_id=history_id,
             author_id=account.id,
+            accessible_team_ids=None,
         )
 
 
@@ -615,6 +829,7 @@ def test_revert_recipe_no_offliner_definition_version(
             recipe_identifier="test_recipe",
             history_id=history_entry.id,
             author_id=account.id,
+            accessible_team_ids=None,
         )
 
 
@@ -677,21 +892,24 @@ def test_revert_recipe_all_fields(
         dbsession,
         author_id=account.id,
         recipe_identifier="test_recipe",
-        new_recipe_config=new_recipe_config,
-        offliner_definition=mwoffliner_definition,
-        tags=["tag3", "tag4"],
-        periodicity=RecipePeriodicity.quarterly,
-        context="updated context",
-        enabled=False,
-        comment="Update all fields",
-        notification=RecipeNotificationSchema(
-            requested=EventNotificationSchema(
-                mailgun=["updated@example.com", "another@example.com"]
-            )
+        accessible_team_ids=None,
+        payload=RecipeUpdateSchema(
+            offliner_definition=mwoffliner_definition,
+            config=new_recipe_config,
+            tags=["tag3", "tag4"],
+            periodicity=RecipePeriodicity.quarterly,
+            context="updated context",
+            enabled=False,
+            comment="Update all fields",
+            notification=RecipeNotificationSchema(
+                requested=EventNotificationSchema(
+                    mailgun=["updated@example.com", "another@example.com"]
+                )
+            ),
         ),
     )
 
-    updated_recipe = get_recipe(dbsession, "test_recipe")
+    updated_recipe = get_recipe(dbsession, "test_recipe", accessible_team_ids=None)
 
     assert updated_recipe.config != initial_config
     assert updated_recipe.tags != initial_tags
@@ -705,6 +923,7 @@ def test_revert_recipe_all_fields(
         recipe_identifier="test_recipe",
         history_id=initial_history_id,
         author_id=account.id,
+        accessible_team_ids=None,
     )
 
     assert reverted_recipe.config == initial_config

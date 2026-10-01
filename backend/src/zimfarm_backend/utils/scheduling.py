@@ -82,6 +82,7 @@ def request_tasks_using_recipe(session: OrmSession):
                         requested_by=get_account_by_identifier(
                             session, account_identifier=requester
                         ).id,
+                        accessible_team_ids=None,
                         worker_name=worker,
                         priority=priority,
                     )

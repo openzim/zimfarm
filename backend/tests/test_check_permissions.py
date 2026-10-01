@@ -14,7 +14,7 @@ def test_check_permission_from_role(dbsession: OrmSession, data_gen: Faker):
         display_name=username,
         password_hash=generate_password_hash("testpassword"),
         scope=None,
-        role=RoleEnum.EDITOR,
+        role=RoleEnum.GLOBAL_EDITOR,
     )
     dbsession.add(account)
     # editors can create recipes but can't create tasks

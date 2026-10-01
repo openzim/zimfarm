@@ -82,6 +82,22 @@
                                   <span class="mr-2">Role:</span>
                                   <code>{{ user.role }}</code>
                                 </div>
+                                <div v-if="user.teams?.length" class="d-flex mt-1">
+                                  <span class="mr-2">Teams:</span>
+                                  <div class="d-flex flex-row flex-wrap">
+                                    <v-chip
+                                      v-for="team in user.teams"
+                                      :key="team"
+                                      size="small"
+                                      color="primary"
+                                      variant="outlined"
+                                      density="comfortable"
+                                      class="mr-1 mb-1"
+                                    >
+                                      {{ team }}
+                                    </v-chip>
+                                  </div>
+                                </div>
                               </v-list-item-title>
                             </v-list-item>
                           </v-list>
@@ -345,6 +361,7 @@ const updateUser = async (payload: {
   display_name?: string
   role?: string
   scope?: Record<string, Record<string, boolean>>
+  teams?: string[]
   idp_sub?: string | null
 }) => {
   // Check if payload has any keys (not just truthy values, since null is valid)

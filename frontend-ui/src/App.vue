@@ -43,6 +43,10 @@ const canReadUsers = computed(() => {
   return authStore.hasPermission('accounts', 'read')
 })
 
+const canReadTeams = computed(() => {
+  return authStore.hasPermission('teams', 'read')
+})
+
 const navigationItems = computed<NavigationItem[]>(() => [
   {
     name: 'pipeline',
@@ -75,6 +79,14 @@ const navigationItems = computed<NavigationItem[]>(() => [
     icon: 'mdi-account-group',
     disabled: false,
     show: canReadUsers.value,
+  },
+  {
+    name: 'teams',
+    label: 'Teams',
+    route: 'teams',
+    icon: 'mdi-account-multiple',
+    disabled: false,
+    show: canReadTeams.value,
   },
 ])
 
