@@ -6,6 +6,7 @@ import pytest
 
 from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.upload import (
+    UPLOAD_SECRET_KEYS,
     build_task_upload_uris,
     generate_http_upload_url,
     rebuild_uri,
@@ -157,6 +158,34 @@ def test_rebuild_uri(uri_string: str, query: str | None, expected_url: str):
             False,
             f"https://example.com/path?key={'*' * SECRET_STRING_LENGTH}",
             id="multiple-values-same-key",
+        ),
+        pytest.param(
+            "s3://keyId:secretAccessKey@host/bucket",
+            UPLOAD_SECRET_KEYS,
+            False,
+            f"s3://keyId:{'*' * SECRET_STRING_LENGTH}@host/bucket",
+            id="hide-userinfo-password",
+        ),
+        pytest.param(
+            "s3://keyId:secretAccessKey@host/bucket",
+            UPLOAD_SECRET_KEYS,
+            True,
+            "s3://keyId:secretAccessKey@host/bucket",
+            id="show-userinfo-password",
+        ),
+        pytest.param(
+            "https://user:pass@example.com/path",
+            UPLOAD_SECRET_KEYS,
+            False,
+            f"https://user:{'*' * SECRET_STRING_LENGTH}@example.com/path",
+            id="hide-http-userinfo-password",
+        ),
+        pytest.param(
+            "sftp://uploader@host:22/logs",
+            UPLOAD_SECRET_KEYS,
+            False,
+            "sftp://uploader@host:22/logs",
+            id="keep-username-only-userinfo",
         ),
     ],
 )

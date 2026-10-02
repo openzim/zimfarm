@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.api.routes.requested_tasks import logic
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
+from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import RecipeConfigSchema, ResourcesSchema
 from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Worker
@@ -481,6 +482,88 @@ def test_get_requested_task_success(
             assert char == "*"
     else:
         assert config["offliner"]["mwPassword"] == "test-password"
+
+
+def test_get_requested_task_hides_upload_uris_no_auth(
+    client: TestClient,
+    dbsession: OrmSession,
+    requested_task: RequestedTask,
+):
+    """Upload URIs embed credentials and do not leak to anonymous callers."""
+    mask = "*" * SECRET_STRING_LENGTH
+    requested_task.upload = {
+        "zim": {"upload_uri": "s3://keyId:secretAccessKey@host/zim?bucketName=b"},
+        "logs": {"upload_uri": "sftp://uploader:secret@host:22/logs"},
+        "artifacts": {"upload_uri": "https://host/artifacts?secretAccessKey=abc"},
+        "check": {"upload_uri": "https://host/check?keyId=abc"},
+    }
+    dbsession.add(requested_task)
+    dbsession.flush()
+
+    response = client.get(f"/v2/requested-tasks/{requested_task.id}")
+
+    assert response.status_code == HTTPStatus.OK
+    upload = response.json()["upload"]
+    assert upload["zim"]["upload_uri"] == f"s3://keyId:{mask}@host/zim?bucketName=b"
+    assert upload["logs"]["upload_uri"] == f"sftp://uploader:{mask}@host:22/logs"
+    assert (
+        upload["artifacts"]["upload_uri"]
+        == f"https://host/artifacts?secretAccessKey={mask}"
+    )
+    assert upload["check"]["upload_uri"] == f"https://host/check?keyId={mask}"
+
+
+@pytest.mark.parametrize("hide_secrets", ["true", "false"])
+def test_get_requested_task_upload_uris_with_auth(
+    client: TestClient,
+    dbsession: OrmSession,
+    access_token: str,
+    requested_task: RequestedTask,
+    hide_secrets: str,
+):
+    """Upload URI credentials are only revealed when explicitly requested."""
+    mask = "*" * SECRET_STRING_LENGTH
+    requested_task.upload = {
+        "zim": {"upload_uri": "s3://keyId:secretAccessKey@host/zim?secretAccessKey=abc"}
+    }
+    dbsession.add(requested_task)
+    dbsession.flush()
+
+    response = client.get(
+        f"/v2/requested-tasks/{requested_task.id}?hide_secrets={hide_secrets}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    upload_uri = response.json()["upload"]["zim"]["upload_uri"]
+    if hide_secrets == "true":
+        assert upload_uri == f"s3://keyId:{mask}@host/zim?secretAccessKey={mask}"
+    else:
+        assert upload_uri == "s3://keyId:secretAccessKey@host/zim?secretAccessKey=abc"
+
+
+def test_update_requested_task_masks_upload_uris(
+    client: TestClient,
+    dbsession: OrmSession,
+    access_token: str,
+    requested_task: RequestedTask,
+):
+    """The update endpoint masks upload URI credentials."""
+    mask = "*" * SECRET_STRING_LENGTH
+    requested_task.upload = {
+        "zim": {"upload_uri": "s3://keyId:secretAccessKey@host/zim"}
+    }
+    dbsession.add(requested_task)
+    dbsession.flush()
+
+    response = client.patch(
+        f"/v2/requested-tasks/{requested_task.id}",
+        json={"priority": 5},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert (
+        response.json()["upload"]["zim"]["upload_uri"] == f"s3://keyId:{mask}@host/zim"
+    )
 
 
 def test_update_requested_task_no_permission(
