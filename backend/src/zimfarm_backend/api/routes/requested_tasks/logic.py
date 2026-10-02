@@ -41,6 +41,10 @@ from zimfarm_backend.common.schemas.orms import (
     RequestedTaskFullSchema,
     RequestedTaskLightSchema,
 )
+from zimfarm_backend.common.upload import (
+    UPLOAD_SECRET_KEYS,
+    build_task_upload_uris,
+)
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
 from zimfarm_backend.db.account import check_account_permission
@@ -322,6 +326,10 @@ def get_requested_task(
     else:
         show_secrets = not hide_secrets
 
+    requested_task = build_task_upload_uris(
+        requested_task, keys=UPLOAD_SECRET_KEYS, show_secrets=show_secrets
+    )
+
     return JSONResponse(
         content=requested_task.model_dump(
             context={"show_secrets": show_secrets}, mode="json"
@@ -342,8 +350,11 @@ def update_requested_task_priority(
 ) -> RequestedTaskFullSchema:
     """Update the priority of a requested task."""
     get_requested_task_by_id(session, requested_task_id)
-    return db_update_requested_task_priority(
+    requested_task = db_update_requested_task_priority(
         session, requested_task_id, update_requested_task_schema.priority
+    )
+    return build_task_upload_uris(
+        requested_task, keys=UPLOAD_SECRET_KEYS, show_secrets=False
     )
 
 

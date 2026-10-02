@@ -27,8 +27,12 @@ from zimfarm_backend.common.schemas.models import (
     RecipeConfigSchema,
     calculate_pagination_metadata,
 )
-from zimfarm_backend.common.schemas.orms import TaskFullSchema, TaskLightSchema
-from zimfarm_backend.common.upload import build_task_upload_uris, populate_zim_urls
+from zimfarm_backend.common.schemas.orms import TaskLightSchema
+from zimfarm_backend.common.upload import (
+    UPLOAD_SECRET_KEYS,
+    build_task_upload_uris,
+    populate_zim_urls,
+)
 from zimfarm_backend.common.utils import task_event_handler
 from zimfarm_backend.db.account import check_account_permission
 from zimfarm_backend.db.models import Account
@@ -110,10 +114,10 @@ def get_task(
     )
     task.container.command = task.config.command
     task = build_task_upload_uris(
-        task, keys=["secretAccessKey", "keyId"], show_secrets=show_secrets
+        task, keys=UPLOAD_SECRET_KEYS, show_secrets=show_secrets
     )
     if INFORM_CMS:
-        populate_zim_urls(cast(TaskFullSchema, task))
+        populate_zim_urls(task)
     return JSONResponse(
         content=task.model_dump(mode="json", context={"show_secrets": show_secrets})
     )

@@ -16,6 +16,9 @@ from zimfarm_backend.common.schemas.orms import (
     ZimUrlSchema,
 )
 
+# query-parameter names that carry credentials in upload URIs
+UPLOAD_SECRET_KEYS: list[str] = ["secretAccessKey", "keyId"]
+
 
 def rebuild_uri(
     uri: urllib.parse.ParseResult,
@@ -68,17 +71,25 @@ def safe_upload_uri(
         if key in param_keys and not show_secrets:
             params[key] = [SECRET_STRING_LENGTH * "*"]
 
+    password = uri.password
+    if password and not show_secrets:
+        password = SECRET_STRING_LENGTH * "*"
+
     return urllib.parse.unquote(
-        rebuild_uri(uri, query=urllib.parse.urlencode(params, doseq=True)).geturl()
+        rebuild_uri(
+            uri,
+            password=password,
+            query=urllib.parse.urlencode(params, doseq=True),
+        ).geturl()
     )
 
 
-def build_task_upload_uris(
-    task: TaskFullSchema | RequestedTaskFullSchema,
+def build_task_upload_uris[TaskSchemaT: (TaskFullSchema, RequestedTaskFullSchema)](
+    task: TaskSchemaT,
     *,
     keys: list[str],
     show_secrets: bool = True,
-) -> TaskFullSchema | RequestedTaskFullSchema:
+) -> TaskSchemaT:
     if task.upload.zim and task.upload.zim.upload_uri:
         task.upload.zim.upload_uri = safe_upload_uri(
             task.upload.zim.upload_uri, keys=keys, show_secrets=show_secrets
