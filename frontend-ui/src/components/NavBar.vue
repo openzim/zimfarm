@@ -49,6 +49,7 @@
         :access-token="accessToken"
         :has-password="hasPassword"
         :token-type="tokenType"
+        :user-id="userId"
         @sign-out="$emit('sign-out')"
       />
     </div>
@@ -107,6 +108,7 @@ const props = defineProps<{
   hasPassword: boolean
   isLoading: boolean
   loadingText: string
+  userId: string | null
 }>()
 
 defineEmits<{

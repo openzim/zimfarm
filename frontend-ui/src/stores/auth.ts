@@ -46,6 +46,10 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.display_name || null
   })
 
+  const userId = computed(() => {
+    return user.value?.id || null
+  })
+
   const accessToken = computed(() => {
     return token.value?.access_token || null
   })
@@ -349,6 +353,7 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     tokenExpiryDate,
     isTokenExpired,
+    userId,
 
     // Methods
     hasPermission,
