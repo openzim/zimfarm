@@ -2,6 +2,7 @@ from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.common.roles import ROLES, RoleEnum, merge_scopes
@@ -20,7 +21,7 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
-from zimfarm_backend.db.models import Account
+from zimfarm_backend.db.models import Account, Team, TeamPermission
 
 
 def test_get_account_by_id_or_none(dbsession: OrmSession):
@@ -84,12 +85,12 @@ def test_create_account(dbsession: OrmSession):
         display_name="New Account",
         password_hash="hash",
         scope=None,
-        role=RoleEnum.EDITOR,
+        role=RoleEnum.GLOBAL_EDITOR,
     )
     assert account.username == "newuser"
     assert account.password_hash == "hash"
     assert account.display_name == "New Account"
-    assert account.role == "editor"
+    assert account.role == "global-editor"
     assert not account.deleted
 
 
@@ -100,8 +101,8 @@ def test_create_account_with_non_custom_role_and_scope(dbsession: OrmSession):
             username="newuser",
             display_name="New Account",
             password_hash="hash",
-            scope=ROLES["editor"],
-            role="editor",
+            scope=ROLES["global-editor"],
+            role="global-editor",
         )
 
 
@@ -122,10 +123,10 @@ def test_update_account_role(dbsession: OrmSession, account: Account):
     update_account(
         dbsession,
         account_id=account.id,
-        request=AccountUpdateSchema(role=RoleEnum.EDITOR),
+        request=AccountUpdateSchema(role=RoleEnum.GLOBAL_EDITOR),
     )
     dbsession.refresh(account)
-    assert account.role == RoleEnum.EDITOR
+    assert account.role == RoleEnum.GLOBAL_EDITOR
     assert account.scope is None
 
 
@@ -186,7 +187,7 @@ def test_update_account_scope_and_role(dbsession: OrmSession, account: Account):
             dbsession,
             account_id=account.id,
             request=AccountUpdateSchema(
-                role=RoleEnum.EDITOR,
+                role=RoleEnum.GLOBAL_EDITOR,
                 scope=scope,
             ),
         )
@@ -197,10 +198,12 @@ def test_update_account_partial(dbsession: OrmSession, account: Account):
     update_account(
         dbsession,
         account_id=account.id,
-        request=AccountUpdateSchema(role=RoleEnum.EDITOR, display_name="newdisplay"),
+        request=AccountUpdateSchema(
+            role=RoleEnum.GLOBAL_EDITOR, display_name="newdisplay"
+        ),
     )
     dbsession.refresh(account)
-    assert account.role == RoleEnum.EDITOR
+    assert account.role == RoleEnum.GLOBAL_EDITOR
     assert account.scope is None
     assert account.display_name == "newdisplay"
 
@@ -242,3 +245,94 @@ def test_delete_account(dbsession: OrmSession, account: Account):
     delete_account(dbsession, account_id=account.id)
     dbsession.refresh(account)
     assert account.deleted
+
+
+def _account_team_names(session: OrmSession, account: Account) -> set[str]:
+    return set(
+        session.scalars(
+            select(Team.name)
+            .join(TeamPermission, TeamPermission.team_id == Team.id)
+            .where(TeamPermission.account_id == account.id)
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "role,teams,expected_team_names",
+    [
+        pytest.param(
+            RoleEnum.TEAM_EDITOR, ["wikimedia"], {"wikimedia"}, id="team-editor"
+        ),
+        pytest.param(
+            RoleEnum.TEAM_EDITOR_REQUESTER,
+            ["wikimedia", "openzim"],
+            {"wikimedia", "openzim"},
+            id="team-editor-requester",
+        ),
+        pytest.param(RoleEnum.TEAM_VIEWER, ["openzim"], {"openzim"}, id="team-viewer"),
+        pytest.param(RoleEnum.ADMIN, None, set[str](), id="admin"),
+    ],
+)
+def test_create_account_with_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    role: RoleEnum,
+    teams: list[str] | None,
+    expected_team_names: set[str],
+):
+    """Test that create_account assigns team permissions for team roles"""
+    create_team(name="wikimedia")
+    create_team(name="openzim")
+
+    account = create_account(
+        dbsession,
+        username="newuser",
+        display_name="New Account",
+        role=role,
+        teams=teams,
+    )
+
+    assert _account_team_names(dbsession, account) == expected_team_names
+
+
+def test_update_account_teams(
+    dbsession: OrmSession,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+):
+    """Test that update_account replaces the account's team permissions"""
+    create_team(name="wikimedia")
+    create_team(name="openzim")
+    account = create_account(permission=RoleEnum.TEAM_EDITOR)
+
+    update_account(
+        dbsession,
+        account_id=account.id,
+        request=AccountUpdateSchema(
+            display_name=account.display_name,
+            role=RoleEnum.TEAM_EDITOR,
+            teams=["wikimedia", "openzim"],
+        ),
+    )
+    assert _account_team_names(dbsession, account) == {"wikimedia", "openzim"}
+
+    update_account(
+        dbsession,
+        account_id=account.id,
+        request=AccountUpdateSchema(
+            display_name=account.display_name,
+            role=RoleEnum.TEAM_EDITOR,
+            teams=["wikimedia"],
+        ),
+    )
+    assert _account_team_names(dbsession, account) == {"wikimedia"}
+
+    update_account(
+        dbsession,
+        account_id=account.id,
+        request=AccountUpdateSchema(
+            display_name=account.display_name,
+            role=RoleEnum.GLOBAL_VIEWER,
+        ),
+    )
+    assert _account_team_names(dbsession, account) == set[str]()

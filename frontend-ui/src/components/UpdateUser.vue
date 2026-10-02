@@ -28,6 +28,24 @@
           </v-col>
         </v-row>
 
+        <v-row v-if="isTeamRole">
+          <v-col cols="12">
+            <v-select
+              v-model="form.teams"
+              :items="teamsOptions"
+              label="Teams"
+              hint="Teams this account belongs to"
+              multiple
+              chips
+              closable-chips
+              variant="outlined"
+              density="compact"
+              persistent-hint
+              :error-messages="teamsError ? [teamsError] : []"
+            />
+          </v-col>
+        </v-row>
+
         <template v-if="hasLocalAuth">
           <v-divider class="my-4"></v-divider>
           <div class="text-subtitle-1 mb-2 font-weight-bold">Local Authentication</div>
@@ -113,6 +131,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue'
 
 import type { Config } from '@/config'
 import constants from '@/constants'
+import { useTeamStore } from '@/stores/team'
 import { generatePassword } from '@/utils/browsers'
 import type { User } from '@/types/user'
 
@@ -131,6 +150,7 @@ const emit = defineEmits<{
       display_name?: string
       role?: (typeof constants.ROLES)[number]
       scope?: Record<string, Record<string, boolean>>
+      teams?: string[]
       idp_sub?: string | null
     },
   ): void
@@ -138,7 +158,11 @@ const emit = defineEmits<{
 }>()
 
 const roles = constants.ROLES
+const teamRoles: readonly string[] = constants.TEAM_ROLES
 const config = inject<Config>(constants.config)
+const teamStore = useTeamStore()
+
+const teamsOptions = computed(() => teamStore.teams.map((team) => team.name))
 
 const hasLocalAuth = computed(
   () => config?.LOGIN_MODES.includes('local') || !!props.user.username || props.user.has_password,
@@ -155,11 +179,26 @@ const form = ref({
   role: '' as (typeof constants.ROLES)[number],
   password: '',
   customScope: '',
+  teams: [] as string[],
   idp_sub: '',
 })
 
 // Computed properties
 const isCustomRole = computed(() => form.value.role === 'custom')
+
+const isTeamRole = computed(() => teamRoles.includes(form.value.role))
+
+const teamsChanged = computed(() => {
+  const current = [...(props.user.teams ?? [])].sort()
+  const selected = [...form.value.teams].sort()
+  return JSON.stringify(current) !== JSON.stringify(selected)
+})
+
+const teamsError = computed(() =>
+  isTeamRole.value && form.value.teams.length === 0
+    ? 'At least one team is required for this role'
+    : null,
+)
 
 const usernameError = computed(() => {
   // If user has password, username cannot be empty
@@ -186,6 +225,7 @@ const payload = computed(() => {
     display_name?: string
     role?: (typeof constants.ROLES)[number]
     scope?: Record<string, Record<string, boolean>>
+    teams?: string[]
     idp_sub?: string | null
   } = {}
 
@@ -214,6 +254,16 @@ const payload = computed(() => {
       result.scope = parsedScope
     } catch {
       return null
+    }
+  } else if (isTeamRole.value) {
+    // Team roles require at least one team; send role and teams together so the
+    // API replaces the account's team permissions.
+    if (form.value.role !== props.user.role || teamsChanged.value) {
+      if (teamsError.value) {
+        return null
+      }
+      result.role = form.value.role
+      result.teams = form.value.teams
     }
   } else {
     // For non-custom roles, send the role only if it changed
@@ -282,7 +332,7 @@ const initializeForm = () => {
 
   const role = constants.ROLES.includes(props.user.role as (typeof constants.ROLES)[number])
     ? (props.user.role as (typeof constants.ROLES)[number])
-    : 'editor'
+    : 'public-viewer'
 
   let customScope = ''
   if (role === 'custom' && props.user.scope) {
@@ -295,6 +345,7 @@ const initializeForm = () => {
     role,
     password: props.user.has_password ? PASSWORD_PLACEHOLDER : '',
     customScope,
+    teams: [...(props.user.teams ?? [])],
     idp_sub: props.user.idp_sub || '',
   }
 }
@@ -310,5 +361,6 @@ watch(
 
 onMounted(() => {
   initializeForm()
+  teamStore.fetchTeams({ limit: 200 })
 })
 </script>

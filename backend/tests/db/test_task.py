@@ -12,7 +12,7 @@ from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
 )
-from zimfarm_backend.db.models import File, RequestedTask, Task, Worker
+from zimfarm_backend.db.models import File, Recipe, RequestedTask, Task, Team, Worker
 from zimfarm_backend.db.requested_task import (
     create_requested_task_full_schema,  # pyright: ignore[reportPrivateUsage]
 )
@@ -27,27 +27,27 @@ from zimfarm_backend.db.tasks import (
 
 def test_get_task_by_id_or_none(dbsession: OrmSession, task: Task):
     """Test that get_task_by_id_or_none returns the task if it exists"""
-    result = get_task_by_id_or_none(dbsession, task.id)
+    result = get_task_by_id_or_none(dbsession, task.id, accessible_team_ids=None)
     assert result is not None
     assert result.id == task.id
 
 
 def test_get_task_by_id_or_none_not_found(dbsession: OrmSession):
     """Test that get_task_by_id_or_none returns None if task doesn't exist"""
-    result = get_task_by_id_or_none(dbsession, UUID(int=0))
+    result = get_task_by_id_or_none(dbsession, UUID(int=0), accessible_team_ids=None)
     assert result is None
 
 
 def test_get_task_by_id(dbsession: OrmSession, task: Task):
     """Test that get_task_by_id returns the task if it exists"""
-    result = get_task_by_id(dbsession, task.id)
+    result = get_task_by_id(dbsession, task.id, accessible_team_ids=None)
     assert result.id == task.id
 
 
 def test_get_task_by_id_not_found(dbsession: OrmSession):
     """Test that get_task_by_id raises an exception if task doesn't exist"""
     with pytest.raises(RecordDoesNotExistError):
-        get_task_by_id(dbsession, UUID(int=0))
+        get_task_by_id(dbsession, UUID(int=0), accessible_team_ids=None)
 
 
 @pytest.mark.parametrize(
@@ -104,12 +104,86 @@ def test_get_tasks(
         session=dbsession,
         skip=skip,
         limit=limit,
+        accessible_team_ids=None,
         status=status,
         recipe_identifier=recipe_name,
         offliner=offliner,
     )
     assert result.nb_records == expected_nb_records
-    assert len(result.tasks) <= limit
+    assert len(result.records) <= limit
+
+
+@pytest.mark.parametrize(
+    "accessible_teams, expected_recipe_names",
+    [
+        (None, {"wikipedia_fr_all", "wikipedia_en_all"}),
+        ("a", {"wikipedia_fr_all"}),
+        ("b", {"wikipedia_en_all"}),
+        ("ab", {"wikipedia_fr_all", "wikipedia_en_all"}),
+        ("", set[str]()),
+    ],
+    ids=[
+        "all-teams",
+        "wikimedia-only",
+        "openzim-only",
+        "both-teams",
+        "no-team",
+    ],
+)
+def test_get_tasks_filters_by_accessible_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    create_task: Callable[..., Task],
+    accessible_teams: str | None,
+    expected_recipe_names: set[str],
+):
+    """Test that get_tasks only returns tasks from accessible teams"""
+    team_a = create_team(name="wikimedia")
+    team_b = create_team(name="openzim")
+    create_recipe(name="wikipedia_fr_all", teams=[team_a])
+    create_recipe(name="wikipedia_en_all", teams=[team_b])
+    create_task(recipe_name="wikipedia_fr_all")
+    create_task(recipe_name="wikipedia_en_all")
+
+    team_by_key = {"a": team_a, "b": team_b}
+    if accessible_teams is None:
+        accessible_team_ids = None
+    else:
+        accessible_team_ids = [team_by_key[key].id for key in accessible_teams]
+
+    result = get_tasks(
+        session=dbsession,
+        skip=0,
+        limit=20,
+        accessible_team_ids=accessible_team_ids,
+    )
+    assert {record.recipe_name for record in result.records} == expected_recipe_names
+
+
+def test_get_task_by_id_filters_by_accessible_teams(
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    create_task: Callable[..., Task],
+):
+    """Test that get_task_by_id only returns tasks from accessible teams"""
+    team_a = create_team(name="wikimedia")
+    team_b = create_team(name="openzim")
+    create_recipe(name="wikipedia_fr_all", teams=[team_a])
+    create_recipe(name="wikipedia_en_all", teams=[team_b])
+    task_a = create_task(recipe_name="wikipedia_fr_all")
+    task_b = create_task(recipe_name="wikipedia_en_all")
+
+    # a task from an accessible team is returned
+    assert get_task_by_id(dbsession, task_a.id, [team_a.id]).id == task_a.id
+
+    # a task from another team is not accessible
+    with pytest.raises(RecordDoesNotExistError):
+        get_task_by_id(dbsession, task_b.id, [team_a.id])
+
+    # the same task is accessible when no team filtering is applied
+    assert get_task_by_id(dbsession, task_b.id, None).id == task_b.id
 
 
 def test_create_task(
@@ -126,6 +200,7 @@ def test_create_task(
         session=dbsession,
         requested_task=requested_task,
         worker_id=worker.id,
+        accessible_team_ids=None,
     )
     assert task.id == requested_task.id
     assert task.status == requested_task.status
@@ -149,6 +224,7 @@ def test_create_task_already_exists(
         session=dbsession,
         requested_task=requested_task,
         worker_id=worker.id,
+        accessible_team_ids=None,
     )
 
     # Try to create the same task again
@@ -157,6 +233,7 @@ def test_create_task_already_exists(
             session=dbsession,
             requested_task=requested_task,
             worker_id=worker.id,
+            accessible_team_ids=None,
         )
 
 

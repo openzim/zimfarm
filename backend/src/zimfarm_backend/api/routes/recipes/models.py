@@ -31,6 +31,7 @@ class RecipesGetSchema(BaseModel):
     name: NotEmptyString | None = None
     archived: bool = False
     offliner: list[NotEmptyString] | None = None
+    team: list[NotEmptyString] | None = None
 
 
 class RecipeCreateSchema(BaseModel):
@@ -44,6 +45,8 @@ class RecipeCreateSchema(BaseModel):
     notification: RecipeNotificationSchema | None = None
     context: str | None = None
     comment: str | None = None
+    # Leave default as Kiwix till WP1 and other clients get updated
+    teams: list[NotEmptyString] = Field(min_length=1, default=["Kiwix"])
 
 
 class RecipeCreateResponseSchema(BaseModel):
@@ -55,6 +58,7 @@ class RecipeUpdateSchema(BaseModel):
     language: ZIMLangCode | None = None
     periodicity: RecipePeriodicity | None = None
     tags: list[NotEmptyString] | None = None
+    teams: list[NotEmptyString] | None = Field(default=None, min_length=1)
     enabled: bool | None = None
     offliner: str | None = None
     warehouse_path: WarehousePathField | None = None
@@ -73,6 +77,7 @@ class RecipeUpdateSchema(BaseModel):
 class CloneSchema(BaseModel):
     name: RecipeNameField
     comment: str | None = None
+    teams: list[NotEmptyString] | None = Field(default=None, min_length=1)
 
 
 class RestoreRecipesSchema(BaseModel):

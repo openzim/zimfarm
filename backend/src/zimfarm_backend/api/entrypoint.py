@@ -26,6 +26,7 @@ from zimfarm_backend.api.routes.requested_tasks.logic import (
 from zimfarm_backend.api.routes.status.logic import router as status_router
 from zimfarm_backend.api.routes.tags.logic import router as tags_router
 from zimfarm_backend.api.routes.tasks.logic import router as tasks_router
+from zimfarm_backend.api.routes.teams.logic import router as teams_router
 from zimfarm_backend.api.routes.workers.logic import router as workers_router
 from zimfarm_backend.common.constants import (
     ALEMBIC_UPGRADE_HEAD_ON_START,
@@ -98,6 +99,7 @@ def create_app(*, debug: bool = True):
     main_router.include_router(router=status_router)
     main_router.include_router(router=recipes_router)
     main_router.include_router(router=files_router)
+    main_router.include_router(router=teams_router)
 
     app.include_router(router=main_router)
 

@@ -152,16 +152,55 @@ class FileCreateUpdateSchema(BaseModel):
     info: dict[str, Any] = Field(default_factory=dict)
 
 
-class AccountUpdateSchema(BaseModel):
+class BaseAccountCreateUpdateSchema(BaseModel):
+    username: NotEmptyString | None = Field(default=None, min_length=3)
+    display_name: NotEmptyString | None = Field(default=None, min_length=3)
+    idp_sub: UUID | None = None
+    teams: list[NotEmptyString] | None = None
+    role: RoleEnum
+
+    @model_validator(mode="after")
+    def check_role(self) -> Self:
+        if self.role == RoleEnum.WORKER:
+            raise ValueError("Worker accounts cannot be created.")
+        return self
+
+    @model_validator(mode="after")
+    def restrict_teams_inclusion(self) -> Self:
+        if (
+            self.role
+            in (
+                RoleEnum.TEAM_EDITOR,
+                RoleEnum.TEAM_EDITOR_REQUESTER,
+                RoleEnum.TEAM_VIEWER,
+            )
+            and self.teams is None
+        ):
+            raise ValueError(
+                f"Teams must be specified when setting role to {self.role}"
+            )
+
+        if (
+            self.role
+            not in (
+                RoleEnum.TEAM_EDITOR,
+                RoleEnum.TEAM_EDITOR_REQUESTER,
+                RoleEnum.TEAM_VIEWER,
+            )
+            and self.teams
+        ):
+            raise ValueError(f"Teams must not be specified when role is {self.role}")
+
+        return self
+
+
+class AccountUpdateSchema(BaseAccountCreateUpdateSchema):
     """
     Schema for updating an account
     """
 
-    role: RoleEnum | None = None
-    username: NotEmptyString | None = None
+    role: RoleEnum | None = None  # pyright: ignore[reportIncompatibleVariableOverride]
     scope: dict[str, dict[str, bool]] | None = None
-    idp_sub: NotEmptyString | None = None
-    display_name: NotEmptyString | None = None
 
     @model_validator(mode="after")
     def check_exclusive_fields(self) -> Self:
@@ -198,3 +237,14 @@ class KeySchema(BaseModel):
     @property
     def name(self) -> str:
         return self.key.split(" ")[2]
+
+
+class TeamCreateSchema(BaseModel):
+    name: NotEmptyString = Field(min_length=3)
+    is_private: bool
+
+
+class TeamUpdateSchema(BaseModel):
+    name: NotEmptyString | None = Field(min_length=3, default=None)
+    is_private: bool | None = None
+    comment: NotEmptyString | None = None

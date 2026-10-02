@@ -16,6 +16,11 @@ from zimfarm_backend.db.exceptions import (
     RecordDoesNotExistError,
 )
 from zimfarm_backend.db.models import Account, Worker
+from zimfarm_backend.db.team import get_team_by_name
+from zimfarm_backend.db.team_permission import (
+    create_team_permission,
+    delete_team_permissions,
+)
 
 
 def get_account_by_username_or_none(
@@ -112,6 +117,9 @@ def create_account_schema(account: Account) -> AccountSchema:
         scope=merge_scopes(
             ROLES.get(account.role, account.scope or {}), ROLES[RoleEnum.ADMIN]
         ),
+        teams=sorted(
+            team_permission.team.name for team_permission in account.team_permissions
+        ),
         idp_sub=account.idp_sub,
         has_password=account.password_hash is not None,
     )
@@ -135,7 +143,7 @@ def get_accounts(
         .where(
             Account.deleted.is_(False),
             (Account.role != RoleEnum.WORKER) | (show_workers is True),
-            (Account.role != RoleEnum.VIEWER) | (show_viewers is True),
+            (Account.role != RoleEnum.PUBLIC_VIEWER) | (show_viewers is True),
             (
                 Account.display_name.ilike(
                     f"%{username if username is not None else ''}%"
@@ -164,6 +172,7 @@ def create_account(
     scope: dict[str, Any] | None = None,
     role: str = "custom",
     idp_sub: UUID | None = None,
+    teams: list[str] | None = None,
 ) -> Account:
     """Create a new account"""
     if role != "custom" and scope is not None:
@@ -182,6 +191,15 @@ def create_account(
         session.flush()
     except IntegrityError as exc:
         raise RecordAlreadyExistsError("Account already exists") from exc
+
+    if (
+        account.role
+        in (RoleEnum.TEAM_EDITOR, RoleEnum.TEAM_EDITOR_REQUESTER, RoleEnum.TEAM_VIEWER)
+        and teams
+    ):
+        for team_name in set(teams):
+            team = get_team_by_name(session, team_name)
+            create_team_permission(session, team.id, account.id)
     return account
 
 
@@ -194,7 +212,7 @@ def update_account(
     if request.role is not None and request.scope is not None:
         raise ValueError("Only one of role/scope must be set.")
 
-    values = request.model_dump(exclude_unset=True, mode="json")
+    values = request.model_dump(exclude_unset=True, mode="json", exclude={"teams"})
 
     if "display_name" in values and not values["display_name"]:
         raise ValueError("Account must have a display name.")
@@ -216,7 +234,24 @@ def update_account(
     if not values:
         return
 
-    session.execute(update(Account).where(Account.id == account.id).values(**values))
+    account = session.scalars(
+        update(Account)
+        .where(Account.id == account.id)
+        .values(**values)
+        .returning(Account)
+    ).one()
+
+    if request.role is not None:
+        delete_team_permissions(session, account_id=account.id)
+
+    if request.teams and account.role in (
+        RoleEnum.TEAM_EDITOR,
+        RoleEnum.TEAM_EDITOR_REQUESTER,
+        RoleEnum.TEAM_VIEWER,
+    ):
+        for team_name in set(request.teams):
+            team = get_team_by_name(session, team_name)
+            create_team_permission(session, team.id, account.id)
 
 
 def delete_account(

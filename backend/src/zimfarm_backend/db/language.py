@@ -16,11 +16,15 @@ class LanguageListResult(BaseModel):
     languages: list[LanguageSchema]
 
 
-def get_language_from_code(language_code: str) -> LanguageSchema:
+def get_language_from_code(
+    language_code: str, *, fallback: LanguageSchema | None = None
+) -> LanguageSchema:
     """Get language information from a language code."""
     language = pycountry.languages.get(alpha_3=language_code)
 
     if not language:
+        if fallback:
+            return fallback
         raise RecordDoesNotExistError(
             f"Language code '{language_code}' not found",
         )

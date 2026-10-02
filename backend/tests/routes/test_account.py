@@ -1,18 +1,21 @@
 from collections.abc import Callable
 from contextlib import nullcontext as does_not_raise
 from http import HTTPStatus
+from typing import Any
+from uuid import UUID
 
 import pytest
 from _pytest.raises import RaisesExc
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.routes.accounts.models import AccountCreateSchema
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.roles import RoleEnum
-from zimfarm_backend.db.models import Account
+from zimfarm_backend.db.models import Account, Team, TeamPermission
 
 
 @pytest.mark.parametrize(
@@ -38,7 +41,7 @@ from zimfarm_backend.db.models import Account
             None,
             "Test User",
             "testpassword",
-            RoleEnum.EDITOR,
+            RoleEnum.GLOBAL_EDITOR,
             pytest.raises(ValidationError),
             id="no-username-with-password",
         ),
@@ -46,7 +49,7 @@ from zimfarm_backend.db.models import Account
             "testuser",
             "Test User",
             "testpassword",
-            RoleEnum.EDITOR,
+            RoleEnum.GLOBAL_EDITOR,
             does_not_raise(),
             id="valid-inputs",
         ),
@@ -233,7 +236,7 @@ def test_update_account_role(client: TestClient, account: Account):
     response = client.patch(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"role": "editor"},
+        json={"role": "global-editor"},
     )
     assert response.status_code == HTTPStatus.NO_CONTENT
 
@@ -242,7 +245,7 @@ def test_update_account_role(client: TestClient, account: Account):
     assert response.status_code == HTTPStatus.OK
     data = response.json()
     assert data["username"] == account.username
-    assert data["role"] == "editor"
+    assert data["role"] == "global-editor"
 
 
 def test_update_account_scope(client: TestClient, account: Account):
@@ -274,12 +277,12 @@ def test_update_account_role_and_scope(client: TestClient, account: Account):
     response = client.patch(
         url,
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"scope": {"recipes": {"read": True}}, "role": "editor"},
+        json={"scope": {"recipes": {"read": True}}, "role": "global-editor"},
     )
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.num_accounts(2, permission="editor")
+@pytest.mark.num_accounts(2, permission="global-editor")
 def test_update_account_password_wrong_permission(
     client: TestClient, accounts: list[Account]
 ):
@@ -320,7 +323,7 @@ def test_update_account_own_password(
     expected: HTTPStatus,
 ):
     """Test updating an account's own password"""
-    account = create_account(permission="editor")
+    account = create_account(permission="global-editor")
     access_token = generate_access_token(
         issue_time=getnow(),
         account_id=str(account.id),
@@ -331,3 +334,130 @@ def test_update_account_own_password(
         json={"current": current, "new": new},
     )
     assert response.status_code == expected
+
+
+def _account_team_names(session: OrmSession, account_id: UUID) -> set[str]:
+    return set(
+        session.scalars(
+            select(Team.name)
+            .join(TeamPermission, TeamPermission.team_id == Team.id)
+            .where(TeamPermission.account_id == account_id)
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "role,teams,expected_status_code",
+    [
+        pytest.param(
+            RoleEnum.TEAM_EDITOR, ["wikimedia"], HTTPStatus.OK, id="team-editor"
+        ),
+        pytest.param(
+            RoleEnum.TEAM_VIEWER,
+            ["wikimedia", "openzim"],
+            HTTPStatus.OK,
+            id="team-viewer",
+        ),
+        pytest.param(RoleEnum.ADMIN, None, HTTPStatus.OK, id="admin"),
+        pytest.param(
+            RoleEnum.TEAM_EDITOR,
+            None,
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="team-editor-without-teams",
+        ),
+        pytest.param(
+            RoleEnum.ADMIN,
+            ["wikimedia"],
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            id="admin-with-teams",
+        ),
+    ],
+)
+def test_create_account_with_teams(
+    client: TestClient,
+    account: Account,
+    create_team: Callable[..., Team],
+    dbsession: OrmSession,
+    role: RoleEnum,
+    teams: list[str] | None,
+    expected_status_code: HTTPStatus,
+):
+    """Test that creating an account assigns team permissions for team roles"""
+    create_team(name="wikimedia")
+    create_team(name="openzim")
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    payload: dict[str, Any] = {
+        "username": "newuser",
+        "password": "testpassword",
+        "role": role.value,
+    }
+    if teams is not None:
+        payload["teams"] = teams
+
+    response = client.post(
+        "/v2/accounts/",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json=payload,
+    )
+    assert response.status_code == expected_status_code
+    if expected_status_code == HTTPStatus.OK:
+        created_id = UUID(response.json()["id"])
+        assert _account_team_names(dbsession, created_id) == set(teams or [])
+
+
+@pytest.mark.parametrize(
+    "teams,expected_team_names",
+    [
+        pytest.param(
+            ["wikimedia", "openzim"],
+            {"wikimedia", "openzim"},
+            id="two-teams",
+        ),
+        pytest.param(["wikimedia"], {"wikimedia"}, id="one-team"),
+        pytest.param([], set[str](), id="no-teams"),
+    ],
+)
+def test_update_account_teams(
+    client: TestClient,
+    account: Account,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    dbsession: OrmSession,
+    teams: list[str],
+    expected_team_names: set[str],
+):
+    """Test that updating an account role/teams replaces its team permissions"""
+    create_team(name="wikimedia")
+    create_team(name="openzim")
+    target = create_account(permission=RoleEnum.PUBLIC_VIEWER)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    response = client.patch(
+        f"/v2/accounts/{target.username}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "display_name": target.display_name,
+            "role": RoleEnum.TEAM_EDITOR.value,
+            "teams": teams,
+        },
+    )
+    assert response.status_code == HTTPStatus.NO_CONTENT
+    assert _account_team_names(dbsession, target.id) == expected_team_names
+
+    # switching to a non-team role clears the team permissions
+    response = client.patch(
+        f"/v2/accounts/{target.username}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "display_name": target.display_name,
+            "role": RoleEnum.GLOBAL_VIEWER.value,
+        },
+    )
+    assert response.status_code == HTTPStatus.NO_CONTENT
+    assert _account_team_names(dbsession, target.id) == set[str]()

@@ -1,8 +1,9 @@
 import datetime
+from collections.abc import Sequence
 from typing import Any, Literal, cast
 from uuid import UUID
 
-from sqlalchemy import func, literal, select
+from sqlalchemy import exists, func, literal, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Bundle, selectinload
@@ -11,13 +12,13 @@ from sqlalchemy.orm import Session as OrmSession
 from zimfarm_backend.common import getnow, is_valid_uuid
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.common.schemas import BaseModel
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema
 from zimfarm_backend.common.schemas.offliners.models import OfflinerSpecSchema
 from zimfarm_backend.common.schemas.orms import (
     ConfigResourcesSchema,
     ConfigWithOnlyResourcesSchema,
     ExpandedRecipeConfigSchema,
+    ListResult,
     MostRecentTaskSchema,
     OfflinerDefinitionSchema,
     RecipeNotificationSchema,
@@ -40,6 +41,7 @@ from zimfarm_backend.db.models import (
     Recipe,
     RequestedTask,
     Task,
+    TeamRecipe,
     Worker,
 )
 from zimfarm_backend.db.offliner import get_offliner
@@ -49,11 +51,6 @@ from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
 )
-
-
-class TaskListResult(BaseModel):
-    nb_records: int
-    tasks: list[TaskLightSchema]
 
 
 def create_task_file_schema(file: File) -> TaskFileSchema:
@@ -75,7 +72,9 @@ def create_task_file_schema(file: File) -> TaskFileSchema:
     )
 
 
-def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema | None:
+def get_task_by_id_or_none(
+    session: OrmSession, task_id: UUID, accessible_team_ids: Sequence[UUID] | None
+) -> TaskFullSchema | None:
     """
     Get a task by id or None if it does not exist
     """
@@ -98,7 +97,14 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
         .join(OfflinerDefinition, Task.offliner_definition)
         .join(Recipe, Task.recipe, isouter=True)
         .join(Worker, Task.worker, isouter=True)
-        .where(Task.id == task_id)
+        .where(
+            Task.id == task_id,
+            exists().where(
+                TeamRecipe.recipe_id == Task.recipe_id,
+                TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (accessible_team_ids is None),
+        )
     )
     if row := session.execute(stmt).one_or_none():
         task = cast(Task, row.Task)
@@ -160,8 +166,10 @@ def get_task_by_id_or_none(session: OrmSession, task_id: UUID) -> TaskFullSchema
     return None
 
 
-def get_task_by_id(session: OrmSession, task_id: UUID) -> TaskFullSchema:
-    if task := get_task_by_id_or_none(session, task_id):
+def get_task_by_id(
+    session: OrmSession, task_id: UUID, accessible_team_ids: Sequence[UUID] | None
+) -> TaskFullSchema:
+    if task := get_task_by_id_or_none(session, task_id, accessible_team_ids):
         return task
     raise RecordDoesNotExistError(f"Task with id {task_id} does not exist")
 
@@ -171,12 +179,13 @@ def get_tasks(
     *,
     skip: int,
     limit: int,
+    accessible_team_ids: Sequence[UUID] | None,
     status: list[TaskStatus] | None = None,
     recipe_identifier: str | None = None,
     sort_criteria: Literal["updated_at", "doing", "done", "failed"] = "updated_at",
     offliner: str | None = None,
     fetch_most_recent_tasks: bool = False,
-) -> TaskListResult:
+) -> ListResult[TaskLightSchema]:
     # Determine the event/column to sort the results based on sort_criteria
     match sort_criteria:
         case "done":
@@ -231,13 +240,18 @@ def get_tasks(
             (Recipe.config["offliner"]["offliner_id"].astext == offliner)
             | (offliner is None),
             (Task.status.in_(status)),
+            exists().where(
+                TeamRecipe.recipe_id == Task.recipe_id,
+                TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (accessible_team_ids is None),
         )
         .order_by(order_by)
         .offset(skip)
         .limit(limit)
     )
 
-    results = TaskListResult(nb_records=0, tasks=[])
+    results = ListResult[TaskLightSchema](nb_records=0, records=[])
     for (
         nb_records,
         _id,
@@ -257,7 +271,7 @@ def get_tasks(
         stmt  # pyright: ignore[reportUnknownArgumentType]
     ).all():
         results.nb_records = nb_records
-        results.tasks.append(
+        results.records.append(
             TaskLightSchema(
                 id=_id,
                 status=_status,
@@ -283,7 +297,7 @@ def get_tasks(
 
     if fetch_most_recent_tasks:
         recipe_ids: set[UUID] = {
-            task.recipe_id for task in results.tasks if task.recipe_id
+            task.recipe_id for task in results.records if task.recipe_id
         }
         if recipe_ids:
             stmt = (
@@ -304,7 +318,7 @@ def get_tasks(
                 task_updated_at,
                 task_timestamp,
             ) in session.execute(stmt).all():
-                for task in results.tasks:
+                for task in results.records:
                     if schedule_id == task.recipe_id:
                         task.recipe_most_recent_task = MostRecentTaskSchema(
                             id=task_id,
@@ -329,7 +343,7 @@ def get_tasks(
                 requested_task_updated_at,
                 requested_task_timestamp,
             ) in session.execute(requested_stmt).all():
-                for task in results.tasks:
+                for task in results.records:
                     if schedule_id == task.recipe_id:
                         task.recipe_most_recent_task = MostRecentTaskSchema(
                             id=requested_task_id,
@@ -343,7 +357,11 @@ def get_tasks(
 
 
 def create_task(
-    session: OrmSession, *, requested_task: RequestedTaskFullSchema, worker_id: UUID
+    session: OrmSession,
+    *,
+    requested_task: RequestedTaskFullSchema,
+    worker_id: UUID,
+    accessible_team_ids: Sequence[UUID] | None,
 ) -> TaskFullSchema:
     """
     Create a task from a requested task
@@ -380,7 +398,7 @@ def create_task(
         raise RecordAlreadyExistsError(
             f"Task with id {requested_task.id} already exists"
         ) from exc
-    return get_task_by_id(session, requested_task.id)
+    return get_task_by_id(session, requested_task.id, accessible_team_ids)
 
 
 def get_oldest_task_timestamp(
@@ -448,6 +466,7 @@ def compute_task_eta(session: OrmSession, task: Task) -> dict[str, Any]:
         session,
         recipe_identifier=task.recipe.name if task.recipe else None,
         worker_name=task.worker.name,
+        accessible_team_ids=None,
     )
     elapsed = now - get_timestamp_for_status(
         task.timestamp, "started", get_timestamp_for_status(task.timestamp, "reserved")

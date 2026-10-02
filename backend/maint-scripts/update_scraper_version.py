@@ -84,7 +84,11 @@ from zimfarm_backend.db.offliner_definition import (
     get_offliner_definition_by_id,
     update_offliner_flags,
 )
-from zimfarm_backend.db.recipe import create_recipe_full_schema, update_recipe
+from zimfarm_backend.db.recipe import (
+    RecipeUpdateSchema,
+    create_recipe_full_schema,
+    update_recipe,
+)
 from zimfarm_backend.db.requested_task import create_requested_task_full_schema
 from zimfarm_backend.utils.offliners import flag_alias
 
@@ -476,11 +480,14 @@ def update_recipes(
 
         update_recipe(
             session,
-            offliner_definition=offliner_definition,
             author_id=get_account_by_username(session, username="maint-scripts").id,
             recipe_identifier=recipe.name,
-            new_recipe_config=recipe_config,
-            comment="updates made via update_scraper_version",
+            accessible_team_ids=None,
+            payload=RecipeUpdateSchema(
+                offliner_definition=offliner_definition,
+                config=recipe_config,
+                comment="updates made via update_scraper_version",
+            ),
         )
         if not dry_run:
             session.commit()

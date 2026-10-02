@@ -181,7 +181,7 @@ def test_get_recipe_with_invalid_language_from_db(
     dbsession.add(recipe)
     dbsession.flush()
     # assert we can read recipes with invalid codes from db
-    recipe = get_recipe(dbsession, "test1")
+    recipe = get_recipe(dbsession, "test1", accessible_team_ids=None)
     assert recipe.language_code == code
     recipe_schema = create_recipe_full_schema(recipe, mwoffliner)
     # for unknown languages, the code and name should be the same

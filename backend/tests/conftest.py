@@ -43,6 +43,9 @@ from zimfarm_backend.db.models import (
     RequestedTask,
     Sshkey,
     Task,
+    Team,
+    TeamPermission,
+    TeamRecipe,
     Worker,
 )
 from zimfarm_backend.db.offliner import create_offliner
@@ -918,12 +921,42 @@ def recipe_config(
 
 
 @pytest.fixture
+def create_team(dbsession: OrmSession) -> Callable[..., Team]:
+    def _create_team(*, name: str = "Kiwix", is_private: bool = False) -> Team:
+        team = Team(name=name, is_private=is_private)
+        dbsession.add(team)
+        dbsession.flush()
+        return team
+
+    return _create_team
+
+
+@pytest.fixture
+def team(create_team: Callable[..., Team]) -> Team:
+    return create_team()
+
+
+@pytest.fixture
+def create_team_permission(
+    dbsession: OrmSession,
+) -> Callable[..., TeamPermission]:
+    def _create_team_permission(*, team: Team, account: Account) -> TeamPermission:
+        permission = TeamPermission(team_id=team.id, account_id=account.id)
+        dbsession.add(permission)
+        dbsession.flush()
+        return permission
+
+    return _create_team_permission
+
+
+@pytest.fixture
 def create_recipe(
     dbsession: OrmSession,
     recipe_config: RecipeConfigSchema,
     language: LanguageSchema,
     mwoffliner_definition: OfflinerDefinitionSchema,
     account: Account,
+    team: Team,
 ):
     _language = language
     _recipe_config = recipe_config
@@ -945,6 +978,7 @@ def create_recipe(
         worker: Worker | None = None,
         account: Account | None = None,
         archived: bool = False,
+        teams: list[Team] | None = None,
     ) -> Recipe:
         offliner_definition = offliner_definition or _offliner_definition
         language = _language if language is None else language
@@ -976,6 +1010,8 @@ def create_recipe(
         recipe_duration.worker = worker
         recipe.durations.append(recipe_duration)
 
+        recipe_teams = teams if teams is not None else [team]
+
         history_entry = RecipeHistory(
             created_at=getnow(),
             comment=None,
@@ -988,9 +1024,19 @@ def create_recipe(
             context=recipe.context,
             notification=notification,
             offliner_definition_version=offliner_definition.version,
+            teams=[
+                {"name": _team.name, "is_private": _team.is_private}
+                for _team in recipe_teams
+            ],
         )
         history_entry.author_id = account.id if account else _account.id
         recipe.history_entries.append(history_entry)
+
+        for _team in recipe_teams:
+            team_recipe = TeamRecipe()
+            team_recipe.team = _team
+            team_recipe.recipe = recipe
+            dbsession.add(team_recipe)
 
         dbsession.add(recipe)
         dbsession.flush()
@@ -1056,7 +1102,7 @@ def create_requested_task(
             else recipe_config
         )
 
-        recipe = get_recipe_or_none(dbsession, recipe_name)
+        recipe = get_recipe_or_none(dbsession, recipe_name, accessible_team_ids=None)
         if recipe is None:
             recipe = create_recipe(name=recipe_name, recipe_config=recipe_config)
 

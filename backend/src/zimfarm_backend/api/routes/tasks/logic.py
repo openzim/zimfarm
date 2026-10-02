@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from http import HTTPStatus
 from typing import Annotated, cast
 from uuid import UUID
@@ -10,9 +11,10 @@ from zimfarm_backend.api.routes.dependencies import (
     gen_dbsession,
     get_current_account,
     get_current_account_or_none,
+    get_editable_team_ids,
+    require_permission,
 )
 from zimfarm_backend.api.routes.http_errors import (
-    ForbiddenError,
     NotFoundError,
 )
 from zimfarm_backend.api.routes.models import ListResponse
@@ -34,22 +36,13 @@ from zimfarm_backend.common.upload import (
     populate_zim_urls,
 )
 from zimfarm_backend.common.utils import task_event_handler
-from zimfarm_backend.db.account import check_account_permission
+from zimfarm_backend.db import account as db_account
+from zimfarm_backend.db import offliner as db_offliner
+from zimfarm_backend.db import offliner_definition as db_offliner_definition
+from zimfarm_backend.db import requested_task as db_requested_task
+from zimfarm_backend.db import tasks as db_tasks
+from zimfarm_backend.db import worker as db_worker
 from zimfarm_backend.db.models import Account
-from zimfarm_backend.db.offliner import get_offliner as db_get_offliner
-from zimfarm_backend.db.offliner_definition import (
-    get_offliner_definition_by_id as db_get_offliner_definition_by_id,
-)
-from zimfarm_backend.db.requested_task import (
-    delete_requested_task as db_delete_requested_task,
-)
-from zimfarm_backend.db.requested_task import (
-    get_requested_task_by_id as db_get_requested_task,
-)
-from zimfarm_backend.db.tasks import create_task as db_create_task
-from zimfarm_backend.db.tasks import get_task_by_id as db_get_task
-from zimfarm_backend.db.tasks import get_tasks as db_get_tasks
-from zimfarm_backend.db.worker import get_worker as db_get_worker
 from zimfarm_backend.utils.offliners import expanded_config
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -59,12 +52,16 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 def get_tasks(
     db_session: Annotated[Session, Depends(gen_dbsession)],
     params: Annotated[TasksGetSchema, Query()],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ) -> ListResponse[TaskLightSchema]:
     """Get a list of tasks"""
-    results = db_get_tasks(
+    results = db_tasks.get_tasks(
         db_session,
         skip=params.skip,
         limit=params.limit,
+        accessible_team_ids=accessible_team_ids,
         status=params.status,
         recipe_identifier=params.recipe_name or params.recipe_id,
         sort_criteria=params.sort_criteria,
@@ -76,9 +73,9 @@ def get_tasks(
             nb_records=results.nb_records,
             skip=params.skip,
             limit=params.limit,
-            page_size=len(results.tasks),
+            page_size=len(results.records),
         ),
-        items=results.tasks,
+        items=results.records,
     )
 
 
@@ -87,23 +84,28 @@ def get_task(
     task_id: Annotated[UUID, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_account: Annotated[Account | None, Depends(get_current_account_or_none)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
     *,
     hide_secrets: Annotated[bool, Query()] = False,
 ) -> JSONResponse:
     """Get a task by ID"""
-    task = db_get_task(db_session, task_id)
+    task = db_tasks.get_task_by_id(db_session, task_id, accessible_team_ids)
     if not (
         current_account
-        and check_account_permission(current_account, namespace="tasks", name="secrets")
+        and db_account.check_account_permission(
+            current_account, namespace="tasks", name="secrets"
+        )
     ):
         task.notification = None
         show_secrets = False
     else:
         show_secrets = not hide_secrets
-    offliner_definition = db_get_offliner_definition_by_id(
+    offliner_definition = db_offliner_definition.get_offliner_definition_by_id(
         db_session, task.offliner_definition_id
     )
-    offliner = db_get_offliner(db_session, offliner_definition.offliner)
+    offliner = db_offliner.get_offliner(db_session, offliner_definition.offliner)
 
     # Rebuild the config as the one that was retrieved from the DB has secrets saved
     task.config = expanded_config(
@@ -123,12 +125,17 @@ def get_task(
     )
 
 
-@router.post("/{requested_task_id}")
+@router.post(
+    "/{requested_task_id}",
+    dependencies=[Depends(require_permission(namespace="tasks", name="create"))],
+)
 def create_task(
     requested_task_id: Annotated[UUID, Path()],
     task_create_schema: TaskCreateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_account: Annotated[Account, Depends(get_current_account)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ):
     """Create a task from a requested task"""
     if not ENABLED_SCHEDULER:
@@ -137,15 +144,19 @@ def create_task(
             status_code=HTTPStatus.NO_CONTENT,
         )
 
-    if not check_account_permission(current_account, namespace="tasks", name="create"):
-        raise ForbiddenError("You are not allowed to create tasks")
+    requested_task = db_requested_task.get_requested_task_by_id(
+        db_session, requested_task_id, accessible_team_ids
+    )
 
-    requested_task = db_get_requested_task(db_session, requested_task_id)
+    worker = db_worker.get_worker(
+        db_session, worker_name=task_create_schema.worker_name
+    )
 
-    worker = db_get_worker(db_session, worker_name=task_create_schema.worker_name)
-
-    task = db_create_task(
-        db_session, requested_task=requested_task, worker_id=worker.id
+    task = db_tasks.create_task(
+        db_session,
+        requested_task=requested_task,
+        worker_id=worker.id,
+        accessible_team_ids=accessible_team_ids,
     )
 
     task_event_handler(
@@ -155,7 +166,9 @@ def create_task(
         {"worker": task_create_schema.worker_name},
     )
 
-    db_delete_requested_task(db_session, requested_task_id)
+    db_requested_task.delete_requested_task(
+        db_session, requested_task_id, accessible_team_ids
+    )
 
     return JSONResponse(
         content=task.model_dump(mode="json", context={"show_secrets": True}),
@@ -163,18 +176,20 @@ def create_task(
     )
 
 
-@router.patch("/{task_id}")
+@router.patch(
+    "/{task_id}",
+    dependencies=[Depends(require_permission(namespace="tasks", name="update"))],
+)
 def update_task(
     task_id: Annotated[UUID, Path()],
     task_update_schema: TaskUpdateSchema,
     db_session: Annotated[Session, Depends(gen_dbsession)],
-    current_account: Annotated[Account, Depends(get_current_account)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ):
     """Update a task"""
-    if not check_account_permission(current_account, namespace="tasks", name="update"):
-        raise ForbiddenError("You are not allowed to update this task")
-
-    task = db_get_task(db_session, task_id)
+    task = db_tasks.get_task_by_id(db_session, task_id, accessible_team_ids)
 
     task_event_handler(
         db_session, task.id, task_update_schema.event, task_update_schema.payload
@@ -183,17 +198,21 @@ def update_task(
     return Response(status_code=HTTPStatus.NO_CONTENT)
 
 
-@router.post("/{task_id}/cancel")
+@router.post(
+    "/{task_id}/cancel",
+    dependencies=[Depends(require_permission(namespace="tasks", name="cancel"))],
+)
 def cancel_task(
     task_id: Annotated[UUID, Path()],
     db_session: Annotated[Session, Depends(gen_dbsession)],
     current_account: Annotated[Account, Depends(get_current_account)],
+    accessible_team_ids: Annotated[
+        Sequence[UUID] | None, Depends(get_editable_team_ids)
+    ],
 ):
     """Cancel a task"""
-    if not check_account_permission(current_account, namespace="tasks", name="cancel"):
-        raise ForbiddenError("You are not allowed to cancel this task")
 
-    task = db_get_task(db_session, task_id)
+    task = db_tasks.get_task_by_id(db_session, task_id, accessible_team_ids)
 
     if task.status not in TaskStatus.incomplete():
         raise NotFoundError(f"Task {task_id} not found")

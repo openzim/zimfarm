@@ -337,7 +337,7 @@ def test_list_worker_keys_forbidden(
     client: TestClient, create_account: Callable[..., Account], worker: Worker
 ):
     """Test listing a workers' SSH keys without permission"""
-    account = create_account(permission="editor")
+    account = create_account(permission="global-editor")
     access_token = generate_access_token(
         issue_time=getnow(),
         account_id=str(account.id),
@@ -485,7 +485,7 @@ def test_delete_account_key_forbidden(
     client: TestClient, create_account: Callable[..., Account], worker: Worker
 ):
     """Test deleting another account's SSH key without permission"""
-    account = create_account(permission="editor")
+    account = create_account(permission="global-editor")
     url = f"/v2/workers/{worker.name}/keys/some-fingerprint"
     access_token = generate_access_token(
         issue_time=getnow(),
@@ -521,7 +521,7 @@ def test_create_worker_success(
 @pytest.mark.parametrize(
     "permission",
     [
-        pytest.param(RoleEnum.EDITOR, id="editor"),
+        pytest.param(RoleEnum.GLOBAL_EDITOR, id="editor"),
         pytest.param(RoleEnum.MANAGER, id="manager"),
     ],
 )

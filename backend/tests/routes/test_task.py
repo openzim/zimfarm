@@ -16,7 +16,15 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import FileCreateUpdateSchema, LanguageSchema
-from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task, Worker
+from zimfarm_backend.db.models import (
+    Account,
+    Recipe,
+    RequestedTask,
+    Task,
+    Team,
+    TeamPermission,
+    Worker,
+)
 from zimfarm_backend.db.tasks import create_or_update_task_file
 
 
@@ -283,7 +291,7 @@ def test_update_task_no_permission(
     create_account: Callable[..., Account],
 ):
     """Test that update_task raises ForbiddenError without permission"""
-    account = create_account(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.GLOBAL_EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
         account_id=str(account.id),
@@ -339,7 +347,7 @@ def test_cancel_task_no_permission(
     create_account: Callable[..., Account],
 ):
     """Test that cancel_task raises ForbiddenError without permission"""
-    account = create_account(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.GLOBAL_EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
         account_id=str(account.id),
@@ -588,3 +596,48 @@ def test_get_task_populate_zim_urls_cms_api_error(
     assert "test.zim" in data["files"]
     # When there's an error, zim_urls should remain empty
     assert data["files"]["test.zim"]["zim_urls"] is None
+
+
+@pytest.mark.parametrize(
+    "role, expected_recipe_names",
+    [
+        (RoleEnum.GLOBAL_VIEWER, {"wikipedia_fr_all", "wikipedia_en_all"}),
+        (RoleEnum.PUBLIC_VIEWER, {"wikipedia_fr_all"}),
+        (RoleEnum.TEAM_EDITOR, {"wikipedia_en_all"}),
+    ],
+    ids=["global-viewer", "public-viewer", "team-editor"],
+)
+def test_get_tasks_filters_by_accessible_teams(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+    create_task: Callable[..., Task],
+    *,
+    role: RoleEnum,
+    expected_recipe_names: set[str],
+):
+    """Test that GET /tasks only returns tasks from accessible teams"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    private_team = create_team(name="openzim", is_private=True)
+    create_recipe(name="wikipedia_fr_all", teams=[public_team])
+    create_recipe(name="wikipedia_en_all", teams=[private_team])
+    create_task(recipe_name="wikipedia_fr_all")
+    create_task(recipe_name="wikipedia_en_all")
+
+    account = create_account(permission=role)
+    if role == RoleEnum.TEAM_EDITOR:
+        create_team_permission(team=private_team, account=account)
+
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    response = client.get(
+        "/v2/tasks?skip=0&limit=20",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    items = response.json()["items"]
+    assert {item["recipe_name"] for item in items} == expected_recipe_names

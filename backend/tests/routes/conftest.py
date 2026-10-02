@@ -6,10 +6,11 @@ from sqlalchemy.orm import Session as OrmSession
 
 from zimfarm_backend.api.entrypoint import app
 from zimfarm_backend.db import gen_dbsession, gen_manual_dbsession
+from zimfarm_backend.db.models import Team
 
 
 @pytest.fixture
-def client(dbsession: OrmSession) -> TestClient:
+def client(dbsession: OrmSession, team: Team) -> TestClient:  # noqa: ARG001
     def test_dbsession() -> Generator[OrmSession]:
         yield dbsession
 

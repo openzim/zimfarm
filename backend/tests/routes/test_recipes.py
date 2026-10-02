@@ -21,9 +21,20 @@ from zimfarm_backend.common.schemas.orms import (
     OfflinerDefinitionSchema,
     OfflinerSchema,
 )
-from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Task
+from zimfarm_backend.db.models import (
+    Account,
+    Recipe,
+    RequestedTask,
+    Task,
+    Team,
+    TeamPermission,
+)
 from zimfarm_backend.db.offliner_definition import create_offliner_definition_schema
-from zimfarm_backend.db.recipe import get_recipe, update_recipe
+from zimfarm_backend.db.recipe import (
+    RecipeUpdateSchema,
+    get_recipe,
+    update_recipe,
+)
 
 
 @pytest.mark.parametrize(
@@ -78,6 +89,92 @@ def test_get_recipes(
     assert "skip" in data["meta"]
     assert data["meta"]["count"] == expected_count
     assert len(data["items"]) <= 5
+
+
+@pytest.mark.parametrize(
+    "permission,expected_names",
+    [
+        pytest.param(
+            RoleEnum.GLOBAL_VIEWER,
+            {"wikipedia_fr_all", "wikipedia_en_all", "wikipedia_ar_all"},
+            id="global-viewer",
+        ),
+        pytest.param(RoleEnum.PUBLIC_VIEWER, {"wikipedia_fr_all"}, id="public-viewer"),
+        pytest.param(
+            RoleEnum.TEAM_EDITOR,
+            {"wikipedia_fr_all", "wikipedia_en_all"},
+            id="team-editor",
+        ),
+    ],
+)
+def test_get_recipes_filters_by_viewable_teams(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+    permission: RoleEnum,
+    expected_names: set[str],
+):
+    """Test that GET /v2/recipes returns recipes from member and public teams"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    private_team = create_team(name="openzim", is_private=True)
+    other_private_team = create_team(name="other", is_private=True)
+    create_recipe(name="wikipedia_fr_all", teams=[public_team])
+    create_recipe(name="wikipedia_en_all", teams=[private_team])
+    create_recipe(name="wikipedia_ar_all", teams=[other_private_team])
+
+    account = create_account(permission=permission)
+    if permission == RoleEnum.TEAM_EDITOR:
+        create_team_permission(team=private_team, account=account)
+
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    response = client.get(
+        "/v2/recipes?skip=0&limit=20",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert {item["name"] for item in data["items"]} == expected_names
+
+
+def test_get_recipes_filters_by_team(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+):
+    """Test that GET /v2/recipes can filter recipes by team name"""
+    wikimedia = create_team(name="wikimedia", is_private=False)
+    openzim = create_team(name="openzim", is_private=False)
+    create_recipe(name="wikipedia_fr_all", teams=[wikimedia])
+    create_recipe(name="wikipedia_en_all", teams=[openzim])
+
+    account = create_account(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    response = client.get(
+        "/v2/recipes?skip=0&limit=20&team=wikimedia",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert {item["name"] for item in response.json()["items"]} == {"wikipedia_fr_all"}
+
+    response = client.get(
+        "/v2/recipes?skip=0&limit=20&team=wikimedia&team=openzim",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert {item["name"] for item in response.json()["items"]} == {
+        "wikipedia_fr_all",
+        "wikipedia_en_all",
+    }
 
 
 @pytest.mark.parametrize(
@@ -352,7 +449,7 @@ def test_create_recipe_with_permssions(
     assert response.status_code == expected_status_code
     if response.status_code == HTTPStatus.OK:
         # assert top-level scalar attributes of the recipe with the payload
-        recipe = get_recipe(dbsession, "test_recipe")
+        recipe = get_recipe(dbsession, "test_recipe", accessible_team_ids=None)
         assert recipe.language_code == "eng"
         assert recipe.tags == ["important"]
         assert recipe.enabled is True
@@ -669,6 +766,40 @@ def test_update_recipe(
     assert response.status_code == expected_status_code
 
 
+def test_update_recipe_teams(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+):
+    """Test that PATCH recipe replaces its teams and records them in history"""
+    account = create_account(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    wikimedia = create_team(name="wikimedia")
+    create_team(name="openzim")
+    recipe = create_recipe(name="wikipedia_fr_all", teams=[wikimedia])
+
+    response = client.patch(
+        f"/v2/recipes/{recipe.name}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"teams": ["wikimedia", "openzim"]},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    response = client.get(
+        f"/v2/recipes/{recipe.name}/history",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    history_team_names = [
+        {team["name"] for team in item["teams"]} for item in response.json()["items"]
+    ]
+    assert {"wikimedia", "openzim"} in history_team_names
+
+
 @pytest.mark.parametrize(
     "permission,expected_status_code",
     [
@@ -762,8 +893,195 @@ def test_clone_recipe(
     assert data["id"] is not None
     assert str(data["id"]) != str(recipe.id)
 
-    new_recipe = get_recipe(dbsession, "test_recipe_clone")
+    new_recipe = get_recipe(dbsession, "test_recipe_clone", accessible_team_ids=None)
     assert new_recipe.is_valid == expected_validity_status
+
+
+def test_team_editor_cannot_edit_public_recipe(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+):
+    """A team-scoped account can view but not edit a public team's recipe"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    private_team = create_team(name="openzim", is_private=True)
+    recipe = create_recipe(name="wikipedia_fr_all", teams=[public_team])
+
+    account = create_account(permission=RoleEnum.TEAM_EDITOR)
+    create_team_permission(team=private_team, account=account)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    read_response = client.get(f"/v2/recipes/{recipe.name}", headers=headers)
+    assert read_response.status_code == HTTPStatus.OK
+
+    update_response = client.patch(
+        f"/v2/recipes/{recipe.name}",
+        headers=headers,
+        json={"tags": ["important"]},
+    )
+    assert update_response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_clone_recipe_from_public_team_targets_member_team(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+):
+    """A team-scoped account cloning a public recipe owns the clone with its team"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    private_team = create_team(name="openzim", is_private=True)
+    recipe = create_recipe(name="wikipedia_fr_all", teams=[public_team])
+
+    account = create_account(permission=RoleEnum.TEAM_EDITOR)
+    create_team_permission(team=private_team, account=account)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    response = client.post(
+        f"/v2/recipes/{recipe.name}/clone",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"name": "wikipedia_fr_clone"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    clone = get_recipe(dbsession, "wikipedia_fr_clone", accessible_team_ids=None)
+    assert {entry.team.name for entry in clone.teams} == {"openzim"}
+
+
+def test_clone_recipe_requires_team_selection(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+):
+    """With several teams, a team-scoped account must pick the clone's owner"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    team_one = create_team(name="openzim", is_private=True)
+    team_two = create_team(name="kiwix", is_private=True)
+    recipe = create_recipe(name="wikipedia_fr_all", teams=[public_team])
+
+    account = create_account(permission=RoleEnum.TEAM_EDITOR)
+    create_team_permission(team=team_one, account=account)
+    create_team_permission(team=team_two, account=account)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    # without an explicit selection the request is rejected
+    response = client.post(
+        f"/v2/recipes/{recipe.name}/clone",
+        headers=headers,
+        json={"name": "wikipedia_fr_clone"},
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    # an explicit owned team is used for the clone
+    response = client.post(
+        f"/v2/recipes/{recipe.name}/clone",
+        headers=headers,
+        json={"name": "wikipedia_fr_clone", "teams": ["kiwix"]},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    clone = get_recipe(dbsession, "wikipedia_fr_clone", accessible_team_ids=None)
+    assert {entry.team.name for entry in clone.teams} == {"kiwix"}
+
+
+@pytest.mark.parametrize(
+    "teams,expected_teams",
+    [
+        pytest.param(
+            ["openzim"],
+            {"openzim"},
+            id="single-team",
+        ),
+        pytest.param(
+            ["openzim", "kiwix"],
+            {"openzim", "kiwix"},
+            id="multiple-teams",
+        ),
+    ],
+)
+def test_clone_recipe_to_owned_teams(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+    teams: list[str],
+    expected_teams: set[str],
+):
+    """A team-scoped account can choose which of its teams own the clone"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    team_one = create_team(name="openzim", is_private=True)
+    team_two = create_team(name="kiwix", is_private=True)
+    recipe = create_recipe(name="wikipedia_fr_all", teams=[public_team])
+
+    account = create_account(permission=RoleEnum.TEAM_EDITOR)
+    create_team_permission(team=team_one, account=account)
+    create_team_permission(team=team_two, account=account)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    response = client.post(
+        f"/v2/recipes/{recipe.name}/clone",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"name": "wikipedia_fr_clone", "teams": teams},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    clone = get_recipe(dbsession, "wikipedia_fr_clone", accessible_team_ids=None)
+    assert {entry.team.name for entry in clone.teams} == expected_teams
+
+
+def test_clone_recipe_rejects_unowned_team(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+):
+    """A team-scoped account cannot assign the clone to a team it does not own"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    private_team = create_team(name="openzim", is_private=True)
+    other_team = create_team(name="other", is_private=True)
+    recipe = create_recipe(name="wikipedia_fr_all", teams=[public_team])
+
+    account = create_account(permission=RoleEnum.TEAM_EDITOR)
+    create_team_permission(team=private_team, account=account)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    # a mix of owned and unowned teams is rejected as a whole
+    response = client.post(
+        f"/v2/recipes/{recipe.name}/clone",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "name": "wikipedia_fr_clone",
+            "teams": [private_team.name, other_team.name],
+        },
+    )
+    assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.parametrize(
@@ -1107,11 +1425,14 @@ def test_get_recipe_history_pagination(
             session=dbsession,
             author_id=account.id,
             recipe_identifier=recipe.name,
-            comment=f"test_comment_{i}",
-            tags=[*recipe.tags, f"test_tag_{i}"],
-            offliner_definition=create_offliner_definition_schema(
-                recipe.offliner_definition
+            payload=RecipeUpdateSchema(
+                offliner_definition=create_offliner_definition_schema(
+                    recipe.offliner_definition
+                ),
+                comment=f"test_comment_{i}",
+                tags=[*recipe.tags, f"test_tag_{i}"],
             ),
+            accessible_team_ids=None,
         )
 
     url = f"/v2/recipes/{recipe.name}/history?{query_string}"
@@ -1310,17 +1631,20 @@ def test_revert_recipe_history(
         dbsession,
         author_id=account.id,
         recipe_identifier="test_recipe",
-        offliner_definition=mwoffliner_definition,
-        tags=["tag3", "tag4"],
-        periodicity=RecipePeriodicity.quarterly,
-        context="updated context",
-        enabled=False,
-        comment="Update all fields",
-        notification=RecipeNotificationSchema(
-            requested=EventNotificationSchema(
-                mailgun=["updated@example.com", "another@example.com"]
-            )
+        payload=RecipeUpdateSchema(
+            offliner_definition=mwoffliner_definition,
+            tags=["tag3", "tag4"],
+            periodicity=RecipePeriodicity.quarterly,
+            context="updated context",
+            enabled=False,
+            comment="Update all fields",
+            notification=RecipeNotificationSchema(
+                requested=EventNotificationSchema(
+                    mailgun=["updated@example.com", "another@example.com"]
+                )
+            ),
         ),
+        accessible_team_ids=None,
     )
 
     response = client.patch(

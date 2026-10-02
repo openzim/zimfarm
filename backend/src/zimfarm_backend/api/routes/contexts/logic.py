@@ -7,7 +7,7 @@ from zimfarm_backend.api.routes.dependencies import gen_dbsession
 from zimfarm_backend.api.routes.models import ListResponse
 from zimfarm_backend.common.schemas.fields import LimitFieldMax500, SkipField
 from zimfarm_backend.common.schemas.models import calculate_pagination_metadata
-from zimfarm_backend.db.contexts import get_contexts as db_get_contexts
+from zimfarm_backend.db import contexts as db_contexts
 
 router = APIRouter(prefix="/contexts", tags=["contexts"])
 
@@ -19,7 +19,7 @@ def get_contexts(
     limit: Annotated[LimitFieldMax500, Query()] = 500,
 ):
     """Get a list of all available contexts from recipes and workers"""
-    result = db_get_contexts(session, skip, limit)
+    result = db_contexts.get_contexts(session, skip, limit)
     return ListResponse(
         items=result.contexts,
         meta=calculate_pagination_metadata(

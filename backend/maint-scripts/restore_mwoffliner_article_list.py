@@ -16,7 +16,7 @@ from zimfarm_backend.db.offliner_definition import (
     create_offliner_definition_schema,
     create_offliner_instance,
 )
-from zimfarm_backend.db.recipe import update_recipe
+from zimfarm_backend.db.recipe import RecipeUpdateSchema, update_recipe
 
 
 def main(*, dry_run: bool = False):
@@ -108,9 +108,12 @@ def main(*, dry_run: bool = False):
                     session=session,
                     author_id=user.id,
                     recipe_identifier=recipe.name,
-                    offliner_definition=offliner_def,
-                    new_recipe_config=recipe_config,
-                    comment="Restore mwoffliner articleList from history",
+                    accessible_team_ids=None,
+                    payload=RecipeUpdateSchema(
+                        offliner_definition=offliner_def,
+                        config=recipe_config,
+                        comment="Restore mwoffliner articleList from history",
+                    ),
                 )
                 session.commit()
                 logger.info(

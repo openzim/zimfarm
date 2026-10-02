@@ -25,17 +25,12 @@ from zimfarm_backend.api.routes.http_errors import (
 from zimfarm_backend.api.token import generate_access_token
 from zimfarm_backend.common import constants, getnow
 from zimfarm_backend.common.schemas.orms import AccountSchema
+from zimfarm_backend.db import account as db_account
 from zimfarm_backend.db import gen_dbsession
-from zimfarm_backend.db.account import create_account_schema, get_account_by_username
+from zimfarm_backend.db import refresh_token as db_refresh_token
+from zimfarm_backend.db import worker as db_worker
 from zimfarm_backend.db.exceptions import RecordDoesNotExistError
 from zimfarm_backend.db.models import Account
-from zimfarm_backend.db.refresh_token import (
-    create_refresh_token,
-    delete_refresh_token,
-    expire_refresh_tokens,
-    get_refresh_token,
-)
-from zimfarm_backend.db.worker import get_worker as db_get_worker
 from zimfarm_backend.exceptions import PublicKeyLoadError
 from zimfarm_backend.utils.cryptography import verify_signed_message
 
@@ -43,18 +38,20 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def _access_token_response(
-    db_session: OrmSession, db_account: Account, response: Response
+    db_session: OrmSession, account: Account, response: Response
 ):
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     issue_time = getnow()
     return Token(
         access_token=generate_access_token(
-            account_id=str(db_account.id),
+            account_id=str(account.id),
             issue_time=issue_time,
         ),
         refresh_token=str(
-            create_refresh_token(session=db_session, account_id=db_account.id).token
+            db_refresh_token.create_refresh_token(
+                session=db_session, account_id=account.id
+            ).token
         ),
         expires_time=issue_time + datetime.timedelta(seconds=JWT_TOKEN_EXPIRY_DURATION),
     )
@@ -65,17 +62,19 @@ def _auth_with_credentials(
 ):
     """Authorize an account with username and password."""
     try:
-        db_account = get_account_by_username(db_session, username=credentials.username)
+        account_model = db_account.get_account_by_username(
+            db_session, username=credentials.username
+        )
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
     if not (
-        db_account.password_hash
-        and check_password_hash(db_account.password_hash, credentials.password)
+        account_model.password_hash
+        and check_password_hash(account_model.password_hash, credentials.password)
     ):
         raise UnauthorizedError("Invalid credentials")
 
-    return _access_token_response(db_session, db_account, response)
+    return _access_token_response(db_session, account_model, response)
 
 
 def _refresh_access_token(
@@ -83,18 +82,20 @@ def _refresh_access_token(
 ):
     """Issue a new set of access and refresh tokens."""
     try:
-        db_refresh_token = get_refresh_token(db_session, token=refresh_token)
+        refresh_token_model = db_refresh_token.get_refresh_token(
+            db_session, token=refresh_token
+        )
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
     now = getnow()
-    if db_refresh_token.expire_time < now:
+    if refresh_token_model.expire_time < now:
         raise UnauthorizedError("Refresh token expired")
 
-    delete_refresh_token(db_session, token=refresh_token)
-    expire_refresh_tokens(db_session, expire_time=now)
+    db_refresh_token.delete_refresh_token(db_session, token=refresh_token)
+    db_refresh_token.expire_refresh_tokens(db_session, expire_time=now)
 
-    return _access_token_response(db_session, db_refresh_token.account, response)
+    return _access_token_response(db_session, refresh_token_model.account, response)
 
 
 @router.post("/authorize")
@@ -149,13 +150,13 @@ def authenticate_account_with_ssh_keys(
         )
 
     try:
-        db_worker = db_get_worker(db_session, worker_name=worker_name)
+        worker_model = db_worker.get_worker(db_session, worker_name=worker_name)
     except RecordDoesNotExistError as exc:
         raise UnauthorizedError() from exc
 
     # verify signature of message with workers' public keys
     authenticated = False
-    for ssh_key in db_worker.ssh_keys:
+    for ssh_key in worker_model.ssh_keys:
         try:
             if verify_signed_message(
                 bytes(ssh_key.key, encoding="ascii"),
@@ -171,7 +172,7 @@ def authenticate_account_with_ssh_keys(
     if not authenticated:
         raise UnauthorizedError("Could not find matching key for signature.")
 
-    return _access_token_response(db_session, db_worker.account, response)
+    return _access_token_response(db_session, worker_model.account, response)
 
 
 @router.get("/test")
@@ -187,4 +188,4 @@ def get_current_account_info(
     current_account: Annotated[Account, Depends(get_current_account)],
 ) -> AccountSchema:
     """Get the current authenticated account's information including scopes."""
-    return create_account_schema(current_account)
+    return db_account.create_account_schema(current_account)

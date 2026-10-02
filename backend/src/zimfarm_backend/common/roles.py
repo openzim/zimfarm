@@ -14,44 +14,25 @@ class Permissions:
         return cls.get(**dict.fromkeys(cls.names, True))
 
 
+class ResourcePermissions(Permissions):
+    names: ClassVar[list[str]] = ["create", "read", "update", "delete"]
+
+
 class TaskPermissions(Permissions):
-    names: ClassVar[list[str]] = [
-        "read",
-        "secrets",
-        "create",
-        "update",
-        "cancel",
-        "delete",
-    ]
+    names: ClassVar[list[str]] = [*ResourcePermissions.names, "secrets", "cancel"]
 
 
 class RecipePermissions(Permissions):
-    names: ClassVar[list[str]] = [
-        "read",
-        "secrets",
-        "create",
-        "update",
-        "archive",
-        "delete",
-    ]
+    names: ClassVar[list[str]] = [*ResourcePermissions.names, "secrets", "archive"]
 
 
 class RequestedTaskPermissions(Permissions):
-    names: ClassVar[list[str]] = [
-        "read",
-        "secrets",
-        "create",
-        "update",
-        "delete",
-    ]
+    names: ClassVar[list[str]] = [*ResourcePermissions.names, "secrets"]
 
 
 class AccountPermissions(Permissions):
     names: ClassVar[list[str]] = [
-        "read",
-        "create",
-        "update",
-        "delete",
+        *ResourcePermissions.names,
         "change_password",
         "secrets",
     ]
@@ -79,11 +60,46 @@ class OfflinerPermissions(Permissions):
 class RoleEnum(StrEnum):
     ADMIN = "admin"
     MANAGER = "manager"
-    EDITOR = "editor"
-    EDITOR_REQUESTER = "editor-requester"
+    GLOBAL_EDITOR = "global-editor"
+    TEAM_EDITOR = "team-editor"
+    GLOBAL_EDITOR_REQUESTER = "global-editor-requester"
+    TEAM_EDITOR_REQUESTER = "team-editor-requester"
     WORKER = "worker"
     PROCESSOR = "processor"
-    VIEWER = "viewer"
+    TEAM_VIEWER = "team-viewer"
+    PUBLIC_VIEWER = "public-viewer"
+    GLOBAL_VIEWER = "global-viewer"
+
+
+GLOBAL_ROLES: frozenset[RoleEnum] = frozenset(
+    {
+        RoleEnum.ADMIN,
+        RoleEnum.MANAGER,
+        RoleEnum.GLOBAL_EDITOR,
+        RoleEnum.GLOBAL_EDITOR_REQUESTER,
+        RoleEnum.GLOBAL_VIEWER,
+        RoleEnum.WORKER,
+        RoleEnum.PROCESSOR,
+    }
+)
+
+TEAM_ROLES: frozenset[RoleEnum] = frozenset(
+    {
+        RoleEnum.TEAM_EDITOR,
+        RoleEnum.TEAM_EDITOR_REQUESTER,
+        RoleEnum.TEAM_VIEWER,
+    }
+)
+
+
+def is_global_role(role: RoleEnum) -> bool:
+    """Whether the role has access to all teams (i.e. is not team-scoped)."""
+    return role in GLOBAL_ROLES
+
+
+def is_team_role(role: RoleEnum) -> bool:
+    """Whether the role is scoped to the teams it is a member of."""
+    return role in TEAM_ROLES
 
 
 ROLES: dict[str, dict[str, dict[str, bool]]] = {
@@ -95,6 +111,7 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
         "workers": WorkerPermissions.get_all(),
         "requested_tasks": RequestedTaskPermissions.get_all(),
         "offliners": OfflinerPermissions.get_all(),
+        "teams": ResourcePermissions.get_all(),
     },
     RoleEnum.MANAGER: {
         "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
@@ -117,13 +134,28 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
         "requested_tasks": RequestedTaskPermissions.get(
             read=True, create=True, delete=True, secrets=True
         ),
+        "teams": ResourcePermissions.get(read=True),
     },
-    RoleEnum.EDITOR: {
+    RoleEnum.GLOBAL_EDITOR: {
         "recipes": RecipePermissions.get(
             read=True, create=True, update=True, secrets=True, archive=True
         ),
     },
-    RoleEnum.EDITOR_REQUESTER.value: {
+    RoleEnum.TEAM_EDITOR: {
+        "recipes": RecipePermissions.get(
+            read=True, create=True, update=True, secrets=True, archive=True
+        ),
+    },
+    RoleEnum.GLOBAL_EDITOR_REQUESTER.value: {
+        "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
+        "recipes": RecipePermissions.get(
+            read=True, create=True, update=True, secrets=True, archive=True
+        ),
+        "requested_tasks": RequestedTaskPermissions.get(
+            read=True, create=True, delete=True, secrets=True
+        ),
+    },
+    RoleEnum.TEAM_EDITOR_REQUESTER.value: {
         "tasks": TaskPermissions.get(read=True, cancel=True, secrets=True),
         "recipes": RecipePermissions.get(
             read=True, create=True, update=True, secrets=True, archive=True
@@ -146,7 +178,12 @@ ROLES: dict[str, dict[str, dict[str, bool]]] = {
         "tasks": TaskPermissions.get(update=True, secrets=True),
         "requested_tasks": RequestedTaskPermissions.get(update=True, secrets=True),
     },
-    RoleEnum.VIEWER: {},
+    RoleEnum.PUBLIC_VIEWER: {},
+    RoleEnum.GLOBAL_VIEWER.value: {
+        "tasks": TaskPermissions.get(read=True),
+        "recipes": RecipePermissions.get(read=True),
+        "requested_tasks": RequestedTaskPermissions.get(read=True),
+    },
 }
 
 

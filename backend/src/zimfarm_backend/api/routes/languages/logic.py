@@ -10,7 +10,7 @@ from zimfarm_backend.common.schemas.models import (
     calculate_pagination_metadata,
 )
 from zimfarm_backend.db import gen_dbsession
-from zimfarm_backend.db.language import get_languages as db_get_languages
+from zimfarm_backend.db import language as db_language
 
 router = APIRouter(prefix="/languages", tags=["languages"])
 
@@ -23,7 +23,7 @@ def get_languages(
 ) -> ListResponse[LanguageSchema]:
     """Get a list of languages."""
 
-    results = db_get_languages(db_session, skip=skip, limit=limit)
+    results = db_language.get_languages(db_session, skip=skip, limit=limit)
     return ListResponse[LanguageSchema](
         meta=calculate_pagination_metadata(
             nb_records=results.nb_languages,

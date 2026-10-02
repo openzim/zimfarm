@@ -9,7 +9,7 @@ from zimfarm_backend.api.routes.dependencies import gen_dbsession
 from zimfarm_backend.api.routes.status.models import StatusMonitorName
 from zimfarm_backend.common import getnow
 from zimfarm_backend.common.enums import TaskStatus
-from zimfarm_backend.db.tasks import get_oldest_task_timestamp
+from zimfarm_backend.db import tasks as db_tasks
 
 router = APIRouter(prefix="/status", tags=["status"])
 
@@ -26,7 +26,7 @@ def get_status(
     """
     match monitor_name:
         case StatusMonitorName.oldest_task_older_than:
-            oldest_task_timestamp = get_oldest_task_timestamp(session, status)
+            oldest_task_timestamp = db_tasks.get_oldest_task_timestamp(session, status)
             if (getnow() - oldest_task_timestamp).total_seconds() > threshold_secs:
                 suffix = "KO"
             else:

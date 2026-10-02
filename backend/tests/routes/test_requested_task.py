@@ -13,7 +13,14 @@ from zimfarm_backend.common import getnow
 from zimfarm_backend.common.constants import SECRET_STRING_LENGTH
 from zimfarm_backend.common.roles import RoleEnum
 from zimfarm_backend.common.schemas.models import RecipeConfigSchema, ResourcesSchema
-from zimfarm_backend.db.models import Account, Recipe, RequestedTask, Worker
+from zimfarm_backend.db.models import (
+    Account,
+    Recipe,
+    RequestedTask,
+    Team,
+    TeamPermission,
+    Worker,
+)
 from zimfarm_backend.db.worker import get_worker
 
 
@@ -55,6 +62,33 @@ def test_create_request_task_no_enabled_recipes(
     response = client.post(
         "/v2/requested-tasks",
         json={"recipe_names": [recipe.name], "worker": worker.name, "priority": 1},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_create_request_task_public_recipe_not_requestable(
+    client: TestClient,
+    create_account: Callable[..., Account],
+    create_team: Callable[..., Team],
+    create_team_permission: Callable[..., TeamPermission],
+    create_recipe: Callable[..., Recipe],
+):
+    """A team-scoped account cannot request tasks for a public team's recipe"""
+    public_team = create_team(name="wikimedia", is_private=False)
+    private_team = create_team(name="openzim", is_private=True)
+    recipe = create_recipe(name="wikipedia_fr_all", teams=[public_team])
+
+    account = create_account(permission=RoleEnum.TEAM_EDITOR_REQUESTER)
+    create_team_permission(team=private_team, account=account)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    response = client.post(
+        "/v2/requested-tasks",
+        json={"recipe_names": [recipe.name], "worker": "test-worker", "priority": 1},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -272,6 +306,65 @@ def test_get_requested_tasks_success(
     assert "count" in data["meta"]
     assert data["meta"]["count"] == 30
     assert len(data["items"]) == 5
+
+
+@pytest.mark.parametrize(
+    ("role", "expected_recipe_names"),
+    [
+        pytest.param(
+            RoleEnum.GLOBAL_VIEWER,
+            {"wikipedia_fr_all", "wikipedia_en_all"},
+            id="global-viewer-sees-all",
+        ),
+        pytest.param(
+            RoleEnum.PUBLIC_VIEWER,
+            {"wikipedia_fr_all"},
+            id="public-viewer-sees-public-only",
+        ),
+        pytest.param(
+            RoleEnum.TEAM_EDITOR,
+            {"wikipedia_en_all"},
+            id="team-editor-sees-team-only",
+        ),
+    ],
+)
+def test_get_requested_tasks_filters_by_accessible_teams(
+    client: TestClient,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    create_requested_task: Callable[..., RequestedTask],
+    create_account: Callable[..., Account],
+    create_team_permission: Callable[..., TeamPermission],
+    role: RoleEnum,
+    expected_recipe_names: set[str],
+):
+    """Test that GET /v2/requested-tasks only returns requested tasks whose
+    recipe belongs to a team the caller can access."""
+    public_team = create_team(name="wikimedia", is_private=False)
+    private_team = create_team(name="openzim", is_private=True)
+
+    create_recipe(name="wikipedia_fr_all", teams=[public_team])
+    create_recipe(name="wikipedia_en_all", teams=[private_team])
+
+    create_requested_task(recipe_name="wikipedia_fr_all")
+    create_requested_task(recipe_name="wikipedia_en_all")
+
+    account = create_account(permission=role)
+    if role == RoleEnum.TEAM_EDITOR:
+        create_team_permission(team=private_team, account=account)
+
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    response = client.get(
+        "/v2/requested-tasks?skip=0&limit=20",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+    assert {item["recipe_name"] for item in data["items"]} == expected_recipe_names
 
 
 def test_get_requested_tasks_for_worker_scheduler_disabled(
@@ -573,7 +666,7 @@ def test_update_requested_task_no_permission(
     create_account: Callable[..., Account],
 ):
     """Test that update_requested_task raises ForbiddenError without permission"""
-    account = create_account(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.GLOBAL_EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
         account_id=str(account.id),
@@ -616,7 +709,7 @@ def test_delete_requested_task_no_permission(
     create_account: Callable[..., Account],
 ):
     """Test that delete_requested_task raises ForbiddenError without permission"""
-    account = create_account(permission=RoleEnum.EDITOR)
+    account = create_account(permission=RoleEnum.GLOBAL_EDITOR)
     access_token = generate_access_token(
         issue_time=getnow(),
         account_id=str(account.id),

@@ -14,13 +14,19 @@ export default {
   // User roles
   ROLES: [
     'admin',
-    'editor',
-    'editor-requester',
     'manager',
+    'global-editor',
+    'team-editor',
+    'global-editor-requester',
+    'team-editor-requester',
     'processor',
+    'team-viewer',
+    'public-viewer',
+    'global-viewer',
     'custom',
-    'viewer',
   ] as const,
+  // Roles that can be associated with teams
+  TEAM_ROLES: ['team-editor', 'team-editor-requester', 'team-viewer'] as const,
   MEMORY_VALUES: [
     536870912, // 512MiB
     1073741824, // 1GiB

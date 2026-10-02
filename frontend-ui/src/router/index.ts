@@ -8,6 +8,8 @@ import RecipesView from '@/views/RecipesView.vue'
 import SignInView from '@/views/SignInView.vue'
 import SupportUsView from '@/views/SupportUs.vue'
 import TaskDetailView from '@/views/TaskDetailView.vue'
+import TeamView from '@/views/TeamView.vue'
+import TeamsView from '@/views/TeamsView.vue'
 import UsersView from '@/views/UsersView.vue'
 import UserView from '@/views/UserView.vue'
 import WorkerDetailView from '@/views/WorkerDetailView.vue'
@@ -151,6 +153,33 @@ const routes = [
     name: 'users',
     component: UsersView,
     meta: { title: 'Zimfarm | Users' },
+  },
+
+  {
+    path: '/teams/:teamName',
+    name: 'team-detail',
+    component: TeamView,
+    props: true,
+    meta: {
+      title: (to: RouteLocationNormalized) => `Zimfarm | Team • ${to.params.teamName}`,
+      parentNavigation: 'teams',
+    },
+  },
+  {
+    path: '/teams/:teamName/:selectedTab',
+    name: 'team-detail-tab',
+    component: TeamView,
+    props: true,
+    meta: {
+      title: (to: RouteLocationNormalized) => `Zimfarm | Team • ${to.params.teamName}`,
+      parentNavigation: 'teams',
+    },
+  },
+  {
+    path: '/teams',
+    name: 'teams',
+    component: TeamsView,
+    meta: { title: 'Zimfarm | Teams' },
   },
 
   {

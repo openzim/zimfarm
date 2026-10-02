@@ -207,7 +207,9 @@ def save_event(
         recipe.most_recent_task = task
 
     if code == TaskStatus.scraper_completed and recipe:
-        update_recipe_duration(session, recipe_identifier=recipe.name)
+        update_recipe_duration(
+            session, recipe_identifier=recipe.name, accessible_team_ids=None
+        )
 
 
 def task_requested_event_handler(

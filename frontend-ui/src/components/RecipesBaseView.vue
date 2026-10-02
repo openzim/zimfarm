@@ -6,6 +6,7 @@
       :languages="languages"
       :tags="tags"
       :offliners="offliners"
+      :teams="teamNames"
       @filters-changed="handleFiltersChange"
       @clear-filters="clearFilters"
     />
@@ -90,6 +91,7 @@ import { useOfflinerStore } from '@/stores/offliner'
 import { useRequestedTasksStore } from '@/stores/requestedTasks'
 import { useRecipeStore } from '@/stores/recipe'
 import { useTagStore } from '@/stores/tag'
+import { useTeamStore } from '@/stores/team'
 import { useWorkersStore } from '@/stores/workers'
 import type { RecipeLight } from '@/types/recipe'
 import type { Worker } from '@/types/workers'
@@ -115,6 +117,7 @@ const emit = defineEmits<{
       languages: string[]
       tags: string[]
       offliners: string[]
+      teams: string[]
     },
   ]
 }>()
@@ -142,6 +145,7 @@ const filters = computed(() => {
     languages: [] as string[],
     tags: [] as string[],
     offliners: [] as string[],
+    teams: [] as string[],
   }
 
   if (query.name && typeof query.name === 'string') {
@@ -163,6 +167,11 @@ const filters = computed(() => {
     derived.offliners = offlinerValue.filter((o): o is string => o !== null)
   }
 
+  if (query.team) {
+    const teamValue = Array.isArray(query.team) ? query.team : [query.team]
+    derived.teams = teamValue.filter((t): t is string => t !== null)
+  }
+
   return derived
 })
 
@@ -181,6 +190,7 @@ const recipeStore = useRecipeStore()
 const languageStore = useLanguageStore()
 const tagStore = useTagStore()
 const offlinerStore = useOfflinerStore()
+const teamStore = useTeamStore()
 const loadingStore = useLoadingStore()
 const notificationStore = useNotificationStore()
 const requestedTasksStore = useRequestedTasksStore()
@@ -190,6 +200,7 @@ const workersStore = useWorkersStore()
 const languages = computed(() => languageStore.languages)
 const tags = computed(() => tagStore.tags)
 const offliners = computed(() => offlinerStore.offliners)
+const teamNames = computed(() => teamStore.teams.map((team) => team.name))
 
 const paginator = ref<Paginator>({
   page: Number(route.query.page) || 1,
@@ -212,6 +223,7 @@ async function loadData(limit: number, skip: number, hideLoading: boolean = fals
     filters.value.name || undefined,
     props.archived,
     filters.value.offliners.length > 0 ? filters.value.offliners : undefined,
+    filters.value.teams.length > 0 ? filters.value.teams : undefined,
   )
 
   recipes.value = recipeStore.recipes
@@ -255,6 +267,7 @@ async function clearFilters() {
     languages: [],
     tags: [],
     offliners: [],
+    teams: [],
   }
   updateUrlFilters(emptyFilters)
 }
@@ -376,6 +389,11 @@ function updateUrlFilters(sourceFilters: typeof filters.value) {
   } else if (sourceFilters.offliners.length > 1) {
     query.offliner = sourceFilters.offliners
   }
+  if (sourceFilters.teams.length === 1) {
+    query.team = sourceFilters.teams[0]
+  } else if (sourceFilters.teams.length > 1) {
+    query.team = sourceFilters.teams
+  }
 
   router.push({
     name: props.routeName,
@@ -389,6 +407,7 @@ onMounted(async () => {
   await languageStore.fetchLanguages()
   await tagStore.fetchTags()
   await offlinerStore.fetchOffliners()
+  await teamStore.fetchTeams({ limit: 200 })
 
   // Fetch workers if can request tasks
   if (props.canRequestTasks) {
