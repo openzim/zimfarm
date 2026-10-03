@@ -35,7 +35,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
     # PostgreSQL. This is only needed for the case where a specific PostgreSQL
     # type has to be used or when we want to ensure a specific setting (like the
     # timezone below)
-    type_annotation_map = {  # noqa: RUF012
+    type_annotation_map = {  # noqa: RUF012 # pyright: ignore[reportUnknownVariableType]
         dict[str, Any]: MutableDict.as_mutable(
             JSONB
         ),  # transform Python Dict[str, Any] into PostgreSQL JSONB
