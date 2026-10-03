@@ -21,6 +21,7 @@ from zimfarm_backend.db.models import (
     TeamPermission,
     Worker,
 )
+from zimfarm_backend.db.recipe import delete_recipe
 from zimfarm_backend.db.worker import get_worker
 
 
@@ -741,3 +742,29 @@ def test_delete_requested_task_success(
     assert response.status_code == HTTPStatus.OK
     data = response.json()
     assert data["deleted"] == 1
+
+
+@pytest.mark.parametrize(
+    "is_private,expected_status",
+    [(False, HTTPStatus.OK), (True, HTTPStatus.NOT_FOUND)],
+    ids=["public-team", "private-team"],
+)
+def test_get_requested_task_with_deleted_recipe_uses_team_snapshot(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_team: Callable[..., Team],
+    create_recipe: Callable[..., Recipe],
+    create_requested_task: Callable[..., RequestedTask],
+    *,
+    is_private: bool,
+    expected_status: HTTPStatus,
+):
+    """A requested task whose recipe is deleted stays scoped by its teams"""
+    team = create_team(name="wikimedia", is_private=is_private)
+    create_recipe(name="wikipedia_fr_all", teams=[team])
+    requested_task = create_requested_task(recipe_name="wikipedia_fr_all")
+
+    delete_recipe(dbsession, "wikipedia_fr_all", accessible_team_ids=None)
+
+    response = client.get(f"/v2/requested-tasks/{requested_task.id}")
+    assert response.status_code == expected_status
