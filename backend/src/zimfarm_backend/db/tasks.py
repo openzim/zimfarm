@@ -103,6 +103,10 @@ def get_task_by_id_or_none(
                 TeamRecipe.recipe_id == Task.recipe_id,
                 TeamRecipe.team_id.in_(accessible_team_ids or []),
             )
+            | (
+                Task.recipe_id.is_(None)
+                & Task.team_ids.overlap(accessible_team_ids or [])
+            )
             | (accessible_team_ids is None),
         )
     )
@@ -243,6 +247,10 @@ def get_tasks(
             exists().where(
                 TeamRecipe.recipe_id == Task.recipe_id,
                 TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (
+                Task.recipe_id.is_(None)
+                & Task.team_ids.overlap(accessible_team_ids or [])
             )
             | (accessible_team_ids is None),
         )
@@ -389,6 +397,7 @@ def create_task(
     task.id = requested_task.id
     task.requested_by_id = requested_task.requester_id
     task.recipe_id = requested_task.recipe_id
+    task.team_ids = list(requested_task.team_ids)
     task.worker_id = worker_id
     task.offliner_definition_id = requested_task.offliner_definition_id
     session.add(task)

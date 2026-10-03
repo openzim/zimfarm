@@ -1128,6 +1128,7 @@ def create_requested_task(
         )
         requested_task.requested_by_id = requested_by.id
         requested_task.recipe = recipe
+        requested_task.team_ids = [entry.team_id for entry in recipe.teams]
         requested_task.offliner_definition_id = recipe.offliner_definition_id
         requested_task.worker = _worker if worker is None else worker
         dbsession.add(requested_task)
@@ -1210,6 +1211,7 @@ def create_task(
         task.requested_by_id = account.id
         task.offliner_definition_id = requested_task.offliner_definition_id
         task.recipe_id = requested_task.recipe_id
+        task.team_ids = list(requested_task.team_ids)
         task.worker_id = _worker.id if worker is None else worker.id
         dbsession.add(task)
         dbsession.delete(requested_task)

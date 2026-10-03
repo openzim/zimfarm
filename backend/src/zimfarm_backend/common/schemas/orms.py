@@ -259,6 +259,7 @@ class RequestedTaskFullSchema(BaseRequestedTaskSchema):
     notification: RecipeNotificationSchema | None
     rank: int | None = None
     recipe_id: UUID | None = Field(exclude=True)
+    team_ids: list[UUID] = Field(exclude=True, default_factory=list)
     context: str
     offliner_definition_id: UUID = Field(exclude=True)
     offliner: str

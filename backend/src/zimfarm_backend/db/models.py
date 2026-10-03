@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     String,
     UniqueConstraint,
+    Uuid,
     false,
     func,
     text,
@@ -46,6 +47,9 @@ class Base(MappedAsDataclass, DeclarativeBase):
         list[str]: ARRAY(
             item_type=String
         ),  # transform Python List[str] into PostgreSQL Array of strings
+        list[UUID]: ARRAY(
+            item_type=Uuid
+        ),  # transform Python List[UUID] into PostgreSQL Array of UUIDs
         IPv4Address: INET,  # transform Python IPV4Address into PostgreSQL INET
     }
 
@@ -195,6 +199,11 @@ class Task(Base):
     original_recipe_name: Mapped[str]
     context: Mapped[str] = mapped_column(default="", server_default="")
     timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
+    # Snapshot of the recipe's team IDs, kept so the task stays visible to those
+    # teams once the recipe is deleted (recipe_id is then NULL)
+    team_ids: Mapped[list[UUID]] = mapped_column(
+        default_factory=list, server_default="{}"
+    )
 
     recipe_id: Mapped[UUID | None] = mapped_column(ForeignKey("recipe.id"), init=False)
 
@@ -224,6 +233,8 @@ class Task(Base):
     canceled_by: Mapped["Account | None"] = relationship(
         init=False, foreign_keys=[canceled_by_id]
     )
+
+    __table_args__ = (Index("ix_task_team_ids", "team_ids", postgresql_using="gin"),)
 
 
 class File(Base):
@@ -409,6 +420,11 @@ class RequestedTask(Base):
     context: Mapped[str] = mapped_column(default="", server_default="")
 
     timestamp: Mapped[list[tuple[str, Any]]] = mapped_column(default_factory=list)
+    # Snapshot of the recipe's team IDs, kept so the requested task stays visible to
+    # those teams once the recipe is deleted (recipe_id is then NULL)
+    team_ids: Mapped[list[UUID]] = mapped_column(
+        default_factory=list, server_default="{}"
+    )
 
     recipe_id: Mapped[UUID | None] = mapped_column(ForeignKey("recipe.id"), init=False)
 
@@ -428,7 +444,10 @@ class RequestedTask(Base):
     offliner_definition: Mapped["OfflinerDefinition"] = relationship(init=False)
     requested_by: Mapped["Account"] = relationship(init=False)
 
-    __table_args__ = (UniqueConstraint("recipe_id"),)
+    __table_args__ = (
+        UniqueConstraint("recipe_id"),
+        Index("ix_requested_task_team_ids", "team_ids", postgresql_using="gin"),
+    )
 
 
 class OfflinerDefinition(Base):

@@ -189,6 +189,7 @@ def _create_new_requested_task(
     )
     requested_task.requested_by_id = requested_by
     requested_task.recipe = recipe
+    requested_task.team_ids = [entry.team_id for entry in recipe.teams]
     if worker:
         requested_task.worker_id = worker.id
     requested_task.offliner_definition = recipe.offliner_definition
@@ -422,6 +423,10 @@ def get_requested_tasks(
             exists().where(
                 TeamRecipe.recipe_id == RequestedTask.recipe_id,
                 TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (
+                RequestedTask.recipe_id.is_(None)
+                & RequestedTask.team_ids.overlap(accessible_team_ids or [])
             )
             | (accessible_team_ids is None),
         )
@@ -995,6 +1000,7 @@ def create_requested_task_full_schema(
         rank=compute_requested_task_rank(session, requested_task.id),
         updated_at=requested_task.updated_at,
         recipe_id=requested_task.recipe_id,
+        team_ids=requested_task.team_ids,
         offliner_definition_id=requested_task.offliner_definition_id,
         version=requested_task.offliner_definition.version,
         offliner=requested_task.offliner_definition.offliner,
@@ -1017,6 +1023,10 @@ def get_raw_requested_task_or_none(
             exists().where(
                 TeamRecipe.recipe_id == RequestedTask.recipe_id,
                 TeamRecipe.team_id.in_(accessible_team_ids or []),
+            )
+            | (
+                RequestedTask.recipe_id.is_(None)
+                & RequestedTask.team_ids.overlap(accessible_team_ids or [])
             )
             | (accessible_team_ids is None),
         )
