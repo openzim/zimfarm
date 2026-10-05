@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.source=https://github.com/openzim/zimfarm
 LABEL zimfarm=true
 
 ENV INIT_PASSWORD=admin
-# mailgun for notifications
+# mailgun for email notifications
 ENV MAILGUN_API_URL=https://api.mailgun.net/v3/mg.farm.openzim.org
 ENV ALEMBIC_UPGRADE_HEAD_ON_START=false
 ENV MAILGUN_FROM="Zimfarm <info@farm.openzim.org>"
@@ -20,7 +20,7 @@ ENV MAILGUN_FROM="Zimfarm <info@farm.openzim.org>"
 # format: list of `method,target,target` separated by comma `,`
 # multiple notification for same event separated with pipe `|`
 # ENV suffixed with event: `GLOBAL_NOTIFICATION_started` or `GLOBAL_NOTIFICATION_ended`
-# ENV GLOBAL_NOTIFICATION_ended slack,#zimfarm-events,@rgaudin|mailgun,reg@kiwix.org
+# ENV GLOBAL_NOTIFICATION_ended slack,#zimfarm-events,@rgaudin|email,reg@kiwix.org
 
 # - curl needed for healthcheck
 # - zimscraperlib: We only install the binaries needed to make zimscraperlib image manipulation work, not

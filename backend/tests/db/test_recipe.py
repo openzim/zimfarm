@@ -844,9 +844,9 @@ def test_revert_recipe_all_fields(
 ):
     """Test that all recipe fields are properly reverted"""
     initial_notification: dict[str, dict[str, list[str]]] = {
-        "requested": {"mailgun": ["test@example.com"]},
-        "started": {"mailgun": []},
-        "ended": {"mailgun": []},
+        "requested": {"email": ["test@example.com"]},
+        "started": {"email": []},
+        "ended": {"email": []},
     }
     recipe = create_recipe(
         name="test_recipe",
@@ -903,7 +903,7 @@ def test_revert_recipe_all_fields(
             comment="Update all fields",
             notification=RecipeNotificationSchema(
                 requested=EventNotificationSchema(
-                    mailgun=["updated@example.com", "another@example.com"]
+                    email=["updated@example.com", "another@example.com"]
                 )
             ),
         ),

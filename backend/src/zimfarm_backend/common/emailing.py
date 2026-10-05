@@ -62,7 +62,7 @@ def send_email_via_mailgun(
         )
         resp.raise_for_status()
     except Exception as exc:
-        logger.error(f"Failed to send mailgun notif: {exc}")
+        logger.error(f"Failed to send email notif: {exc}")
         logger.exception(exc)
     else:
         return resp.json().get("id")

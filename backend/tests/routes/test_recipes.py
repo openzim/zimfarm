@@ -1640,7 +1640,7 @@ def test_revert_recipe_history(
             comment="Update all fields",
             notification=RecipeNotificationSchema(
                 requested=EventNotificationSchema(
-                    mailgun=["updated@example.com", "another@example.com"]
+                    email=["updated@example.com", "another@example.com"]
                 )
             ),
         ),

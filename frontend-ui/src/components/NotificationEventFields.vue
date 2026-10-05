@@ -5,12 +5,12 @@
     </v-col>
     <v-col cols="12" sm="4">
       <v-combobox
-        :model-value="modelValue.mailgun"
-        :rules="mailgunRules"
+        :model-value="modelValue.email"
+        :rules="emailRules"
         :delimiters="[',', ' ']"
-        @update:model-value="updateMailgun"
-        label="Mailgun Recipients"
-        hint="Email addresses to notify via Mailgun"
+        @update:model-value="updateMail"
+        label="Email Recipients"
+        hint="Email addresses to notify"
         multiple
         chips
         closable-chips
@@ -77,7 +77,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const urlRegex = /^https?:\/\/.+/
 const slackRegex = /^[#|@].+$/
 
-const mailgunRules = [
+const emailRules = [
   (value: string[] | null) => {
     if (!value || value.length === 0) return true
     const invalidEmails = value.filter((email) => !emailRegex.test(email))
@@ -110,11 +110,11 @@ const slackRules = [
   },
 ]
 
-const updateMailgun = (mailgun: string[] | null) => {
+const updateMail = (email: string[] | null) => {
   if (props.modelValue) {
     emit('update:modelValue', {
       ...props.modelValue,
-      mailgun,
+      email,
     })
   }
 }

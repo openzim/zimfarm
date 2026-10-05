@@ -51,7 +51,7 @@ export interface RecipeDuration {
 }
 
 export interface EventNotification {
-  mailgun: string[] | null
+  email: string[] | null
   webhook: string[] | null
   slack: string[] | null
 }

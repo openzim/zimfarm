@@ -470,7 +470,7 @@ GLOBAL_NOTIFICATION_<event>=<method>,<target1>,<target2>|<method>,<target3>
 Where:
 
 - `<event>`: One of `requested`, `started`, or `ended`
-- `<method>`: One of `mailgun`, `slack`, or `webhook`
+- `<method>`: One of `email`, `slack`, or `webhook`
 - `<target>`: The recipient (email, Slack channel, or webhook URL)
 - Multiple targets for the same method are comma-separated
 - Multiple methods are pipe (`|`) separated
@@ -479,11 +479,11 @@ Where:
 
 ```sh
 # Email admin on all task completions
-GLOBAL_NOTIFICATION_ended=mailgun,admin@example.com
+GLOBAL_NOTIFICATION_ended=email,admin@example.com
 
 # Slack #operations on starts, email on failures
 GLOBAL_NOTIFICATION_started=slack,#operations
-GLOBAL_NOTIFICATION_ended=mailgun,oncall@example.com|slack,#alerts
+GLOBAL_NOTIFICATION_ended=email,oncall@example.com|slack,#alerts
 
 # Webhook integration for all events
 GLOBAL_NOTIFICATION_requested=webhook,https://api.example.com/zimfarm/requested
