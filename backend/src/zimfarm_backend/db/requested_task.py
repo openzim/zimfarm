@@ -203,7 +203,7 @@ def _validate_recipe_request_uniqueness(
     session: OrmSession, *, recipe: Recipe, worker_name: str | None
 ):
 
-    query = select(RequestedTask, Recipe).join(Recipe, RequestedTask.recipe)
+    query = select(RequestedTask).where(RequestedTask.recipe_id == recipe.id)
     if worker_name is not None:
         query = query.join(Worker, RequestedTask.worker).where(
             Worker.name == worker_name
