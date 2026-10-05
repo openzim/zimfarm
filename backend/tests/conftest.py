@@ -990,7 +990,7 @@ def create_recipe(
                 raw_recipe_config
                 if raw_recipe_config
                 else recipe_config.model_dump(
-                    mode="json", context={"show_secrets": True}
+                    mode="json", context={"show_secrets": True}, exclude_none=True
                 )
             ),
             enabled=enabled,
