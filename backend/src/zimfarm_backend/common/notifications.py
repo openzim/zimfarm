@@ -96,12 +96,24 @@ def handle_mailgun_notification(task: dict[str, Any], recipients: list[str]):
         send_email_via_mailgun(recipient, subject, body)
 
 
+def get_webhook_payload(task: dict[str, Any]) -> dict[str, Any]:
+    config: dict[str, Any] = task.get("config") or {}
+    return {
+        "id": task["id"],
+        "status": task["status"],
+        "recipe_name": task.get("recipe_name"),
+        "config": {"warehouse_path": config.get("warehouse_path")},
+        "files": task.get("files"),
+    }
+
+
 def handle_webhook_notification(task: dict[str, Any], urls: list[str]):
+    payload = get_webhook_payload(task)
     for url in urls:
         try:
             resp = requests.post(
                 url,
-                data=json.dumps(task).encode("UTF-8"),
+                data=json.dumps(payload).encode("UTF-8"),
                 headers={"Content-Type": "application/json"},
                 timeout=REQ_TIMEOUT_NOTIFICATIONS,
             )
