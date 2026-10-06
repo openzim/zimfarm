@@ -179,7 +179,7 @@ docker exec -it zf_postgresdb bash -c \
   'pg_restore -U zimfarm -d zimfarm /data/zimfarm'
 ```
 
-Delete admin user so that it is recreated by API startup with admin/admin_pass credentials:
+Delete admin user so that it is recreated by API startup with admin/admin credentials:
 
 ```
 docker exec -it zf_postgresdb bash -c \
