@@ -6,6 +6,7 @@ from typing import Any, Self
 from uuid import UUID
 
 from pydantic import (
+    AliasChoices,
     BaseModel,
     EmailStr,
     Field,
@@ -83,7 +84,13 @@ class ExpandedRecipeConfigSchema(BaseRecipeConfigSchema):
 
 
 class EventNotificationSchema(BaseModel):
-    mailgun: list[EmailStr] | None = Field(default_factory=list)
+    # "mailgun" is kept as a validation alias so that notification data stored
+    # before the provider-neutral rename is still read correctly. New data is
+    # serialized using the generic "email" key.
+    email: list[EmailStr] | None = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("email", "mailgun"),
+    )
     webhook: list[HttpUrl] | None = Field(  # pyright: ignore[reportUnknownVariableType]
         default_factory=list
     )

@@ -88,7 +88,7 @@ def get_context(task: dict[str, Any]) -> dict[str, Any]:
     return {"base_url": PUBLIC_URL, "download_url": ZIM_DOWNLOAD_URL, "task": task}
 
 
-def handle_mailgun_notification(task: dict[str, Any], recipients: list[str]):
+def handle_email_notification(task: dict[str, Any], recipients: list[str]):
     context = get_context(task)
     subject = jinja_env.get_template("email_subject.txt").render(**context)
     body = jinja_env.get_template("email_body.html").render(**context)
@@ -190,7 +190,7 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
 
     for method, recipients in list(task_notifs.items()) + list(global_notifs.items()):
         func = {
-            "mailgun": handle_mailgun_notification,
+            "email": handle_email_notification,
             "webhook": handle_webhook_notification,
             "slack": handle_slack_notification,
         }.get(method)

@@ -929,7 +929,7 @@ const eventNotificationsEqual = (
   }
 
   return (
-    arraysEqual(a.mailgun, b.mailgun) &&
+    arraysEqual(a.email, b.email) &&
     arraysEqual(a.webhook, b.webhook) &&
     arraysEqual(a.slack, b.slack)
   )
@@ -962,7 +962,7 @@ const cleanNotificationPayload = (
     if (!event) return null
 
     return {
-      mailgun: event.mailgun && event.mailgun.length > 0 ? event.mailgun : null,
+      email: event.email && event.email.length > 0 ? event.email : null,
       webhook: event.webhook && event.webhook.length > 0 ? event.webhook : null,
       slack: event.slack && event.slack.length > 0 ? event.slack : null,
     }
