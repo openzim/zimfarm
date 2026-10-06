@@ -67,7 +67,7 @@ class RecipeUpdateSchema(BaseModel):
     resources: ResourcesSchema | None = None
     monitor: bool | None = None
     flags: dict[str, Any] | None = None
-    artifacts_globs: list[NotEmptyString] | None = None
+    artifacts_globs: list[NotEmptyString] = Field(default_factory=list)
     context: str | None = None
     version: str | None = None
     comment: str | None = None  # Optional comment for history tracking

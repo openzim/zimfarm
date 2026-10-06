@@ -161,7 +161,7 @@ def test_create_recipe(
     assert recipe.language_code == "eng"
     assert recipe.context == "test"
     assert recipe.config == recipe_config.model_dump(
-        mode="json", context={"show_secrets": True}
+        mode="json", context={"show_secrets": True}, exclude_none=True
     )
     assert recipe.tags == ["test"]
     assert recipe.enabled

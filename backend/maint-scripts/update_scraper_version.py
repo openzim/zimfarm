@@ -50,6 +50,10 @@ database. If you must use the -n flag, here are some examples:
 7. Set the value of an existing flag:
    ./update_scraper_version.py -o mwoffliner \
      -s "articleList=https://example.com/list.tsv"
+
+8. Remove a flag from recipes and requested tasks (setting a flag to null or None
+   removes it):
+   ./update_scraper_version.py -o mwoffliner -s "forceRender=null"
 """
 
 import argparse
@@ -197,7 +201,14 @@ def apply_field_values(
             data[field] = value
         else:
             data[field] = _cast_flag_value(flag, value)
-    return data
+
+    return create_offliner_instance(
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        data=data,
+        skip_validation=True,
+        extra="allow",
+    ).model_dump(mode="json", context={"show_secrets": True}, exclude_none=True)
 
 
 def _format_value(value: Any) -> str:
@@ -720,7 +731,7 @@ requested tasks.
         "--set-flag-values-to",
         metavar="FIELD=VALUE",
         help="Set values for recipe flags in the format "
-        "'name=value,name=value...'. Use 'null' or 'None' to unset a flag.",
+        "'name=value,name=value...'. Use 'null' or 'None' to remove a flag.",
         type=parse_field_values,
         default={},
     )

@@ -455,10 +455,13 @@ def create_recipe(
 ) -> Recipe:
     """Create a new recipe"""
     offliner = get_offliner(session, offliner_definition.offliner)
+
     recipe = Recipe(
         name=payload.name,
         language_code=payload.language.code,
-        config=payload.config.model_dump(mode="json", context={"show_secrets": True}),
+        config=payload.config.model_dump(
+            mode="json", context={"show_secrets": True}, exclude_none=True
+        ),
         tags=payload.tags,
         enabled=payload.enabled,
         notification=payload.notification.model_dump(mode="json")
@@ -711,7 +714,7 @@ def update_recipe(
 
     if payload.config:
         update_data["config"] = payload.config.model_dump(
-            mode="json", context={"show_secrets": True}
+            mode="json", context={"show_secrets": True}, exclude_none=True
         )
         update_data["similarity_data"] = generate_similarity_data(
             payload.config.offliner.model_dump(mode="json", exclude={"offliner_id"}),
