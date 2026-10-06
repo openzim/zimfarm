@@ -29,6 +29,7 @@ from zimfarm_backend.common.schemas.models import (
     EventNotificationSchema,
     RecipeNotificationSchema,
 )
+from zimfarm_backend.common.schemas.orms import RequestedTaskFullSchema, TaskFullSchema
 from zimfarm_backend.db.requested_task import (
     get_requested_task_by_id_or_none,
 )
@@ -88,20 +89,56 @@ def get_context(task: dict[str, Any]) -> dict[str, Any]:
     return {"base_url": PUBLIC_URL, "download_url": ZIM_DOWNLOAD_URL, "task": task}
 
 
-def handle_mailgun_notification(task: dict[str, Any], recipients: list[str]):
-    context = get_context(task)
+def handle_mailgun_notification(
+    task: RequestedTaskFullSchema | TaskFullSchema, recipients: list[str]
+):
+    context = get_context(task.model_dump(mode="json"))
     subject = jinja_env.get_template("email_subject.txt").render(**context)
     body = jinja_env.get_template("email_body.html").render(**context)
     for recipient in recipients:
         send_email_via_mailgun(recipient, subject, body)
 
 
-def handle_webhook_notification(task: dict[str, Any], urls: list[str]):
+def get_webhook_payload(
+    task: RequestedTaskFullSchema | TaskFullSchema,
+) -> dict[str, Any]:
+    return {
+        "id": str(task.id),
+        "status": task.status,
+        "version": task.version,
+        "offliner": task.offliner,
+        "recipe_name": task.recipe_name,
+        "config": task.config.model_dump(mode="json"),
+        "files": {
+            filename: file.model_dump(mode="json")
+            for filename, file in task.files.items()
+        }
+        if isinstance(task, TaskFullSchema)
+        else {},
+        "rank": task.rank if isinstance(task, RequestedTaskFullSchema) else None,
+        "notification": task.notification.model_dump(mode="json")
+        if task.notification
+        else None,
+        "container": task.container.model_dump(
+            mode="json",
+            include={
+                "progress",
+            },
+        )
+        if isinstance(task, TaskFullSchema)
+        else None,
+    }
+
+
+def handle_webhook_notification(
+    task: RequestedTaskFullSchema | TaskFullSchema, urls: list[str]
+):
+    payload = get_webhook_payload(task)
     for url in urls:
         try:
             resp = requests.post(
                 url,
-                data=json.dumps(task).encode("UTF-8"),
+                data=json.dumps(payload).encode("UTF-8"),
                 headers={"Content-Type": "application/json"},
                 timeout=REQ_TIMEOUT_NOTIFICATIONS,
             )
@@ -111,12 +148,14 @@ def handle_webhook_notification(task: dict[str, Any], urls: list[str]):
             logger.exception(exc)
 
 
-def handle_slack_notification(task: dict[str, Any], channels: list[str]):
+def handle_slack_notification(
+    task: RequestedTaskFullSchema | TaskFullSchema, channels: list[str]
+):
     # return early if slack is not configured
     if not SLACK_URL:
         return
 
-    context = get_context(task)
+    context = get_context(task.model_dump(mode="json"))
     for channel in channels:
         try:
             requests.post(
@@ -139,7 +178,7 @@ def handle_slack_notification(task: dict[str, Any], channels: list[str]):
                                 TaskStatus.canceled: "warning",
                                 TaskStatus.cancel_requested: "warning",
                                 TaskStatus.failed: "danger",
-                            }.get(task["status"]),
+                            }.get(TaskStatus(task.status)),
                             "fields": [
                                 {
                                     "title": jinja_env.get_template(
@@ -195,7 +234,7 @@ def handle_notification(task_id: UUID, event: str, session: so.Session):
             "slack": handle_slack_notification,
         }.get(method)
         if func and recipients:
-            func(task_safe.model_dump(mode="json"), recipients)
+            func(task_safe, recipients)
 
 
 # fill-up GlobalNotifications from environ on module load
