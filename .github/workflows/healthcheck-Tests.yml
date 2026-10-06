@@ -35,7 +35,7 @@ jobs:
             -e ZIMFARM_FRONTEND_URL=http://localhost:8001 \
             -e CMS_API_URL=http://localhost:8001 \
             -e ZIMFARM_USERNAME=admin \
-            -e ZIMFARM_PASSWORD=admin_pass \
+            -e ZIMFARM_PASSWORD=admin \
             -e ZIMFARM_DATABASE_URL=postgresql+psycopg://zimfarm:zimpass@localhost:5432/zimtest \
             -p 8000:80 \
             zimfarm-healthcheck:test

@@ -29,9 +29,11 @@ repos:
   - repo: local
     hooks:
       - id: prettier
-        name: prettier (system)
+        name: prettier
         entry: prettier --write --ignore-unknown
         language: node
+        additional_dependencies:
+          - prettier@3.5.3
         files: frontend-ui\/.*$ # files in frontend folder
         minimum_pre_commit_version: "2.9.2"
   - repo: https://github.com/pre-commit/mirrors-eslint
