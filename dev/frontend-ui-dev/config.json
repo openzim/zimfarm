@@ -3,5 +3,7 @@
   "MONITORING_URL": "http://localhost:8004/v3",
   "BLOB_MAX_SIZE": 1048576,
   "DISABLE_WAREHOUSE_PATH": true,
+  "CMS_API_URL": "https://api.cms.openzim.org/v1",
+  "CMS_UI_URL": "https://cms.openzim.org",
   "LOGIN_MODES": ["local"]
 }
