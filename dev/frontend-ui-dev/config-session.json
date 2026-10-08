@@ -5,5 +5,7 @@
   "DISABLE_WAREHOUSE_PATH": true,
   "LOGIN_MODES": ["oauth"],
   "OAUTH_MODE": "session",
+  "CMS_API_URL": "https://api.cms.openzim.org/v1",
+  "CMS_UI_URL": "https://cms.openzim.org",
   "OAUTH_BASE_URL": "https://ory.login-staging.kiwix.org"
 }
