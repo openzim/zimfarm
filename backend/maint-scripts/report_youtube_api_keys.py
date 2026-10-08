@@ -79,6 +79,7 @@ def report_youtube_api_keys(
                             "media_count info, ignoring, key usage stats will be "
                             "impacted"
                         )
+                        continue
                     media_count += file.info["media_count"]
                 recipe_data["media_count"] = media_count
                 break
