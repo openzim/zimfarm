@@ -6,6 +6,8 @@ import { inject } from 'vue'
 export interface Config {
   ZIMFARM_WEBAPI: string
   ZIMFARM_ZIM_DOWNLOAD_URL: string
+  CMS_API_URL: string
+  CMS_UI_URL: string
   MATOMO_ENABLED: boolean
   MATOMO_HOST: string
   MATOMO_SITE_ID: number
