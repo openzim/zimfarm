@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -30,7 +31,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "category": "devdocs",
             "config": {
                 "offliner": {
-                    "logo-format": (_get_icon_url_for_slug(item["slug"])),
+                    "logo-format": _get_icon_for_slug(item["slug"]),
                     "output": "/output",
                     "slug": item["slug"],
                     "file-name-format": f"devdocs_en_"
@@ -74,7 +75,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     ]
 
 
-def _get_icon_url_for_slug(slug: str) -> str:
+def _get_icon_for_slug(slug: str) -> Path:
+    """Local icon file in assets (missing file is reported by processor)"""
     slug_no_version = _get_slug_without_version(slug)
     if slug_no_version == "moment_timezone":
         filename = "moment"
@@ -87,20 +89,18 @@ def _get_icon_url_for_slug(slug: str) -> str:
     elif slug_no_version in [
         "minitest",
         "xslt_xpath",
-        "nginx_lua_module",
-        "liquid",
         "browser_support_tables",
         "web_extensions",
         "tcl_tk",
         "enzyme",
         "graphite",
-        "mongoose",
         "es_toolkit",
     ]:
         filename = "zzz-generic"
     else:
         filename = slug_no_version
-    return f"https://drive.farm.openzim.org/devdocs/{_get_cleaned(filename)}.png"
+    # logo filenames keep underscores, unlike ZIM names which use dashes
+    return context.assets / "devdocs" / f"{re.sub(r'[^.a-zA-Z0-9]', '_', filename)}.png"
 
 
 def group_items_by_type(items: list[dict[str, Any]]) -> list[dict[str, Any]]:

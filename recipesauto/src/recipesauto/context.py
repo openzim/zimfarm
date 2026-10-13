@@ -36,6 +36,9 @@ class Context:
     # path to files with configuration override
     overrides: Path = Path(ROOT_DIR / "overrides.yaml")
 
+    # path to folder with local assets (e.g. illustrations) to upload as blobs
+    assets: Path = Path(ROOT_DIR / "assets")
+
     @classmethod
     def setup(cls, **kwargs):
         new_instance = cls(**kwargs)

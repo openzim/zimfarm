@@ -58,6 +58,15 @@ def prepare_context(raw_args: list[str]) -> None:
     )
 
     parser.add_argument(
+        "--assets",
+        type=Path,
+        help=(
+            "Path to the folder with local assets (e.g. illustrations) to upload as "
+            f"blobs. Defaults to {Context.assets}"
+        ),
+    )
+
+    parser.add_argument(
         "kind",
         choices=[
             "ted",

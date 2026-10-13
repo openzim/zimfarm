@@ -49,6 +49,7 @@ class SpokenLanguage(Enum):
     PORTUGUESE = 9
     SWAHILI = 10
     UKRAINIAN = 11
+    ARABIC = 12
 
 
 static_data = {
@@ -142,6 +143,13 @@ static_data = {
         "Structures Certification ви дізнаєтесь про основи JavaScript, зокрема "
         "про змінні, масиви, об’єкти, цикли та функції.",  # noqa: RUF001
     },
+    "freecodecamp_sw_javascript-algorithms-and-data-structures": {
+        "title": "FreeCodeCamp JavaScript",
+        "description": "Kozi za JavaScript",
+        "long_description": "Katika Cheti cha Algoriti na Miundo ya Data ya "
+        "JavaScript, utajifunza misingi ya JavaScript ikiwa ni pamoja na "
+        "vigezo, safu, vitu, vitanzi na vitendaji.",
+    },
     "freecodecamp_en_coding-interview-prep": {
         "title": "FreeCodeCamp Interview Prep",
         "description": "Coding exercises",
@@ -157,6 +165,14 @@ static_data = {
         "conocimiento de algoritmos, estructuras de datos y matemáticas. También tiene "
         "una serie de proyectos para llevar a casa que puede usar para fortalecer sus "
         "habilidades o agregar a su portafolio.",
+    },
+    "freecodecamp_de_coding-interview-prep": {
+        "title": "FreeCodeCamp Interviewtraining",
+        "description": "Programmierübungen",
+        "long_description": "Dutzende Programmieraufgaben, die Ihr Wissen über "
+        "Algorithmen, Datenstrukturen und Mathematik testen. Außerdem gibt es eine "
+        "Reihe von Projekten für zu Hause, mit denen Sie Ihre Fähigkeiten stärken "
+        "oder Ihr Portfolio erweitern können.",
     },
     "freecodecamp_it_coding-interview-prep": {
         "title": "Intervista di FreeCodeCamp",
@@ -189,6 +205,13 @@ static_data = {
         "які можна використати для вдосконалення ваших навичок або додати до свого "  # noqa: RUF001
         "портфоліо.",
     },
+    "freecodecamp_sw_coding-interview-prep": {
+        "title": "FreeCodeCamp Maandalizi",
+        "description": "Mazoezi ya uandishi wa programu",
+        "long_description": "Changamoto nyingi za uandishi wa programu zinazopima "
+        "ujuzi wako wa algoriti, miundo ya data na hisabati. Pia kuna miradi kadhaa "
+        "unayoweza kutumia kuimarisha ujuzi wako au kuongeza kwenye jalada lako.",
+    },
     "freecodecamp_en_project-euler": {
         "title": "Project Euler",
         "description": "Programming challenges",
@@ -205,6 +228,15 @@ static_data = {
         "experiencia es un aprendizaje en cadena inductiva, ya que resolver un "
         "problema lo expondrá a un nuevo concepto que le permitirá abordar un "
         "desafío previamente inaccesible.",
+    },
+    "freecodecamp_de_project-euler": {
+        "title": "Projekt Euler",
+        "description": "Programmieraufgaben",
+        "long_description": "Diese Aufgaben festigen Ihr Wissen in Algorithmen und "
+        "Mathematik. Sie sind unterschiedlich schwierig, und für viele ist die "
+        "Erfahrung ein induktives Kettenlernen, da Sie durch das Lösen einer Aufgabe "
+        "ein neues Konzept kennenlernen, mit dem Sie eine zuvor unzugängliche "
+        "Herausforderung angehen können.",
     },
     "freecodecamp_it_project-euler": {
         "title": "Progetto Eulero",
@@ -239,6 +271,14 @@ static_data = {
         "Вони різняться за складністю, і для багатьох досвід є індуктивним ланцюговим "  # noqa: RUF001
         "навчанням, оскільки розв’язання однієї проблеми відкриє вам нову концепцію, "  # noqa: RUF001
         "яка дозволить вам взятися за завдання, яке раніше було недоступним",
+    },
+    "freecodecamp_sw_project-euler": {
+        "title": "Mradi wa Euler",
+        "description": "Changamoto za uandishi wa programu",
+        "long_description": "Matatizo haya yataimarisha ujuzi wako wa algoriti na "
+        "hisabati. Yanatofautiana kwa ugumu, na kwa wengi, uzoefu huu ni ujifunzaji "
+        "wa mnyororo, kwani kutatua tatizo moja kutakufunulia dhana mpya "
+        "itakayokuwezesha kukabili changamoto ambayo hapo awali haikufikika.",
     },
     "freecodecamp_en_rosetta-code": {
         "title": "Rosetta Code",
@@ -345,6 +385,70 @@ static_data = {
         "description": "提升你的創造性問題解決能力",
         "long_description": "這些挑戰可能相當困難，但會將您的演算法邏輯推向新的高度。",  # noqa: RUF001
     },
+    "freecodecamp_ar_all": {
+        "title": "FreeCodeCamp",
+        "description": "جميع دورات FreeCodeCamp",
+        "long_description": "تدرّب وتعلّم مع جميع دورات FreeCodeCamp.",
+    },
+    "freecodecamp_ar_javascript-algorithms-and-data-structures": {
+        "title": "FreeCodeCamp JavaScript",
+        "description": "دورات JavaScript",
+        "long_description": "في شهادة خوارزميات وهياكل بيانات JavaScript، ستتعلم "
+        "أساسيات JavaScript بما في ذلك المتغيرات والمصفوفات والكائنات والحلقات "
+        "والدوال.",
+    },
+    "freecodecamp_ar_coding-interview-prep": {
+        "title": "FreeCodeCamp مقابلات العمل",
+        "description": "تمارين برمجية",
+        "long_description": "عشرات التحديات البرمجية التي تختبر معرفتك بالخوارزميات "
+        "وهياكل البيانات والرياضيات. كما تتضمن عددًا من المشاريع التي يمكنك "
+        "استخدامها لتعزيز مهاراتك أو إضافتها إلى ملف أعمالك.",
+    },
+    "freecodecamp_ar_project-euler": {
+        "title": "مشروع أويلر",
+        "description": "تحديات برمجية",
+        "long_description": "ستعزز هذه المسائل معرفتك بالخوارزميات والرياضيات. "
+        "تتفاوت في صعوبتها، ويُعد حل كل مسألة تعلمًا متسلسلًا يعرّفك على مفهوم "
+        "جديد يتيح لك خوض تحدٍّ كان صعب المنال سابقًا.",
+    },
+    "freecodecamp_ar_rosetta-code": {
+        "title": "Rosetta Code",
+        "description": "طوّر مهاراتك الإبداعية في حل المشكلات",
+        "long_description": "قد تكون هذه التحديات صعبة، لكنها سترتقي بمنطق "
+        "الخوارزميات لديك إلى مستويات جديدة.",
+    },
+    "freecodecamp_ko_all": {
+        "title": "FreeCodeCamp",
+        "description": "모든 FreeCodeCamp 강좌",
+        "long_description": "모든 FreeCodeCamp 강좌로 훈련하고 배우세요.",
+    },
+    "freecodecamp_ko_javascript-algorithms-and-data-structures": {
+        "title": "FreeCodeCamp JavaScript",
+        "description": "JavaScript 강좌",
+        "long_description": "JavaScript 알고리즘 및 자료 구조 인증 과정에서 "
+        "변수, 배열, 객체, 반복문, 함수 등 JavaScript의 기초를 배웁니다.",
+    },
+    "freecodecamp_ko_coding-interview-prep": {
+        "title": "FreeCodeCamp 면접 준비",
+        "description": "코딩 연습",
+        "long_description": "알고리즘, 자료 구조, 수학 지식을 시험하는 수십 개의 "
+        "코딩 과제입니다. 실력을 키우거나 포트폴리오에 추가할 수 있는 "
+        "과제형 프로젝트도 다수 포함되어 있습니다.",
+    },
+    "freecodecamp_ko_project-euler": {
+        "title": "프로젝트 오일러",
+        "description": "프로그래밍 과제",
+        "long_description": "이 문제들은 알고리즘과 수학 지식을 단단하게 다져 "
+        "줍니다. 난이도는 다양하며, 하나의 문제를 풀면 새로운 개념을 접하게 "
+        "되어 이전에는 도전할 수 없었던 문제에 도전할 수 있게 되는 귀납적 "
+        "연쇄 학습을 경험하게 됩니다.",
+    },
+    "freecodecamp_ko_rosetta-code": {
+        "title": "로제타 코드",
+        "description": "창의적인 문제 해결 능력을 향상하세요",
+        "long_description": "이 과제들은 어려울 수 있지만, 알고리즘 논리를 "
+        "새로운 수준으로 끌어올려 줄 것입니다.",
+    },
 }
 
 
@@ -443,6 +547,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     current_language = SpokenLanguage.SWAHILI
                 elif match.group(1) == "Korean":
                     current_language = SpokenLanguage.KOREAN
+                elif match.group(1) == "Arabic":
+                    current_language = SpokenLanguage.ARABIC
                 else:
                     raise Exception(
                         f"Unknown language found in curriculum.ts: {match.group(1)}"
@@ -600,13 +706,15 @@ def _get_zf_language(language: SpokenLanguage) -> str:
     elif language == SpokenLanguage.JAPANESE:
         return "jpn"
     elif language == SpokenLanguage.KOREAN:
-        raise NotImplementedError()
+        return "kor"
     elif language == SpokenLanguage.PORTUGUESE:
         return "por"
     elif language == SpokenLanguage.SWAHILI:
         return "swa"
     elif language == SpokenLanguage.UKRAINIAN:
         return "ukr"
+    elif language == SpokenLanguage.ARABIC:
+        return "ara"
 
 
 def _get_name(curriculum: Curriculum, language: SpokenLanguage) -> str:
@@ -709,6 +817,8 @@ def _get_zim_name_lang(language: SpokenLanguage) -> str:
         return "sw"
     elif language == SpokenLanguage.UKRAINIAN:
         return "ua"
+    elif language == SpokenLanguage.ARABIC:
+        return "ar"
     else:
         raise UndefinedMetadataError
 
@@ -736,6 +846,8 @@ def _get_language_setting(language: SpokenLanguage) -> str:
         return "swa"
     elif language == SpokenLanguage.UKRAINIAN:
         return "ukr"
+    elif language == SpokenLanguage.ARABIC:
+        return "ara"
     else:
         raise UndefinedMetadataError
 
@@ -747,11 +859,11 @@ def _is_needed(curriculum: Curriculum, language: SpokenLanguage) -> bool:
         "rosetta-code",
         "coding-interview-prep",
     ] and language not in [
-        SpokenLanguage.KOREAN,  # not yet officially supported on website
+        "foo"  # no language ignored ATM
     ]
 
 
 def _is_lang_needed(language: SpokenLanguage) -> bool:
     return language not in [
-        SpokenLanguage.KOREAN,  # not yet officially supported on website
+        "foo"  # no language ignored ATM
     ]
