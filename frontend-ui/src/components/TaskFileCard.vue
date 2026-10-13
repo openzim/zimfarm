@@ -104,6 +104,57 @@
           </div>
           <div v-else class="text-body-2 text-grey">-</div>
         </div>
+
+        <div v-if="file.cms_notified" class="d-flex justify-space-between align-center">
+          <div class="text-body-2 font-weight-medium">CMS Status</div>
+          <div v-if="!cmsBookId" class="text-body-2 text-grey">-</div>
+          <div v-else-if="cmsChecking" class="text-body-2 text-grey d-flex align-center ga-1">
+            <v-progress-circular indeterminate size="16" width="2" color="primary" />
+            <span>Checking...</span>
+          </div>
+          <div v-else-if="cmsTarget" class="d-flex align-center ga-1">
+            <v-tooltip
+              :text="
+                cmsTarget.kind === 'book' ? 'Book available in CMS' : 'Notification sent to CMS'
+              "
+              location="top"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-icon
+                  v-bind="tooltipProps"
+                  :color="cmsTarget.kind === 'book' ? 'success' : 'info'"
+                  size="small"
+                >
+                  {{ cmsTarget.kind === 'book' ? 'mdi-book-check' : 'mdi-bell-check' }}
+                </v-icon>
+              </template>
+            </v-tooltip>
+            <span class="text-body-2">
+              {{ cmsTarget.kind === 'book' ? 'Published' : 'Notified' }}
+            </span>
+            <v-tooltip
+              :text="cmsTarget.kind === 'book' ? 'View book in CMS' : 'View notification in CMS'"
+              location="top"
+            >
+              <template #activator="{ props: tooltipProps }">
+                <v-btn
+                  v-bind="tooltipProps"
+                  :href="cmsTarget.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="text"
+                  size="x-small"
+                  class="pa-0"
+                  icon
+                  density="compact"
+                >
+                  <v-icon size="small">mdi-open-in-new</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
+          <div v-else class="text-body-2 text-grey">Not found</div>
+        </div>
       </div>
     </v-card-text>
 
@@ -149,12 +200,14 @@
 <script setup lang="ts">
 import FileInfoTable from '@/components/FileInfoTable.vue'
 import ZimUrlButtons from '@/components/ZimUrlButtons.vue'
+import { useCmsStore } from '@/stores/cms'
 import { TaskStatus } from '@/types/base'
+import type { CmsTarget } from '@/types/cms'
 import type { Task, TaskFile, ZimUrl } from '@/types/tasks'
 import { formatDt, formatDurationBetween, formattedBytesSize } from '@/utils/format'
 import { checkUrl } from '@/utils/offliner'
 import { getTimestampStringForStatus } from '@/utils/timestamp'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 // Props
 interface Props {
@@ -202,4 +255,22 @@ const checksUrl = computed(() => {
 const fallbackDownloadUrl = computed(() => {
   return `${props.kiwixDownloadUrl}${props.task.config.warehouse_path}/${props.file.name}`
 })
+
+const cmsStore = useCmsStore()
+const cmsBookId = computed(() => props.file.info?.id || '')
+const cmsTarget = ref<CmsTarget | null>(null)
+const cmsChecking = ref(false)
+
+const resolveCms = async () => {
+  if (!props.file.cms_notified || !cmsBookId.value) {
+    cmsTarget.value = null
+    cmsChecking.value = false
+    return
+  }
+  cmsChecking.value = true
+  cmsTarget.value = await cmsStore.resolveCmsTarget(cmsBookId.value)
+  cmsChecking.value = false
+}
+
+watch(() => [props.file.cms_notified, cmsBookId.value] as const, resolveCms, { immediate: true })
 </script>

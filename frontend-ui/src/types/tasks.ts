@@ -34,6 +34,7 @@ export interface TaskFile {
   uploaded_timestamp?: string
   failed_timestamp?: string
   check_timestamp?: string
+  cms_notified?: boolean
   status: string
   check_result?: number
   check_filename?: string
