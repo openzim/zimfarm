@@ -1,7 +1,10 @@
 # ruff: noqa: PLC0415
 
+import base64
 import copy
+import hashlib
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -11,6 +14,11 @@ from recipesauto.constants import logger
 from recipesauto.context import Context
 
 context = Context.get()
+
+# marker stored in comments of blobs uploaded by this tool, followed by the sha256 of
+# the source content ; needed because Zimfarm converts some blobs (e.g. images to
+# PNG) at upload, so the blob checksum is not the checksum of the source content
+BLOB_SOURCE_CHECKSUM_MARKER = "source sha256: "
 
 
 class Processor:
@@ -43,6 +51,8 @@ class Processor:
                 "do_not_update": [],
                 "do_not_delete": [],
             }
+
+        self.blob_flags_cache: dict[tuple[str, str], list[dict[str, Any]]] = {}
 
         logger.info("Authenticating with zimfarm")
         self.authenticate()
@@ -141,13 +151,14 @@ class Processor:
             ask_for_confirmation = True
             for recipe in recipes_to_create:
                 logger.info(f"- {recipe['name']}")
+                if not self._check_blob_sources(recipe):
+                    logger.warning(
+                        f"Skipping creation of {recipe['name']} since some blob "
+                        "sources are not available"
+                    )
+                    continue
                 if not context.push:
                     continue
-                # automatically set warehouse_path to /.hidden/dev and periodicity to
-                # manually at creation
-                # /!\ beware that it means that if you run this tool twice in a /!\
-                # /!\  row, second run will erase these "on-creation" settings  /!\
-
                 if ask_for_confirmation:
                     response = input(
                         "Do you really want to create this recipe? [y/N/a]"
@@ -156,24 +167,56 @@ class Processor:
                         continue
                     if response == "A":
                         ask_for_confirmation = False
-                self._create_recipe_on_zf(recipe)
+                created_offliner_flags = self._create_recipe_on_zf(recipe)
                 logger.info("Recipe created successfully")
+                # blobs can only be uploaded once the recipe exists, so recipe has
+                # been created without blob flags, which we now upload
+                offliner_flags = copy.deepcopy(recipe["config"]["offliner"])
+                self._resolve_blob_flags(
+                    recipe_name=recipe["name"],
+                    version=recipe["version"],
+                    offliner_flags=offliner_flags,
+                    current_offliner_flags=created_offliner_flags,
+                    upload=True,
+                )
+                if offliner_flags != created_offliner_flags:
+                    self._patch_recipe_on_zf(recipe["name"], {"flags": offliner_flags})
+                    logger.info("Recipe blobs uploaded successfully")
 
-    def _create_recipe_on_zf(self, recipe: dict[str, Any]):
-        """Really create the recipe on the Zimfarm"""
+    def _create_recipe_on_zf(self, recipe: dict[str, Any]) -> dict[str, Any]:
+        """Really create the recipe on the Zimfarm
+
+        Blob flags are omitted (except required remote URLs) since blobs can only be
+        uploaded once the recipe exists. Returns the offliner flags used at creation.
+        """
         patched_recipe = copy.deepcopy(recipe)
-        patched_recipe["config"]["warehouse_path"] = "/.hidden/dev"
-        patched_recipe["periodicity"] = "manually"
+        offliner_flags = patched_recipe["config"]["offliner"]
+        for flag in self._get_blob_flags(
+            offliner_flags["offliner_id"], recipe["version"]
+        ):
+            source = offliner_flags.get(flag["data_key"])
+            if not source:
+                continue
+            if flag["required"]:
+                if isinstance(source, Path):
+                    raise Exception(
+                        f"Cannot create {recipe['name']} recipe: required "
+                        f"{flag['data_key']} flag is a local file, which can only be "
+                        "uploaded once recipe exists"
+                    )
+                continue
+            del offliner_flags[flag["data_key"]]
         response = requests.post(
             self.get_zf_url("/recipes"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
-            json=recipe,
+            json=patched_recipe,
         )
 
         if not HTTPStatus(response.status_code).is_success:
             logger.error(response.text)
         response.raise_for_status()
+        return offliner_flags
 
     def _patch_dictionary(
         self, existing_dict: dict[str, Any], patch_dict: dict[str, Any]
@@ -230,6 +273,14 @@ class Processor:
                 current_recipe = self._get_recipe_definition_on_zf(
                     expected_recipe["name"]
                 )
+                blob_version = expected_recipe.get("version", current_recipe["version"])
+                self._resolve_blob_flags(
+                    recipe_name=expected_recipe["name"],
+                    version=blob_version,
+                    offliner_flags=expected_recipe["config"]["offliner"],
+                    current_offliner_flags=current_recipe["config"]["offliner"],
+                    upload=False,
+                )
                 for current_recipe_key, current_recipe_value in current_recipe.items():
                     if current_recipe_key in [
                         # keys handled separately
@@ -242,6 +293,7 @@ class Processor:
                         "is_requested",
                         "is_valid",
                         "id",
+                        "teams",
                     ]:
                         continue
                     expected_value = expected_recipe[current_recipe_key]
@@ -315,6 +367,16 @@ class Processor:
                             continue
                         if response == "A":
                             ask_for_confirmation = False
+                    if "flags" in changes:
+                        # upload blobs which are not yet known, now that we know
+                        # recipe will really be updated
+                        self._resolve_blob_flags(
+                            recipe_name=expected_recipe["name"],
+                            version=blob_version,
+                            offliner_flags=changes["flags"],
+                            current_offliner_flags=current_recipe["config"]["offliner"],
+                            upload=True,
+                        )
                     self._patch_recipe_on_zf(expected_recipe["name"], changes)
                     logger.info("Recipe updated successfully")
 
@@ -424,6 +486,206 @@ class Processor:
             logger.error(response.text)
         response.raise_for_status()
         return response.json()
+
+    def _get_blob_flags(self, offliner_id: str, version: str) -> list[dict[str, Any]]:
+        """Get flags of type blob for a given offliner definition version"""
+        cache_key = (offliner_id, version)
+        if cache_key not in self.blob_flags_cache:
+            response = requests.get(
+                self.get_zf_url(f"/offliners/{offliner_id}/{version}"),
+                headers=self.get_zf_headers(),
+                timeout=context.http_timeout,
+            )
+            if not HTTPStatus(response.status_code).is_success:
+                logger.error(response.text)
+            response.raise_for_status()
+            self.blob_flags_cache[cache_key] = [
+                flag for flag in response.json()["flags"] if flag["type"] == "blob"
+            ]
+        return self.blob_flags_cache[cache_key]
+
+    def _list_zf_blobs(self, recipe_name: str) -> list[dict[str, Any]]:
+        """Get the list of blobs of a recipe on Zimfarm"""
+        skip = 0
+        per_page = 200
+
+        blobs: list[dict[str, Any]] = []
+        while True:
+            response = requests.get(
+                self.get_zf_url(f"/blobs/{recipe_name}?limit={per_page}&skip={skip}"),
+                headers=self.get_zf_headers(),
+                timeout=context.http_timeout,
+            )
+            if not HTTPStatus(response.status_code).is_success:
+                logger.error(response.text)
+            response.raise_for_status()
+
+            result = response.json()
+            blobs.extend(result["items"])
+
+            if (
+                result["meta"]["limit"] + result["meta"]["skip"]
+                < result["meta"]["count"]
+            ):
+                skip += per_page
+            else:
+                break
+
+        return blobs
+
+    def _get_blob_source_content(self, source: str | Path) -> bytes | None:
+        """Get content of a blob source, either a local file or a remote URL
+
+        Returns None (and logs a warning) when source is not available.
+        """
+        try:
+            if isinstance(source, Path):
+                return source.read_bytes()
+            response = self._download_blob_source(source)
+        except OSError as exc:  # requests exceptions are OSError as well
+            logger.warning(f"Blob source {source} is not available: {exc}")
+            return None
+        return response.content
+
+    def _download_blob_source(self, source: str) -> requests.Response:
+        response = requests.get(
+            source,
+            headers={
+                "User-Agent": (
+                    "zimfarm-recipesauto (https://github.com/openzim/zimfarm; "
+                    f"contact+crawl@kiwix.org) requests/{requests.__version__}"
+                )
+            },
+            timeout=context.http_timeout,
+        )
+        response.raise_for_status()
+        return response
+
+    def _check_blob_sources(self, recipe: dict[str, Any]) -> bool:
+        """Check (and warn about) availability of all recipe blob sources"""
+        offliner_flags = recipe["config"]["offliner"]
+        all_available = True
+        for flag in self._get_blob_flags(
+            offliner_flags["offliner_id"], recipe["version"]
+        ):
+            source = offliner_flags.get(flag["data_key"])
+            if source and self._get_blob_source_content(source) is None:
+                all_available = False
+        return all_available
+
+    def _create_blob_on_zf(
+        self,
+        *,
+        recipe_name: str,
+        flag: dict[str, Any],
+        source: str | Path,
+        content: bytes,
+        checksum: str,
+    ) -> dict[str, Any]:
+        """Upload content as a blob of the recipe"""
+        response = requests.post(
+            self.get_zf_url(f"/blobs/{recipe_name}"),
+            headers=self.get_zf_headers(),
+            timeout=context.http_timeout,
+            json={
+                "flag_name": flag["key"],
+                "kind": flag["kind"],
+                "data": base64.b64encode(content).decode("ascii"),
+                "comments": f"Uploaded by recipesauto from "
+                f"{source.name if isinstance(source, Path) else source} "
+                f"({BLOB_SOURCE_CHECKSUM_MARKER}{checksum})",
+            },
+        )
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
+        response.raise_for_status()
+        return response.json()
+
+    def _resolve_blob_flags(
+        self,
+        *,
+        recipe_name: str,
+        version: str,
+        offliner_flags: dict[str, Any],
+        current_offliner_flags: dict[str, Any],
+        upload: bool,
+    ):
+        """Replace (in-place) sources of blob flags by Zimfarm blob URLs
+
+        Recipes are expressed with sources of blob flags, either a local file (Path)
+        or a remote URL (str). Matching blobs are found by comparing the sha256 of
+        the source content with either the blob checksum (blob stored as-is) or the
+        source checksum stored in blob comments (blob uploaded by this tool).
+
+        When no matching blob is found, the source is uploaded as a new blob if
+        `upload` is set, otherwise it is kept, so that a change is detected.
+
+        When source is not available (missing local file, download error), a
+        warning is logged and current value of the flag is kept (flag is removed if
+        it has no current value).
+        """
+        blob_flags = [
+            flag
+            for flag in self._get_blob_flags(offliner_flags["offliner_id"], version)
+            if offliner_flags.get(flag["data_key"])
+        ]
+        if not blob_flags:
+            return
+
+        blobs = self._list_zf_blobs(recipe_name)
+        blobs_urls = {blob["url"] for blob in blobs}
+
+        for flag in blob_flags:
+            source = offliner_flags[flag["data_key"]]
+            if source in blobs_urls:
+                # already a blob URL (e.g. from overrides)
+                continue
+
+            content = self._get_blob_source_content(source)
+            if content is None:
+                if current_value := current_offliner_flags.get(flag["data_key"]):
+                    offliner_flags[flag["data_key"]] = current_value
+                else:
+                    del offliner_flags[flag["data_key"]]
+                continue
+            checksum = hashlib.sha256(content).hexdigest()
+
+            matching_blob = next(
+                (
+                    blob
+                    for blob in blobs
+                    if blob["flag_name"] == flag["key"]
+                    and (
+                        blob["checksum"] == checksum
+                        or f"{BLOB_SOURCE_CHECKSUM_MARKER}{checksum}"
+                        in (blob["comments"] or "")
+                    )
+                ),
+                None,
+            )
+            if matching_blob:
+                offliner_flags[flag["data_key"]] = matching_blob["url"]
+                continue
+
+            if not upload:
+                logger.info(
+                    f"New blob would be uploaded for {flag['data_key']} from {source}"
+                )
+                continue
+
+            new_blob = self._create_blob_on_zf(
+                recipe_name=recipe_name,
+                flag=flag,
+                source=source,
+                content=content,
+                checksum=checksum,
+            )
+            logger.info(
+                f"Blob uploaded for {flag['data_key']} from {source}: {new_blob['url']}"
+            )
+            offliner_flags[flag["data_key"]] = new_blob["url"]
+            blobs.append(new_blob)
+            blobs_urls.add(new_blob["url"])
 
     def get_zf_url(self, path: str):
         """Build full Zimfarm URL from a path"""
