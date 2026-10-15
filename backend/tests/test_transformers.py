@@ -257,6 +257,7 @@ def test_generate_similarity_data_value_missing(
         ("image", ".png"),
         ("html", ".html"),
         ("txt", ".txt"),
+        ("js", ".js"),
         ("zip", ".bin"),
     ],
 )

@@ -49,6 +49,8 @@ const highlightLanguage = computed(() => {
       return 'html'
     case 'css':
       return 'css'
+    case 'js':
+      return 'javascript'
     case 'txt':
     default:
       return 'plaintext'

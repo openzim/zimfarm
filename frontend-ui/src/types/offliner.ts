@@ -1,3 +1,5 @@
+import type { BlobKind } from '@/utils/blob'
+
 export interface Choice {
   title: string
   value: string
@@ -17,7 +19,7 @@ export interface OfflinerDefinition {
   min_graphemes: number | null
   max_graphemes: number | null
   pattern: string | null
-  kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
+  kind?: BlobKind
   allow_remote_url: boolean
 }
 

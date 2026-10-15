@@ -183,6 +183,7 @@ import { diff } from 'deep-diff'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { EnhancedDiff } from '@/utils/diff'
+import type { BlobKind } from '@/utils/blob'
 
 const props = withDefaults(
   defineProps<{
@@ -280,7 +281,7 @@ const enhancedDifferences = computed((): EnhancedDiff[] | undefined => {
   }
 
   // Build blob map from both old and new configs
-  const blobMap = new Map<string, 'image' | 'illustration' | 'css' | 'html' | 'txt'>()
+  const blobMap = new Map<string, BlobKind>()
   if (selectedItemsArray.value.length === 2) {
     const oldConfig = selectedItemsArray.value[0].config as { offliner?: Record<string, unknown> }
     const newConfig = selectedItemsArray.value[1].config as { offliner?: Record<string, unknown> }

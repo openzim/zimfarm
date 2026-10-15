@@ -8,6 +8,7 @@ import { createApp } from 'vue'
 import hljs from 'highlight.js/lib/core'
 import css from 'highlight.js/lib/languages/css'
 import xml from 'highlight.js/lib/languages/xml'
+import javascript from 'highlight.js/lib/languages/javascript'
 import plaintext from 'highlight.js/lib/languages/plaintext'
 import hljsVuePlugin from '@highlightjs/vue-plugin'
 // Vuetify
@@ -30,6 +31,7 @@ import constants from '@/constants'
 // Register highlight.js languages
 hljs.registerLanguage('css', css)
 hljs.registerLanguage('html', xml) // HTML uses xml language
+hljs.registerLanguage('javascript', javascript)
 hljs.registerLanguage('plaintext', plaintext)
 
 const app = createApp(App)
