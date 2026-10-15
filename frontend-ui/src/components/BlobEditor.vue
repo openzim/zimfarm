@@ -92,13 +92,13 @@ if (!config) {
   throw new Error('Config is not defined')
 }
 
-const TEXT_KINDS = ['css', 'html', 'txt'] as const
+const TEXT_KINDS = ['css', 'html', 'js', 'txt'] as const
 const IMAGE_KINDS = ['illustration', 'image'] as const
 
 interface Props {
   modelValue: string | null | undefined
   label?: string
-  kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt' | string
+  kind?: 'image' | 'illustration' | 'css' | 'html' | 'js' | 'txt' | string
   allowRemoteUrl: boolean
   required?: boolean
   description?: string | null
@@ -190,7 +190,7 @@ const isTextKind = computed(() => TEXT_KINDS.includes(props.kind as (typeof TEXT
 const isImageKind = computed(() => IMAGE_KINDS.includes(props.kind as (typeof IMAGE_KINDS)[number]))
 
 const textFileType = computed(() => {
-  return isTextKind.value ? (props.kind as 'css' | 'html' | 'txt') : 'txt'
+  return isTextKind.value ? (props.kind as 'css' | 'html' | 'js' | 'txt') : 'txt'
 })
 
 const acceptedTypes = computed(() => {
@@ -200,6 +200,8 @@ const acceptedTypes = computed(() => {
     return '.css,text/css'
   } else if (props.kind === 'html') {
     return '.html,.htm,text/html'
+  } else if (props.kind === 'js') {
+    return '.js,.mjs,application/javascript,text/javascript'
   } else if (props.kind === 'txt') {
     return '.txt,text/plain'
   }
@@ -279,6 +281,18 @@ const processFile = async (file: File) => {
     !file.name.endsWith('.htm')
   ) {
     errorMessage.value = 'File must be an HTML file'
+    hasError.value = true
+    return
+  }
+
+  if (
+    props.kind === 'js' &&
+    file.type !== 'application/javascript' &&
+    file.type !== 'text/javascript' &&
+    !file.name.endsWith('.js') &&
+    !file.name.endsWith('.mjs')
+  ) {
+    errorMessage.value = 'File must be a JavaScript file'
     hasError.value = true
     return
   }

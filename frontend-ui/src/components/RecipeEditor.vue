@@ -711,6 +711,7 @@ import type {
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
 import { buildYoutubeLinks, type YoutubeLinkKind } from '@/utils/youtube'
+import type { BlobKind } from '@/utils/blob'
 import diff from 'deep-diff'
 import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch, inject } from 'vue'
@@ -731,7 +732,7 @@ interface FlagField {
   min_graphemes: number | null
   max_graphemes: number | null
   pattern: string | null
-  kind?: 'image' | 'illustration' | 'css' | 'html' | 'txt'
+  kind?: BlobKind
   allowRemoteUrl: boolean
 }
 

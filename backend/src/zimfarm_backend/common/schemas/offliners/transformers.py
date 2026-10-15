@@ -84,4 +84,6 @@ def get_extension_from_kind(kind: str) -> str:
         return ".html"
     elif kind == "txt":
         return ".txt"
+    elif kind == "js":
+        return ".js"
     return ".bin"

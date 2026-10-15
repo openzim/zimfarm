@@ -171,7 +171,7 @@ interface Props {
   originalChecksum?: string
   originalComment?: string
   originalUrl?: string | null
-  fileType?: 'css' | 'html' | 'txt'
+  fileType?: 'css' | 'html' | 'js' | 'txt'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -237,6 +237,8 @@ const acceptedFileTypes = computed(() => {
       return '.html,.htm,text/html'
     case 'css':
       return '.css,text/css'
+    case 'js':
+      return '.js,.mjs,application/javascript,text/javascript'
     case 'txt':
       return '.txt,text/plain'
     default:
