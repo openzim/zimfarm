@@ -367,6 +367,7 @@ def update_recipes(
     exclude_contexts: list[str] | None,
     dry_run: bool,
     changes: list[dict[str, Any]] | None = None,
+    username: str,
 ) -> int:
     nb_modified: int = 0
 
@@ -491,7 +492,7 @@ def update_recipes(
 
         update_recipe(
             session,
-            author_id=get_account_by_username(session, username="maint-scripts").id,
+            author_id=get_account_by_username(session, username=username).id,
             recipe_identifier=recipe.name,
             accessible_team_ids=None,
             payload=RecipeUpdateSchema(
@@ -735,6 +736,10 @@ requested tasks.
         type=parse_field_values,
         default={},
     )
+
+    parser.add_argument(
+        "--username", required=True, help="Username of account applying these updates."
+    )
     args = parser.parse_args()
 
     # Ensure there is at least one update/set operation to perform
@@ -795,6 +800,7 @@ requested tasks.
             exclude_contexts=args.exclude_contexts,
             dry_run=args.dry_run,
             changes=changes,
+            username=args.username,
         )
         logger.info(f"updated {nb_recipes_modified} recipe(s) ")
 

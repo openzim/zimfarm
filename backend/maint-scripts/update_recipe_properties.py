@@ -208,6 +208,7 @@ def main(
     values: dict[str, str],
     comment: str | None,
     dry_run: bool,
+    username: str,
 ) -> None:
     filter_clauses = build_filters(filters)
     updates, config_updates = build_updates(values)
@@ -222,7 +223,7 @@ def main(
             stmt = stmt.where(clause)
 
         recipes = session.scalars(stmt).all()
-        author_id = get_account_by_username(session, username="maint-scripts").id
+        author_id = get_account_by_username(session, username=username).id
 
         logger.info(f"Matched {len(recipes)} recipe(s)")
 
@@ -302,6 +303,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--username", required=True, help="Username of account applying these updates."
+    )
+
+    parser.add_argument(
         "--dry-run", action="store_true", help="Do not apply the changes"
     )
 
@@ -319,6 +324,7 @@ if __name__ == "__main__":
             values=values,
             comment=args.comment,
             dry_run=args.dry_run,
+            username=args.username,
         )
     except ValueError as exc:
         logger.error(str(exc))
