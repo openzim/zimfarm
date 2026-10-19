@@ -189,6 +189,7 @@ ALL_PLATFORMS = [
     "gutenberg",
     "phet",
     "maps",
+    "stackexchange",
 ]
 PLATFORMS_TASKS: dict[str, int] = {}
 for platform in ALL_PLATFORMS:

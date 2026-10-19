@@ -234,6 +234,7 @@ class Platform(StrEnum):
     phet = "phet"
     gutenberg = "gutenberg"
     maps = "maps"
+    stackexchange = "stackexchange"
 
     @classmethod
     def all(cls) -> list["Platform"]:
@@ -249,6 +250,7 @@ class Platform(StrEnum):
             cls.phet,
             cls.gutenberg,
             cls.maps,
+            cls.stackexchange,
         ]
 
     @classmethod
