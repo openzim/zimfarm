@@ -185,7 +185,7 @@ def get_tasks(
     limit: int,
     accessible_team_ids: Sequence[UUID] | None,
     status: list[TaskStatus] | None = None,
-    recipe_identifier: str | None = None,
+    recipe_identifier: list[str] | None = None,
     sort_criteria: Literal["updated_at", "doing", "done", "failed"] = "updated_at",
     offliner: str | None = None,
     fetch_most_recent_tasks: bool = False,
@@ -206,10 +206,10 @@ def get_tasks(
             order_by = Task.updated_at.desc()
 
     if recipe_identifier is not None:
-        if is_valid_uuid(recipe_identifier):
-            recipe_where_clause = Recipe.id == recipe_identifier
+        if is_valid_uuid(recipe_identifier[0]):
+            recipe_where_clause = Recipe.id.in_(recipe_identifier)
         else:
-            recipe_where_clause = Recipe.name == recipe_identifier
+            recipe_where_clause = Recipe.name.in_(recipe_identifier)
     else:
         # if no recipe identifier, then we don't filter by that column and just set it
         # it to true so every row passes the condition

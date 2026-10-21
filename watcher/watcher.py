@@ -97,6 +97,10 @@ ZIMFARM_TOKEN_RENEWAL_WINDOW = datetime.timedelta(
 )
 
 
+class RecordDoesNotExistError(Exception):
+    pass
+
+
 def getnow():
     """naive UTC now"""
     return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
@@ -432,7 +436,7 @@ class WatcherRunner:
 
     def get_recipes_for(self, domain: str) -> list[str]:
         """list of Zimfarm recipes names for a StackExchange domain"""
-        success, status, payload = self.query_api(
+        success, _, payload = self.query_api(
             "GET",
             "/recipes",
             params={"category": ["stack_exchange"], "name": f"{domain}_"},
@@ -459,10 +463,13 @@ class WatcherRunner:
             logger.info(f"No recipes found for {domain}")
             return False
 
-        success, status, payload = self.query_api(
+        success, _, payload = self.query_api(
             "GET",
             "/tasks",
-            params={"recipe_name": recipes, "status": ["started", "scraper_started"]},
+            params={
+                "recipe_name": recipes,
+                "status": ["started", "scraper_started", "reserved", "status_running"],
+            },
         )
         if not success:
             logger.error(f"{prefix} Can't get tasks from zimfarm")
@@ -472,12 +479,27 @@ class WatcherRunner:
         if not tasks:
             return False
 
-        for task in filter(lambda t: t.get("scraper_started"), tasks):
-            started_on = datetime.datetime.fromisoformat(
-                re.sub(r"Z$", "", task["scraper_started"])
+        start_timestamps = [
+            (task["id"], datetime.datetime.fromisoformat(started_at))
+            for task in tasks
+            if (
+                started_at := next(
+                    (
+                        ts
+                        for status, ts in task["timestamp"]
+                        if status == "scraper_started"
+                    ),
+                    None,
+                )
             )
-            if started_on < datetime.datetime.now() - datetime.timedelta(days=1):
-                logger.debug(f"{prefix} Zimfarm task #{task['id']} is blocking it")
+            is not None
+        ]
+
+        for task_id, start_timestamp in start_timestamps:
+            if start_timestamp < datetime.datetime.now(
+                tz=datetime.UTC
+            ) - datetime.timedelta(days=1):
+                logger.debug(f"{prefix} Zimfarm task #{task_id} is blocking it")
                 return True
 
         return False
@@ -492,7 +514,7 @@ class WatcherRunner:
         if not recipes:
             return False
 
-        success, status, payload = self.query_api(
+        success, _, payload = self.query_api(
             "GET", "/requested-tasks", params={"recipe_name": recipes}
         )
         if not success:
@@ -513,17 +535,17 @@ class WatcherRunner:
         """Schedule matching recipes in Zimfarm as a new dump was uploaded"""
         recipes = self.get_recipes_for(domain)
         if not recipes:
-            logger.info(f"No matching recipes for {domain} on zimfarm")
-            return []
+            raise RecordDoesNotExistError(
+                f"No matching recipes for {domain} on zimfarm"
+            )
 
         success, status, payload = self.query_api(
             "POST", "/requested-tasks", payload={"recipe_names": recipes}
         )
         if not success:
-            logger.error(
+            raise ValueError(
                 f"Failed to create tasks for {recipes} with HTTP {status}: {payload}"
             )
-            return []
 
         return payload.get("requested", [])
 
@@ -573,13 +595,17 @@ class WatcherRunner:
 
         if self.schedule_on_update:
             logger.info(f"{prefix} Scheduling recipe on Zimfarm")
-            scheduled = self.schedule_in_zimfarm(domain)
-            if scheduled:
-                logger.info(f"{prefix} scheduled: {', '.join(scheduled)}")
-            elif scheduled is False:
-                logger.info(f"{prefix} no recipe to schedule")
+            try:
+                scheduled = self.schedule_in_zimfarm(domain)
+            except Exception:
+                logger.exception(
+                    "encountered error while scheduling recipes on zimfarm"
+                )
             else:
-                logger.warning(f"{prefix} couldn't schedule recipe(s)")
+                if scheduled:
+                    logger.info(f"{prefix} scheduled: {', '.join(scheduled)}")
+                else:
+                    logger.warning(f"{prefix} couldn't schedule recipe(s)")
 
     def retrieve_cached_summary(self) -> dict[str, Any] | None:
         if not self.s3_summary_file_url:
