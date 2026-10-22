@@ -3,7 +3,7 @@ FROM python:3.13-alpine3.22
 LABEL zimfarm=true
 LABEL org.opencontainers.image.source https://github.com/openzim/zimfarm
 
-RUN apk update && apk --no-cache add wget
+RUN apk update && apk --no-cache add wget 7zip
 
 ENV DOWNLOAD_URL https://archive.org/download/stackexchange/
 ENV ZIMFARM_API_URL https://api.farm.openzim.org/v2

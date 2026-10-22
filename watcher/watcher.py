@@ -18,6 +18,7 @@ Then, it retrieves the list of 7z files in the dump, and for each of them:
 - check whether zimfarm is currently using the current dump and skip in that case
 - check whether there's a pending task for this dump and delete it in that case
 - if we had the same file but for another version, we'd delete it from bucket first
+- test the downloaded archive's integrity and discard it if it is corrupted
 - upload the file to our S3 bucket with a Metadata for the `last-modified` value
 - delete the local file we downloaded
 - schedule matching and enabled recipe(s) on the Zimfarm when we have updated dump
@@ -76,7 +77,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("watcher")
 # disable boto3's verbose logging
-for logger_name in set(["urllib3", "boto3", "botocore", "s3transfer"]):
+for logger_name in ("urllib3", "boto3", "botocore", "s3transfer"):
     logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 HTTP_REQUEST_TIMEOUT = 30
@@ -214,11 +215,9 @@ def query_api(
             params=params,
             allow_redirects=False,
         )
-    except Exception as exc:
+    except Exception:
         attempt += 1
-        logger.exception(
-            f"ConnectionError (attempt {attempt}) for {method} {url} -- {exc}"
-        )
+        logger.exception(f"ConnectionError (attempt {attempt}) for {method} {url}")
         if attempt <= 3:
             time.sleep(attempt * 60 * 2)
             return query_api(token, method, url, payload, params, headers, attempt)
@@ -232,8 +231,8 @@ def query_api(
     except json.JSONDecodeError:
         logger.exception(f"ResponseError (not JSON): -- {req.text}")
         return (False, req.status_code, {})
-    except Exception as exc:
-        logger.exception(f"ResponseError -- {exc} -- {req.text}")
+    except Exception:
+        logger.exception(f"ResponseError -- {req.text}")
         return (
             False,
             req.status_code,
@@ -245,7 +244,7 @@ def query_api(
         requests.codes.CREATED,
         requests.codes.ACCEPTED,
     ):
-        return True, req.status_code, resp
+        return True, cast(int, req.status_code), resp
 
     if "error" in resp:
         content = resp["error"]
@@ -271,6 +270,7 @@ class WatcherRunner:
         duration: str,
         work_dir: str,
         only: list[str] | None,
+        force: bool,
         runonce: bool,
         debug: bool = False,
     ):
@@ -282,6 +282,7 @@ class WatcherRunner:
         self.duration = duration
         self.work_dir = work_dir
         self.only = only
+        self.force = force
         self.runonce = runonce
         self.debug = debug
         self._token_provider = ClientTokenProvider()
@@ -432,7 +433,7 @@ class WatcherRunner:
 
     def get_recipes_for(self, domain: str) -> list[str]:
         """list of Zimfarm recipes names for a StackExchange domain"""
-        success, status, payload = self.query_api(
+        success, _status, payload = self.query_api(
             "GET",
             "/recipes",
             params={"category": ["stack_exchange"], "name": f"{domain}_"},
@@ -459,7 +460,7 @@ class WatcherRunner:
             logger.info(f"No recipes found for {domain}")
             return False
 
-        success, status, payload = self.query_api(
+        success, _status, payload = self.query_api(
             "GET",
             "/tasks",
             params={"recipe_name": recipes, "status": ["started", "scraper_started"]},
@@ -492,7 +493,7 @@ class WatcherRunner:
         if not recipes:
             return False
 
-        success, status, payload = self.query_api(
+        success, _status, payload = self.query_api(
             "GET", "/requested-tasks", params={"recipe_name": recipes}
         )
         if not success:
@@ -552,6 +553,7 @@ class WatcherRunner:
 
         wget = subprocess.run(
             ["/usr/bin/env", "wget", "-O", fpath, url],
+            check=False,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -561,6 +563,24 @@ class WatcherRunner:
             logger.error(wget.stdout)
             return
         logger.info(f"{prefix} Download completed")
+
+        logger.info(f"{prefix} Testing archive integrity…")
+        seven_zip = subprocess.run(
+            ["/usr/bin/env", "7z", "t", fpath],
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        if seven_zip.returncode != 0:
+            logger.error(
+                f"{prefix} Archive integrity test failed with exit-code "
+                f"{seven_zip.returncode}"
+            )
+            logger.error(seven_zip.stdout)
+            fpath.unlink()
+            return
+        logger.info(f"{prefix} Archive integrity test passed")
 
         logger.info(f"{prefix} Uploading to S3…")
         self.s3_storage.upload_file(
@@ -607,15 +627,22 @@ class WatcherRunner:
         self.archives_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
 
         for archive in archives:
-            url = f"https://archive.org/download/{identifier}/{archive}"
-
             key = archive.split("/")[-1]
+            domain = re.sub(r".7z$", "", key)
+
+            if self.only and domain not in self.only:
+                continue
+
+            url = f"https://archive.org/download/{identifier}/{archive}"
             last_modified = get_last_modified_for(url)
 
-            if not self.s3_storage.has_object_matching(
+            if self.force or not self.s3_storage.has_object_matching(
                 key, meta={"lastmodified": last_modified}
             ):
-                logger.info(f" [+] {key} (from {last_modified})")
+                logger.info(
+                    f" [+] {key} (from {last_modified})"
+                    + (" (forced)" if self.force else "")
+                )
 
                 future = self.archives_executor.submit(
                     self.update_file,
@@ -799,6 +826,14 @@ def entrypoint():
         action="append",
     )
     parser.add_argument(
+        "--force",
+        help="Force reprocessing of --only domain(s) even if already in sync with "
+        "Archive.org (e.g. to fix a corrupted archive previously uploaded to S3). "
+        "Requires --only.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "--debug", help="Enable verbose output", action="store_true", default=False
     )
 
@@ -817,6 +852,9 @@ def entrypoint():
     )
 
     args = parser.parse_args()
+
+    if args.force and not args.only:
+        parser.error("--force requires --only to be set")
 
     if AUTH_MODE == "local":
         if not (ZIMFARM_USERNAME and ZIMFARM_PASSWORD):
@@ -846,6 +884,7 @@ def entrypoint():
         duration=args.duration,
         work_dir=args.work_dir,
         only=args.only,
+        force=args.force,
         runonce=args.runonce,
         debug=args.debug,
     )
@@ -855,7 +894,7 @@ def entrypoint():
     except Exception as exc:
         logger.error(f"FAILED. An error occurred: {exc}")
         if runner.debug:
-            logger.exception(exc)
+            logger.exception("Unhandled exception")
         raise SystemExit(1)
 
 
