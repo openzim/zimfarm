@@ -77,7 +77,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("watcher")
 # disable boto3's verbose logging
-for logger_name in set(["urllib3", "boto3", "botocore", "s3transfer"]):
+for logger_name in ("urllib3", "boto3", "botocore", "s3transfer"):
     logging.getLogger(logger_name).setLevel(logging.WARNING)
 
 HTTP_REQUEST_TIMEOUT = 30
@@ -215,11 +215,9 @@ def query_api(
             params=params,
             allow_redirects=False,
         )
-    except Exception as exc:
+    except Exception:
         attempt += 1
-        logger.exception(
-            f"ConnectionError (attempt {attempt}) for {method} {url} -- {exc}"
-        )
+        logger.exception(f"ConnectionError (attempt {attempt}) for {method} {url}")
         if attempt <= 3:
             time.sleep(attempt * 60 * 2)
             return query_api(token, method, url, payload, params, headers, attempt)
@@ -233,8 +231,8 @@ def query_api(
     except json.JSONDecodeError:
         logger.exception(f"ResponseError (not JSON): -- {req.text}")
         return (False, req.status_code, {})
-    except Exception as exc:
-        logger.exception(f"ResponseError -- {exc} -- {req.text}")
+    except Exception:
+        logger.exception(f"ResponseError -- {req.text}")
         return (
             False,
             req.status_code,
@@ -246,7 +244,7 @@ def query_api(
         requests.codes.CREATED,
         requests.codes.ACCEPTED,
     ):
-        return True, req.status_code, resp
+        return True, cast(int, req.status_code), resp
 
     if "error" in resp:
         content = resp["error"]
@@ -435,7 +433,7 @@ class WatcherRunner:
 
     def get_recipes_for(self, domain: str) -> list[str]:
         """list of Zimfarm recipes names for a StackExchange domain"""
-        success, status, payload = self.query_api(
+        success, _status, payload = self.query_api(
             "GET",
             "/recipes",
             params={"category": ["stack_exchange"], "name": f"{domain}_"},
@@ -462,7 +460,7 @@ class WatcherRunner:
             logger.info(f"No recipes found for {domain}")
             return False
 
-        success, status, payload = self.query_api(
+        success, _status, payload = self.query_api(
             "GET",
             "/tasks",
             params={"recipe_name": recipes, "status": ["started", "scraper_started"]},
@@ -495,7 +493,7 @@ class WatcherRunner:
         if not recipes:
             return False
 
-        success, status, payload = self.query_api(
+        success, _status, payload = self.query_api(
             "GET", "/requested-tasks", params={"recipe_name": recipes}
         )
         if not success:
@@ -555,6 +553,7 @@ class WatcherRunner:
 
         wget = subprocess.run(
             ["/usr/bin/env", "wget", "-O", fpath, url],
+            check=False,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -568,6 +567,7 @@ class WatcherRunner:
         logger.info(f"{prefix} Testing archive integrity…")
         seven_zip = subprocess.run(
             ["/usr/bin/env", "7z", "t", fpath],
+            check=False,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -894,7 +894,7 @@ def entrypoint():
     except Exception as exc:
         logger.error(f"FAILED. An error occurred: {exc}")
         if runner.debug:
-            logger.exception(exc)
+            logger.exception("Unhandled exception")
         raise SystemExit(1)
 
 
