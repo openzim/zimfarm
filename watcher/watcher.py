@@ -272,6 +272,7 @@ class WatcherRunner:
         duration: str,
         work_dir: str,
         only: list[str] | None,
+        force: bool,
         runonce: bool,
         debug: bool = False,
     ):
@@ -283,6 +284,7 @@ class WatcherRunner:
         self.duration = duration
         self.work_dir = work_dir
         self.only = only
+        self.force = force
         self.runonce = runonce
         self.debug = debug
         self._token_provider = ClientTokenProvider()
@@ -625,15 +627,22 @@ class WatcherRunner:
         self.archives_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
 
         for archive in archives:
-            url = f"https://archive.org/download/{identifier}/{archive}"
-
             key = archive.split("/")[-1]
+            domain = re.sub(r".7z$", "", key)
+
+            if self.only and domain not in self.only:
+                continue
+
+            url = f"https://archive.org/download/{identifier}/{archive}"
             last_modified = get_last_modified_for(url)
 
-            if not self.s3_storage.has_object_matching(
+            if self.force or not self.s3_storage.has_object_matching(
                 key, meta={"lastmodified": last_modified}
             ):
-                logger.info(f" [+] {key} (from {last_modified})")
+                logger.info(
+                    f" [+] {key} (from {last_modified})"
+                    + (" (forced)" if self.force else "")
+                )
 
                 future = self.archives_executor.submit(
                     self.update_file,
@@ -817,6 +826,14 @@ def entrypoint():
         action="append",
     )
     parser.add_argument(
+        "--force",
+        help="Force reprocessing of --only domain(s) even if already in sync with "
+        "Archive.org (e.g. to fix a corrupted archive previously uploaded to S3). "
+        "Requires --only.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "--debug", help="Enable verbose output", action="store_true", default=False
     )
 
@@ -835,6 +852,9 @@ def entrypoint():
     )
 
     args = parser.parse_args()
+
+    if args.force and not args.only:
+        parser.error("--force requires --only to be set")
 
     if AUTH_MODE == "local":
         if not (ZIMFARM_USERNAME and ZIMFARM_PASSWORD):
@@ -864,6 +884,7 @@ def entrypoint():
         duration=args.duration,
         work_dir=args.work_dir,
         only=args.only,
+        force=args.force,
         runonce=args.runonce,
         debug=args.debug,
     )
