@@ -18,6 +18,7 @@ Then, it retrieves the list of 7z files in the dump, and for each of them:
 - check whether zimfarm is currently using the current dump and skip in that case
 - check whether there's a pending task for this dump and delete it in that case
 - if we had the same file but for another version, we'd delete it from bucket first
+- test the downloaded archive's integrity and discard it if it is corrupted
 - upload the file to our S3 bucket with a Metadata for the `last-modified` value
 - delete the local file we downloaded
 - schedule matching and enabled recipe(s) on the Zimfarm when we have updated dump
@@ -561,6 +562,23 @@ class WatcherRunner:
             logger.error(wget.stdout)
             return
         logger.info(f"{prefix} Download completed")
+
+        logger.info(f"{prefix} Testing archive integrity…")
+        seven_zip = subprocess.run(
+            ["/usr/bin/env", "7z", "t", fpath],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        if seven_zip.returncode != 0:
+            logger.error(
+                f"{prefix} Archive integrity test failed with exit-code "
+                f"{seven_zip.returncode}"
+            )
+            logger.error(seven_zip.stdout)
+            fpath.unlink()
+            return
+        logger.info(f"{prefix} Archive integrity test passed")
 
         logger.info(f"{prefix} Uploading to S3…")
         self.s3_storage.upload_file(
