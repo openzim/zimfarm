@@ -468,7 +468,7 @@ class WatcherRunner:
             "/tasks",
             params={
                 "recipe_name": recipes,
-                "status": ["started", "scraper_started", "reserved", "status_running"],
+                "status": ["started", "scraper_started", "reserved", "scraper_running"],
             },
         )
         if not success:
@@ -479,28 +479,9 @@ class WatcherRunner:
         if not tasks:
             return False
 
-        start_timestamps = [
-            (task["id"], datetime.datetime.fromisoformat(started_at))
-            for task in tasks
-            if (
-                started_at := next(
-                    (
-                        ts
-                        for status, ts in task["timestamp"]
-                        if status == "scraper_started"
-                    ),
-                    None,
-                )
-            )
-            is not None
-        ]
-
-        for task_id, start_timestamp in start_timestamps:
-            if start_timestamp < datetime.datetime.now(
-                tz=datetime.UTC
-            ) - datetime.timedelta(days=1):
-                logger.debug(f"{prefix} Zimfarm task #{task_id} is blocking it")
-                return True
+        if tasks:
+            logger.debug(f"{prefix} {len(tasks)} zimfarm tasks are  blocking it")
+            return True
 
         return False
 
