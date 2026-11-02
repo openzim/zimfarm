@@ -57,7 +57,7 @@
     >
       <template #content>
         <div class="mb-4">
-          <p class="text-body-2 text-medium-emphasis mb-3">
+          <p class="text-body-medium text-medium-emphasis mb-3">
             You are about to restore the selected recipes. Please add an optional comment to track
             this action.
           </p>

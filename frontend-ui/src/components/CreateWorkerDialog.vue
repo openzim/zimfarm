@@ -2,7 +2,7 @@
   <v-dialog v-model="dialog" max-width="800px" persistent>
     <v-card>
       <v-card-title>
-        <span class="text-h5">Create Worker</span>
+        <span class="text-headline-small">Create Worker</span>
       </v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="valid" @submit.prevent="createWorker">
@@ -21,7 +21,7 @@
           </v-row>
 
           <v-divider class="my-4" />
-          <h3 class="text-h6 mb-2">SSH Key</h3>
+          <h3 class="text-title-large mb-2">SSH Key</h3>
           <SshKeyInput v-model="sshKeyData" />
         </v-form>
       </v-card-text>

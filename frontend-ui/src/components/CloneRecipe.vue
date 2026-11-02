@@ -1,12 +1,12 @@
 <template>
   <div>
-    <p class="text-body-1 mb-4">
+    <p class="text-body-large mb-4">
       You are about to <strong>create a new recipe</strong> by cloning <code>{{ from }}</code
       >.
     </p>
 
     <v-form @submit.prevent="submit">
-      <v-row dense>
+      <v-row density="compact">
         <v-col cols="12">
           <v-text-field
             v-model="formName"

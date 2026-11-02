@@ -9,7 +9,7 @@
 
     <v-card v-if="!errors.length" class="mb-4" flat>
       <v-card-text>
-        <v-row align="stretch">
+        <v-row class="align-stretch">
           <v-col cols="12" sm="6" md="3" class="d-flex">
             <v-sheet rounded border class="pa-2 d-flex align-center flex-grow-1">
               <div class="d-flex align-center">
@@ -17,8 +17,8 @@
                   <v-icon color="success" size="40">mdi-server</v-icon>
                 </div>
                 <div class="ml-3">
-                  <div class="text-caption text-medium-emphasis">Online workers</div>
-                  <div class="text-body-2">{{ onlineWorkers.length }}</div>
+                  <div class="text-body-small text-medium-emphasis">Online workers</div>
+                  <div class="text-body-medium">{{ onlineWorkers.length }}</div>
                 </div>
               </div>
             </v-sheet>
@@ -34,12 +34,12 @@
                     size="44"
                     width="4"
                   >
-                    <span class="text-caption">{{ percentCpu }}%</span>
+                    <span class="text-body-small">{{ percentCpu }}%</span>
                   </v-progress-circular>
                 </div>
                 <div class="ml-3">
-                  <div class="text-caption text-medium-emphasis">CPU</div>
-                  <div class="text-body-2">{{ usageCpu }}</div>
+                  <div class="text-body-small text-medium-emphasis">CPU</div>
+                  <div class="text-body-medium">{{ usageCpu }}</div>
                 </div>
               </div>
             </v-sheet>
@@ -55,12 +55,12 @@
                     size="44"
                     width="4"
                   >
-                    <span class="text-caption">{{ percentMemory }}%</span>
+                    <span class="text-body-small">{{ percentMemory }}%</span>
                   </v-progress-circular>
                 </div>
                 <div class="ml-3">
-                  <div class="text-caption text-medium-emphasis">Memory</div>
-                  <div class="text-body-2">{{ usageMemory }}</div>
+                  <div class="text-body-small text-medium-emphasis">Memory</div>
+                  <div class="text-body-medium">{{ usageMemory }}</div>
                 </div>
               </div>
             </v-sheet>
@@ -76,12 +76,12 @@
                     size="44"
                     width="4"
                   >
-                    <span class="text-caption">{{ percentDisk }}%</span>
+                    <span class="text-body-small">{{ percentDisk }}%</span>
                   </v-progress-circular>
                 </div>
                 <div class="ml-3">
-                  <div class="text-caption text-medium-emphasis">Disk</div>
-                  <div class="text-body-2">{{ usageDisk }}</div>
+                  <div class="text-body-small text-medium-emphasis">Disk</div>
+                  <div class="text-body-medium">{{ usageDisk }}</div>
                 </div>
               </div>
             </v-sheet>

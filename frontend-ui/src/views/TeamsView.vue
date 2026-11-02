@@ -6,7 +6,7 @@
   <div>
     <v-card class="mb-4" flat>
       <v-card-text>
-        <v-row align="center">
+        <v-row class="align-center">
           <v-col cols="12" sm="4">
             <v-text-field
               v-model="searchName"
@@ -71,7 +71,7 @@
     <!-- Create Team Dialog -->
     <v-dialog v-model="showCreateDialog" max-width="600" persistent>
       <v-card>
-        <v-card-title class="text-h6 bg-primary">
+        <v-card-title class="text-title-large bg-primary">
           <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>
           Create New Team
         </v-card-title>

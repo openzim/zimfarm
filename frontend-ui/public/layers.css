@@ -1,0 +1,10 @@
+@layer vuetify-core;
+@layer app-tokens;
+/* App base element styles are intentionally placed before Vuetify's component
+   styles so generic rules such as `a { color: ... }` don't override components. */
+@layer app-base;
+@layer vuetify-components;
+@layer vuetify-overrides;
+@layer vuetify-utilities;
+@layer app-utilities;
+@layer vuetify-final;

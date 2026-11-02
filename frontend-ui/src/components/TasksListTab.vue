@@ -5,7 +5,7 @@
       v-for="filterOption in filterOptions"
       :key="filterOption.value"
       :value="filterOption.value"
-      class="text-none text-subtitle-2"
+      class="text-none text-title-small"
       @click="$emit('filter-changed', filterOption.value)"
     >
       {{ filterOption.label }}

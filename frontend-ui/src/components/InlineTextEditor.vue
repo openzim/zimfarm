@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="label" class="text-caption text-grey-darken-1 mb-1">
+    <div v-if="label" class="text-body-small text-grey-darken-1 mb-1">
       {{ label }}
     </div>
     <!-- Drop Zone / Editor Container -->
@@ -38,10 +38,10 @@
         style="pointer-events: none"
       >
         <v-icon size="48" color="grey-lighten-1">mdi-file-document-outline</v-icon>
-        <p class="text-body-1 text-grey-darken-1 mt-3 mb-0 text-center">
+        <p class="text-body-large text-grey-darken-1 mt-3 mb-0 text-center">
           Drag & drop a {{ fileType.toUpperCase() }} file here
         </p>
-        <p class="text-body-2 text-grey mt-2 mb-2 text-center">
+        <p class="text-body-medium text-grey mt-2 mb-2 text-center">
           or click to browse, or paste text/URL
         </p>
         <v-btn
@@ -65,12 +65,12 @@
           style="z-index: 20; opacity: 0.8"
         >
           <v-progress-circular indeterminate color="primary" size="48" />
-          <p class="text-body-2 mt-3">Loading file...</p>
+          <p class="text-body-medium mt-3">Loading file...</p>
         </div>
 
         <div
           v-else-if="previewErrorMessage"
-          class="w-100 h-100 d-flex align-center justify-center pa-4 text-error text-caption"
+          class="w-100 h-100 d-flex align-center justify-center pa-4 text-error text-body-small"
         >
           <v-icon size="small" class="mr-1">mdi-alert-circle</v-icon>
           {{ previewErrorMessage }}
@@ -131,12 +131,12 @@
     </div>
 
     <!-- Description -->
-    <div v-if="description" class="text-caption text-grey mt-2">
+    <div v-if="description" class="text-body-small text-grey mt-2">
       {{ description }}
     </div>
 
     <!-- Error Message -->
-    <div v-if="errorMessage" class="text-error text-caption mt-2">
+    <div v-if="errorMessage" class="text-error text-body-small mt-2">
       <v-icon size="small" class="mr-1">mdi-alert-circle</v-icon>
       {{ errorMessage }}
     </div>

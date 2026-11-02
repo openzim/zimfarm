@@ -1,14 +1,14 @@
 <template>
   <v-dialog v-model="isOpen" :max-width="maxWidth" persistent>
     <v-card>
-      <v-card-title class="text-h6">
+      <v-card-title class="text-title-large">
         <v-icon class="mr-2" :color="iconColor">
           {{ icon }}
         </v-icon>
         {{ title }}
       </v-card-title>
 
-      <v-card-text class="text-body-1">
+      <v-card-text class="text-body-large">
         <slot name="content">
           <span v-if="message">{{ message }}</span>
         </slot>

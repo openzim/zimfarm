@@ -2,16 +2,48 @@
 
 @import url('highlight.js/styles/github-dark.css') screen and (prefers-color-scheme: dark);
 
-body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+@layer vuetify-core.reset {
+  ul,
+  ol,
+  figure,
+  details,
+  summary {
+    padding: 0;
+    margin: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    margin: 0;
+  }
 }
 
-/* Global link styles */
-a {
-  text-decoration: none !important;
-  color: rgb(var(--v-theme-primary));
+@layer app-tokens {
+  :root {
+    --overlay-primary-05: color-mix(in srgb, rgb(var(--v-theme-primary)) 5%, transparent);
+    --overlay-on-surface-05: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 5%, transparent);
+    --overlay-on-surface-12: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 12%, transparent);
+    --overlay-on-surface-38: color-mix(in srgb, rgb(var(--v-theme-on-surface)) 38%, transparent);
+  }
+}
+
+@layer app-base {
+  body {
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+      'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  /* Global link styles */
+  a {
+    text-decoration: none !important;
+    color: rgb(var(--v-theme-primary));
+  }
 }
 
 /* Ensure hljs background stays transparent for your overlay approach */

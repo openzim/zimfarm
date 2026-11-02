@@ -7,22 +7,24 @@
   - Redirects to appropriate page after successful authentication -->
 
 <template>
-  <v-container class="fill-height">
-    <v-row justify="center" align="center">
+  <v-container class="fill-height d-flex align-center flex-wrap">
+    <v-row class="justify-center align-center">
       <v-col cols="12" sm="8" md="6" lg="4">
-        <v-card class="elevation-12">
+        <v-card class="elevation-4">
           <v-card-text class="text-center pa-8">
             <!-- Loading State -->
             <div v-if="loading">
               <v-progress-circular indeterminate size="64" color="primary" class="mb-4" />
-              <h2 class="text-h6 mb-2">Completing sign in...</h2>
-              <p class="text-body-2 text-medium-emphasis">Please wait while we authenticate you.</p>
+              <h2 class="text-title-large mb-2">Completing sign in...</h2>
+              <p class="text-body-medium text-medium-emphasis">
+                Please wait while we authenticate you.
+              </p>
             </div>
 
             <!-- Error State -->
             <div v-else-if="error">
               <v-icon size="64" color="error" class="mb-4">mdi-alert-circle</v-icon>
-              <h2 class="text-h6 mb-2">Authentication Failed</h2>
+              <h2 class="text-title-large mb-2">Authentication Failed</h2>
               <v-alert type="error" variant="tonal" class="mb-4 text-left">
                 {{ error }}
               </v-alert>

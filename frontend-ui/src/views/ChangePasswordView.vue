@@ -6,11 +6,13 @@
   - only accessible to users with username -->
 
 <template>
-  <v-container class="fill-height">
-    <v-row justify="center" align="center">
+  <v-container class="fill-height d-flex align-center flex-wrap">
+    <v-row class="justify-center align-center">
       <v-col cols="12" sm="8">
-        <v-card class="elevation-12">
-          <v-card-title class="text-center text-h5 py-4"> Change Password </v-card-title>
+        <v-card class="elevation-4">
+          <v-card-title class="text-center text-headline-small py-4">
+            Change Password
+          </v-card-title>
 
           <v-card-text>
             <v-form @submit.prevent="changePassword" ref="form">

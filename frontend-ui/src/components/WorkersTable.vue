@@ -50,7 +50,7 @@
         <template #loading>
           <div class="d-flex flex-column align-center justify-center pa-8">
             <v-progress-circular indeterminate size="64" />
-            <div class="mt-4 text-body-1">{{ loadingText || 'Fetching workers...' }}</div>
+            <div class="mt-4 text-body-large">{{ loadingText || 'Fetching workers...' }}</div>
           </div>
         </template>
 
@@ -204,7 +204,7 @@
                 color="primary"
                 variant="outlined"
                 density="comfortable"
-                class="mr-1 mb-1 text-caption text-uppercase"
+                class="mr-1 mb-1 text-body-small text-uppercase"
               >
                 {{ ctx }}
               </v-chip>
@@ -218,7 +218,7 @@
         <template #no-data>
           <div class="text-center pa-4">
             <v-icon size="large" class="mb-2">mdi-robot-outline</v-icon>
-            <div class="text-body-1">No workers found</div>
+            <div class="text-body-large">No workers found</div>
           </div>
         </template>
 

@@ -2,11 +2,11 @@
   <v-card elevation="2" class="h-100 d-flex flex-column border">
     <v-card-title class="d-flex flex-column align-start pa-4">
       <div class="d-flex align-center flex-wrap w-100">
-        <div class="text-subtitle-1 text-truncate flex-grow-1">
+        <div class="text-body-large text-truncate flex-grow-1">
           {{ displayName }}
         </div>
 
-        <div v-if="file.info === undefined" class="text-caption text-grey ml-2">
+        <div v-if="file.info === undefined" class="text-body-small text-grey ml-2">
           Loading metadata...
         </div>
       </div>
@@ -28,17 +28,17 @@
     <v-card-text class="pa-4">
       <div class="d-flex flex-column ga-2">
         <div class="d-flex justify-space-between align-center">
-          <div class="text-body-2 font-weight-medium">Size</div>
-          <div class="text-body-2 font-weight-medium">
+          <div class="text-body-medium font-weight-medium">Size</div>
+          <div class="text-body-medium font-weight-medium">
             {{ formattedBytesSize(file.size) }}
           </div>
         </div>
 
         <div class="d-flex justify-space-between align-center">
-          <div class="text-body-2 font-weight-medium">Created After</div>
+          <div class="text-body-medium font-weight-medium">Created After</div>
           <v-tooltip :text="formatDt(file.created_timestamp)">
             <template #activator="{ props: tooltipProps }">
-              <div v-bind="tooltipProps" class="text-body-2 font-weight-medium">
+              <div v-bind="tooltipProps" class="text-body-medium font-weight-medium">
                 {{ createdAfterTime }}
               </div>
             </template>
@@ -46,10 +46,10 @@
         </div>
 
         <div v-if="file.uploaded_timestamp" class="d-flex justify-space-between align-center">
-          <div class="text-body-2 font-weight-medium">Upload Duration</div>
+          <div class="text-body-medium font-weight-medium">Upload Duration</div>
           <v-tooltip :text="formatDt(file.uploaded_timestamp)">
             <template #activator="{ props: tooltipProps }">
-              <div v-bind="tooltipProps" class="text-body-2 font-weight-medium">
+              <div v-bind="tooltipProps" class="text-body-medium font-weight-medium">
                 {{ uploadDurationTime }}
               </div>
             </template>
@@ -60,22 +60,22 @@
           v-else-if="file.failed_timestamp || (!file.uploaded_timestamp && isTaskFailed)"
           class="d-flex justify-space-between align-center"
         >
-          <div class="text-body-2 font-weight-medium">Upload Status</div>
-          <div class="text-body-2 text-error d-flex align-center ga-1">
+          <div class="text-body-medium font-weight-medium">Upload Status</div>
+          <div class="text-body-medium text-error d-flex align-center ga-1">
             <span>Failed</span>
           </div>
         </div>
 
         <div v-else class="d-flex justify-space-between align-center">
-          <div class="text-body-2 font-weight-medium">Upload Status</div>
-          <div class="text-body-2 text-grey d-flex align-center ga-1">
+          <div class="text-body-medium font-weight-medium">Upload Status</div>
+          <div class="text-body-medium text-grey d-flex align-center ga-1">
             <v-progress-circular indeterminate size="16" width="2" color="primary" />
             <span>Uploading...</span>
           </div>
         </div>
 
         <div class="d-flex justify-space-between align-center">
-          <div class="text-body-2 font-weight-medium">Quality Check</div>
+          <div class="text-body-medium font-weight-medium">Quality Check</div>
           <div v-if="file.check_result !== undefined" class="d-flex align-center">
             <v-tooltip :text="`Return code: ${file.check_result}`">
               <template #activator="{ props: tooltipProps }">
@@ -102,13 +102,13 @@
               <v-icon size="small">mdi-download</v-icon>
             </v-btn>
           </div>
-          <div v-else class="text-body-2 text-grey">-</div>
+          <div v-else class="text-body-medium text-grey">-</div>
         </div>
 
         <div v-if="file.cms_notified" class="d-flex justify-space-between align-center">
-          <div class="text-body-2 font-weight-medium">CMS Status</div>
-          <div v-if="!cmsBookId" class="text-body-2 text-grey">-</div>
-          <div v-else-if="cmsChecking" class="text-body-2 text-grey d-flex align-center ga-1">
+          <div class="text-body-medium font-weight-medium">CMS Status</div>
+          <div v-if="!cmsBookId" class="text-body-medium text-grey">-</div>
+          <div v-else-if="cmsChecking" class="text-body-medium text-grey d-flex align-center ga-1">
             <v-progress-circular indeterminate size="16" width="2" color="primary" />
             <span>Checking...</span>
           </div>
@@ -129,7 +129,7 @@
                 </v-icon>
               </template>
             </v-tooltip>
-            <span class="text-body-2">
+            <span class="text-body-medium">
               {{ cmsTarget.kind === 'book' ? 'Published' : 'Notified' }}
             </span>
             <v-tooltip
@@ -153,7 +153,7 @@
               </template>
             </v-tooltip>
           </div>
-          <div v-else class="text-body-2 text-grey">Not found</div>
+          <div v-else class="text-body-medium text-grey">Not found</div>
         </div>
       </div>
     </v-card-text>

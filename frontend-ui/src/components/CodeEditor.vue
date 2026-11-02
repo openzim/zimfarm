@@ -163,7 +163,7 @@ watch(
 }
 
 .code-textarea::placeholder {
-  color: rgba(var(--v-theme-on-surface), 0.38);
+  color: var(--overlay-on-surface-38);
 }
 
 .code-textarea:focus {

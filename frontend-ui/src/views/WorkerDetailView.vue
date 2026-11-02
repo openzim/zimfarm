@@ -3,7 +3,7 @@
     <!-- Header -->
     <v-row class="mb-4">
       <v-col cols="12" class="d-flex flex-column flex-sm-row ga-2">
-        <code class="text-h6 mr-2">{{ workerName }}</code>
+        <code class="text-title-large mr-2">{{ workerName }}</code>
         <div class="d-flex flex-wrap flex-align-center ga-2">
           <v-chip
             :color="worker?.status === 'online' ? 'success' : 'dark'"
@@ -75,11 +75,11 @@
                     size="44"
                     width="4"
                   >
-                    <span class="text-caption">{{ percentCpu }}%</span>
+                    <span class="text-body-small">{{ percentCpu }}%</span>
                   </v-progress-circular>
                   <div class="ml-3">
-                    <div class="text-caption text-medium-emphasis">CPU</div>
-                    <div class="text-body-2">{{ usageCpu }}</div>
+                    <div class="text-body-small text-medium-emphasis">CPU</div>
+                    <div class="text-body-medium">{{ usageCpu }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -93,11 +93,11 @@
                     size="44"
                     width="4"
                   >
-                    <span class="text-caption">{{ percentMemory }}%</span>
+                    <span class="text-body-small">{{ percentMemory }}%</span>
                   </v-progress-circular>
                   <div class="ml-3">
-                    <div class="text-caption text-medium-emphasis">Memory</div>
-                    <div class="text-body-2">{{ usageMemory }}</div>
+                    <div class="text-body-small text-medium-emphasis">Memory</div>
+                    <div class="text-body-medium">{{ usageMemory }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -111,11 +111,11 @@
                     size="44"
                     width="4"
                   >
-                    <span class="text-caption">{{ percentDisk }}%</span>
+                    <span class="text-body-small">{{ percentDisk }}%</span>
                   </v-progress-circular>
                   <div class="ml-3">
-                    <div class="text-caption text-medium-emphasis">Disk</div>
-                    <div class="text-body-2">{{ usageDisk }}</div>
+                    <div class="text-body-small text-medium-emphasis">Disk</div>
+                    <div class="text-body-medium">{{ usageDisk }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -129,8 +129,8 @@
                 <div class="d-flex align-center">
                   <v-icon class="mr-2" color="primary">mdi-format-list-bulleted</v-icon>
                   <div>
-                    <div class="text-caption text-medium-emphasis">Total tasks</div>
-                    <div class="text-h6">{{ worker.nb_tasks_total }}</div>
+                    <div class="text-body-small text-medium-emphasis">Total tasks</div>
+                    <div class="text-title-large">{{ worker.nb_tasks_total }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -140,8 +140,8 @@
                 <div class="d-flex align-center">
                   <v-icon class="mr-2" color="info">mdi-flag-checkered</v-icon>
                   <div>
-                    <div class="text-caption text-medium-emphasis">Completed</div>
-                    <div class="text-h6">{{ worker.nb_tasks_completed }}</div>
+                    <div class="text-body-small text-medium-emphasis">Completed</div>
+                    <div class="text-title-large">{{ worker.nb_tasks_completed }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -151,8 +151,8 @@
                 <div class="d-flex align-center">
                   <v-icon class="mr-2" color="success">mdi-check-circle</v-icon>
                   <div>
-                    <div class="text-caption text-medium-emphasis">Succeeded</div>
-                    <div class="text-h6">{{ worker.nb_tasks_succeeded }}</div>
+                    <div class="text-body-small text-medium-emphasis">Succeeded</div>
+                    <div class="text-title-large">{{ worker.nb_tasks_succeeded }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -162,8 +162,8 @@
                 <div class="d-flex align-center">
                   <v-icon class="mr-2" color="error">mdi-close-circle</v-icon>
                   <div>
-                    <div class="text-caption text-medium-emphasis">Failed</div>
-                    <div class="text-h6">{{ worker.nb_tasks_failed }}</div>
+                    <div class="text-body-small text-medium-emphasis">Failed</div>
+                    <div class="text-title-large">{{ worker.nb_tasks_failed }}</div>
                   </div>
                 </div>
               </v-sheet>
@@ -173,7 +173,7 @@
           <v-row class="mt-2">
             <v-col cols="12" sm="3">
               <v-sheet rounded border class="pa-3">
-                <div class="text-subtitle-2 mb-2 d-flex align-center">
+                <div class="text-title-small mb-2 d-flex align-center">
                   <v-icon size="small" class="mr-1">mdi-shape</v-icon>
                   Contexts
                 </div>
@@ -185,7 +185,7 @@
                     color="primary"
                     variant="outlined"
                     density="comfortable"
-                    class="text-caption text-uppercase"
+                    class="text-body-small text-uppercase"
                   >
                     <template v-if="canUpdateWorkers && ip"> {{ ctx }}: {{ ip }} </template>
                     <template v-else>
@@ -196,7 +196,7 @@
 
                 <v-divider class="my-3" />
 
-                <div class="text-subtitle-2 mb-2 d-flex align-center">
+                <div class="text-title-small mb-2 d-flex align-center">
                   <v-icon size="small" class="mr-1">mdi-ip-network</v-icon>
                   Last IP
                   <v-tooltip v-if="worker.ip_changed" location="bottom">
@@ -208,13 +208,13 @@
                     <span>IP discrepancy detected between worker IP and context IPs</span>
                   </v-tooltip>
                 </div>
-                <div class="text-body-2">
+                <div class="text-body-medium">
                   {{ worker.last_ip || 'N/A' }}
                 </div>
 
                 <v-divider class="my-3" />
 
-                <div class="text-subtitle-2 mb-2 d-flex align-center">
+                <div class="text-title-small mb-2 d-flex align-center">
                   <v-icon size="small" class="mr-1">mdi-docker</v-icon>
                   Offliners
                 </div>
@@ -226,7 +226,7 @@
                     color="secondary"
                     variant="outlined"
                     density="comfortable"
-                    class="text-uppercase text-caption"
+                    class="text-uppercase text-body-small"
                   >
                     {{ off }}
                   </v-chip>
@@ -234,7 +234,7 @@
 
                 <v-divider class="my-3" />
 
-                <div class="text-subtitle-2 mb-2">
+                <div class="text-title-small mb-2">
                   <v-icon size="small" class="mr-1">mdi-docker</v-icon>
                   Docker Image
                   <v-chip
@@ -249,32 +249,32 @@
                 </div>
 
                 <!-- Current image -->
-                <div class="text-caption text-medium-emphasis mb-1">Current</div>
-                <div v-if="worker.docker_image" class="text-body-2">
+                <div class="text-body-small text-medium-emphasis mb-1">Current</div>
+                <div v-if="worker.docker_image" class="text-body-medium">
                   <div class="mb-1 d-flex align-center ga-1">
                     <span class="text-medium-emphasis">ID:</span>
                     <code class="text-break">{{ worker.docker_image.hash?.substring(7, 19) }}</code>
                   </div>
-                  <div class="text-caption text-medium-emphasis">
+                  <div class="text-body-small text-medium-emphasis">
                     Built {{ fromNow(worker.docker_image.created_at) }}
                   </div>
-                  <div v-if="isImageOutdated" class="text-caption text-warning mt-1">
+                  <div v-if="isImageOutdated" class="text-body-small text-warning mt-1">
                     <v-icon size="x-small" color="warning">mdi-clock-alert-outline</v-icon>
                     {{ imageAge }} behind latest
                   </div>
                 </div>
-                <div v-else class="text-body-2 text-medium-emphasis">N/A</div>
+                <div v-else class="text-body-medium text-medium-emphasis">N/A</div>
 
                 <!-- Latest image -->
                 <template v-if="latestImage">
                   <v-divider class="my-2" />
-                  <div class="text-caption text-medium-emphasis mb-1">Latest</div>
-                  <div class="text-body-2">
+                  <div class="text-body-small text-medium-emphasis mb-1">Latest</div>
+                  <div class="text-body-medium">
                     <div class="mb-1 d-flex align-center ga-1">
                       <span class="text-medium-emphasis">ID:</span>
                       <code class="text-break">{{ latestImage.hash?.substring(7, 19) }}</code>
                     </div>
-                    <div class="text-caption text-medium-emphasis">
+                    <div class="text-body-small text-medium-emphasis">
                       Released {{ fromNow(latestImage.created_at) }}
                     </div>
                   </div>
@@ -283,7 +283,7 @@
             </v-col>
             <v-col cols="12" sm="9">
               <v-sheet rounded border class="pa-3">
-                <div class="text-subtitle-2 mb-2">Running tasks</div>
+                <div class="text-title-small mb-2">Running tasks</div>
                 <v-data-table
                   :headers="runningTasksHeaders"
                   :items="worker.running_tasks"
@@ -346,26 +346,28 @@
                       :updated-at="item.updated_at"
                       :task-id="item.id"
                     />
-                    <span v-else class="text-caption">-</span>
+                    <span v-else class="text-body-small">-</span>
                   </template>
                 </v-data-table>
               </v-sheet>
 
               <!-- SSH Keys Section -->
               <v-sheet rounded border class="pa-3 mt-4">
-                <div class="text-subtitle-2 mb-2 d-flex align-center">
+                <div class="text-title-small mb-2 d-flex align-center">
                   <v-icon size="small" class="mr-1">mdi-key</v-icon>
                   SSH Keys
                 </div>
                 <div
                   v-if="!worker.ssh_keys || !worker.ssh_keys.length"
-                  class="text-body-2 text-medium-emphasis"
+                  class="text-body-medium text-medium-emphasis"
                 >
                   No SSH keys added
                 </div>
                 <template v-else>
                   <!-- Header (visible on md and up) -->
-                  <div class="d-none d-md-flex font-weight-medium text-body-2 pb-2 mb-2 border-b">
+                  <div
+                    class="d-none d-md-flex font-weight-medium text-body-medium pb-2 mb-2 border-b"
+                  >
                     <div class="flex-grow-1" style="flex-basis: 30%">SSH Key</div>
                     <div class="flex-grow-1" style="flex-basis: 50%">Fingerprint</div>
                     <div v-if="canManageSshKeys" style="flex-basis: 20%; min-width: 120px">
@@ -379,12 +381,12 @@
                     class="d-flex flex-column flex-md-row align-start align-md-center py-3 border-b"
                   >
                     <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 30%">
-                      <div class="text-caption text-medium-emphasis d-md-none">SSH Key</div>
-                      <div class="text-body-2">{{ sshKey.name }}</div>
+                      <div class="text-body-small text-medium-emphasis d-md-none">SSH Key</div>
+                      <div class="text-body-medium">{{ sshKey.name }}</div>
                     </div>
                     <div class="flex-grow-1 mb-2 mb-md-0" style="flex-basis: 50%">
-                      <div class="text-caption text-medium-emphasis d-md-none">Fingerprint</div>
-                      <code class="text-body-2">{{ sshKey.fingerprint }}</code>
+                      <div class="text-body-small text-medium-emphasis d-md-none">Fingerprint</div>
+                      <code class="text-body-medium">{{ sshKey.fingerprint }}</code>
                     </div>
                     <div
                       v-if="canManageSshKeys"
@@ -428,7 +430,7 @@
                 <v-divider class="my-2" />
                 <v-row>
                   <v-col cols="12">
-                    <p class="text-body-2 text-medium-emphasis">
+                    <p class="text-body-medium text-medium-emphasis">
                       Configure the contexts and IP addresses for this worker.
                     </p>
                   </v-col>
@@ -513,8 +515,8 @@
           <v-card v-else>
             <v-card-text class="text-center">
               <v-icon size="64" color="error">mdi-lock</v-icon>
-              <h3 class="text-h6 mt-4">Access Denied</h3>
-              <p class="text-body-2 text-medium-emphasis">
+              <h3 class="text-title-large mt-4">Access Denied</h3>
+              <p class="text-body-medium text-medium-emphasis">
                 You don't have permission to edit worker contexts.
               </p>
             </v-card-text>
@@ -522,7 +524,7 @@
 
           <!-- Add SSH Key -->
           <v-card v-if="canManageSshKeys" class="mt-4">
-            <v-card-title class="text-subtitle-1">
+            <v-card-title class="text-body-large">
               <v-icon class="mr-2">mdi-key-plus</v-icon>
               Add SSH Key
             </v-card-title>
@@ -569,8 +571,8 @@
     >
       <template #content>
         <div class="mb-4">
-          <h3 class="text-h6 mb-2">Changes Summary</h3>
-          <p class="text-body-2 text-medium-emphasis mb-3">
+          <h3 class="text-title-large mb-2">Changes Summary</h3>
+          <p class="text-body-medium text-medium-emphasis mb-3">
             Please review the changes below before confirming the update.
           </p>
         </div>
