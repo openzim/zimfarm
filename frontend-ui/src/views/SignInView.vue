@@ -7,17 +7,17 @@
   - supports Ory.sh OAuth2 authentication -->
 
 <template>
-  <v-container class="fill-height">
-    <v-row justify="center" align="center">
+  <v-container class="fill-height d-flex align-center flex-wrap">
+    <v-row class="justify-center align-center">
       <v-col cols="12" sm="8" md="6" lg="4">
-        <v-card class="elevation-12">
+        <v-card class="elevation-4">
           <v-card-text class="text-center pa-4">
             <!-- Logo -->
             <div class="mb-3">
               <img src="/assets/logo.svg" alt="Zimfarm Logo" width="48" height="48" />
             </div>
 
-            <h1 class="text-h5 mb-4 font-weight-medium">Please sign in</h1>
+            <h1 class="text-headline-small mb-4 font-weight-medium">Please sign in</h1>
 
             <!-- Sign In Form -->
             <v-form v-if="showLocalLogin" @submit.prevent="authenticate" ref="form">
@@ -106,7 +106,7 @@
             </v-btn>
 
             <!-- Contact Email -->
-            <div class="text-caption text-medium-emphasis">
+            <div class="text-body-small text-medium-emphasis">
               <a :href="`mailto:${contactEmail}`" class="text-decoration-none">
                 {{ contactEmail }}
               </a>
@@ -230,7 +230,7 @@ const signInWithKiwix = async () => {
 }
 
 .v-divider {
-  color: rgba(var(--v-theme-on-surface), 0.12);
+  color: var(--overlay-on-surface-12);
 }
 
 .kiwix-icon {

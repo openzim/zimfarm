@@ -23,7 +23,7 @@
     <!-- Header -->
     <v-row class="mb-4">
       <v-col cols="12" sm="4" md="3" lg="2">
-        <code class="text-h6">#{{ shortId }}</code>
+        <code class="text-title-large">#{{ shortId }}</code>
       </v-col>
       <v-col cols="12" sm="8" md="9" lg="10" v-if="recipeName">
         <router-link
@@ -33,7 +33,7 @@
           }"
           class="text-decoration-none"
         >
-          <code class="text-h6 text-primary">
+          <code class="text-title-large text-primary">
             {{ recipeName }}
           </code>
         </router-link>
@@ -71,7 +71,7 @@
               <div class="ml-4 mr-4 mt-2 mb-2">
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">ID</div>
+                    <div class="text-title-small">ID</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <code>{{ id }}</code
@@ -85,7 +85,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Recipe</div>
+                    <div class="text-title-small">Recipe</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <span v-if="task.recipe_name === null || task.recipe_name === 'none'">
@@ -106,7 +106,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Status</div>
+                    <div class="text-title-small">Status</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <StatusDisplay
@@ -122,7 +122,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Worker</div>
+                    <div class="text-title-small">Worker</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <router-link
@@ -137,7 +137,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Started On</div>
+                    <div class="text-title-small">Started On</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     {{ formatDt(startedOn) }}, after
@@ -148,7 +148,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Duration</div>
+                    <div class="text-title-small">Duration</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     {{ taskDuration }}<span v-if="isRunning"> (<strong>Ongoing</strong>)</span>
@@ -158,7 +158,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Events</div>
+                    <div class="text-title-small">Events</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <v-data-table
@@ -202,7 +202,7 @@
 
                 <v-row v-if="task.files" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Files</div>
+                    <div class="text-title-small">Files</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <v-row>
@@ -237,7 +237,7 @@
               <div class="ml-4 mr-4 mt-2 mb-2">
                 <v-row v-if="task.config" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Offliner</div>
+                    <div class="text-title-small">Offliner</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <a target="_blank" :href="imageUrl">
@@ -251,7 +251,7 @@
 
                 <v-row v-if="task.config" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Offliner Definition</div>
+                    <div class="text-title-small">Offliner Definition</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <code>{{ task.version }}</code>
@@ -261,7 +261,7 @@
 
                 <v-row v-if="task.config" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Resources</div>
+                    <div class="text-title-small">Resources</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <div class="d-flex flex-row flex-wrap ga-1">
@@ -286,7 +286,7 @@
 
                 <v-row v-if="task.config" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Platform</div>
+                    <div class="text-title-small">Platform</div>
                   </v-col>
                   <v-col cols="12" md="9">{{ task.config.platform || '-' }}</v-col>
                 </v-row>
@@ -294,7 +294,7 @@
 
                 <v-row v-if="task.config" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Config</div>
+                    <div class="text-title-small">Config</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <FlagsList
@@ -309,7 +309,7 @@
                 <v-row v-if="taskContainer?.command" no-gutters class="py-2">
                   <v-col cols="12" md="3">
                     <div
-                      class="text-subtitle-2 d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
+                      class="text-title-small d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
                     >
                       <span> Command </span>
                       <v-btn
@@ -331,7 +331,7 @@
 
                 <v-row v-if="taskContainer?.exit_code != null" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Exit-code</div>
+                    <div class="text-title-small">Exit-code</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <code class="text-pink-accent-2">{{ taskContainer.exit_code }}</code>
@@ -341,7 +341,7 @@
 
                 <v-row v-if="hasStats" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Stats</div>
+                    <div class="text-title-small">Stats</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <div class="d-flex flex-wrap ga-2">
@@ -393,7 +393,7 @@
 
                 <v-row v-if="taskProgress" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Scraper progress</div>
+                    <div class="text-title-small">Scraper progress</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     {{ taskProgress.overall }}% ({{ taskProgress.done }} / {{ taskProgress.total }})
@@ -414,7 +414,7 @@
                 <v-row v-if="taskContainer?.stdout" no-gutters class="py-2">
                   <v-col cols="12" md="3">
                     <div
-                      class="text-subtitle-2 d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
+                      class="text-title-small d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
                     >
                       <span>
                         Scraper stdout
@@ -445,7 +445,7 @@
                 <v-row v-if="taskContainer?.stderr" no-gutters class="py-2">
                   <v-col cols="12" md="3">
                     <div
-                      class="text-subtitle-2 d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
+                      class="text-title-small d-flex flex-row flex-md-column ga-2 pa-2 align-center align-md-stretch"
                     >
                       <span> Scraper stderr </span>
                       <v-btn
@@ -467,7 +467,7 @@
 
                 <v-row v-if="taskContainer?.log" no-gutters class="py-2">
                   <v-col cols="12">
-                    <div class="text-subtitle-2 d-flex flex-row ga-2 pa-2 align-center">
+                    <div class="text-title-small d-flex flex-row ga-2 pa-2 align-center">
                       <span> Scraper Log </span>
                       <v-btn
                         variant="outlined"
@@ -485,7 +485,7 @@
 
                 <v-row v-if="taskContainer?.artifacts" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Scraper Artifacts</div>
+                    <div class="text-title-small">Scraper Artifacts</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <v-btn
@@ -502,7 +502,7 @@
 
                 <v-row v-if="taskDebug.exception" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Exception</div>
+                    <div class="text-title-small">Exception</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <pre>{{ taskDebug.exception }}</pre>
@@ -512,7 +512,7 @@
 
                 <v-row v-if="taskDebug.traceback" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Traceback</div>
+                    <div class="text-title-small">Traceback</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <pre>{{ taskDebug.traceback }}</pre>
@@ -522,7 +522,7 @@
 
                 <v-row v-if="taskDebug.log" no-gutters class="py-2">
                   <v-col cols="12" md="3">
-                    <div class="text-subtitle-2">Task-worker Log</div>
+                    <div class="text-title-small">Task-worker Log</div>
                   </v-col>
                   <v-col cols="12" md="9">
                     <pre>{{ taskDebug.log }}</pre>

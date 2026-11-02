@@ -202,7 +202,7 @@ const router = createRouter({
 })
 
 // Add global navigation guard to update title
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   // Update document title
   if (to.meta.title) {
     if (typeof to.meta.title === 'function') {
@@ -215,7 +215,6 @@ router.beforeEach((to, from, next) => {
   } else {
     document.title = 'Zimfarm' // fallback
   }
-  next()
 })
 
 export default router

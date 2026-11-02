@@ -1,14 +1,14 @@
 <template>
   <v-alert type="error" variant="tonal" class="mb-4 mx-auto" width="auto">
-    <div class="text-body-1 mb-2">
+    <div class="text-body-large mb-2">
       You are about to <strong>permanently delete</strong> {{ description }} <code>{{ name }}</code
       >.
     </div>
 
     <v-form @submit.prevent="confirmDelete">
-      <v-row dense>
+      <v-row density="compact">
         <v-col cols="12">
-          <span class="text-body-2">
+          <span class="text-body-medium">
             Please type its <em>{{ property }}</em> to confirm:
           </span>
         </v-col>

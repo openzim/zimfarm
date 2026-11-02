@@ -48,7 +48,7 @@
 
         <template v-if="hasLocalAuth">
           <v-divider class="my-4"></v-divider>
-          <div class="text-subtitle-1 mb-2 font-weight-bold">Local Authentication</div>
+          <div class="text-body-large mb-2 font-weight-bold">Local Authentication</div>
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field
@@ -81,7 +81,7 @@
 
         <template v-if="hasOauth">
           <v-divider class="my-4"></v-divider>
-          <div class="text-subtitle-1 mb-2 font-weight-bold">External Identity Provider</div>
+          <div class="text-body-large mb-2 font-weight-bold">External Identity Provider</div>
           <v-row>
             <v-col cols="12" md="6">
               <v-text-field

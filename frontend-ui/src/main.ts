@@ -18,7 +18,6 @@ import * as directives from 'vuetify/directives'
 
 import { createPinia } from 'pinia'
 import VueMatomo from 'vue-matomo'
-import { VColorInput } from 'vuetify/labs/VColorInput'
 
 // config
 import getConfig, { configPlugin } from '@/config'
@@ -26,6 +25,7 @@ import getConfig, { configPlugin } from '@/config'
 import router from '@/router'
 
 import App from '@/App.vue'
+import { BREAKPOINTS } from '@/constants/breakpoints'
 import constants from '@/constants'
 
 // Register highlight.js languages
@@ -37,13 +37,14 @@ hljs.registerLanguage('plaintext', plaintext)
 const app = createApp(App)
 
 const vuetify = createVuetify({
-  components: {
-    ...components,
-    VColorInput,
-  },
+  components,
   directives,
   theme: {
     defaultTheme: 'system',
+  },
+  display: {
+    // Keep the Vuetify 3 breakpoints used by the existing layouts.
+    thresholds: { ...BREAKPOINTS },
   },
 })
 

@@ -18,11 +18,11 @@
                         <span class="diff-symbol text-center mr-1 font-weight-bold">{{
                           getDiffSymbol(diff.type)
                         }}</span>
-                        <span class="text-caption text-high-emphasis mr-4 text-break">{{
+                        <span class="text-body-small text-high-emphasis mr-4 text-break">{{
                           diff.path
                         }}</span>
                       </div>
-                      <div class="text-body-2 text-break flex-grow-1">
+                      <div class="text-body-medium text-break flex-grow-1">
                         <template v-if="diff.type === 'modified' && diff.oldValue">
                           <span class="text-error">{{ diff.oldValue }}</span>
                           <span class="mx-2 text-medium-emphasis">→</span>
@@ -48,13 +48,13 @@
                         <span class="diff-symbol text-center mr-1 font-weight-bold">{{
                           getDiffSymbol(item.type)
                         }}</span>
-                        <span class="text-caption text-high-emphasis mr-4 text-break">{{
+                        <span class="text-body-small text-high-emphasis mr-4 text-break">{{
                           item.path
                         }}</span>
                       </div>
 
                       <!-- Simple format for small screens -->
-                      <div class="text-body-2 text-break flex-grow-1 d-flex d-sm-none">
+                      <div class="text-body-medium text-break flex-grow-1 d-flex d-sm-none">
                         <v-chip size="x-small" color="info" variant="tonal" class="mr-2">
                           {{ item.blobKind }}
                         </v-chip>
@@ -69,7 +69,7 @@
                       </div>
 
                       <!-- Enhanced viewer for larger screens -->
-                      <div class="text-body-2 flex-grow-1 d-none d-sm-block">
+                      <div class="text-body-medium flex-grow-1 d-none d-sm-block">
                         <v-chip size="x-small" color="info" variant="tonal" class="mr-2">
                           {{ item.blobKind }}
                         </v-chip>
@@ -110,8 +110,8 @@
       <v-card flat class="d-flex align-center justify-center" height="200">
         <v-card-text class="text-center text-medium-emphasis">
           <v-icon size="large" color="success" class="mb-2">mdi-check-circle</v-icon>
-          <div class="text-h6">No differences found</div>
-          <div class="text-body-2">The configurations are identical</div>
+          <div class="text-title-large">No differences found</div>
+          <div class="text-body-medium">The configurations are identical</div>
         </v-card-text>
       </v-card>
     </template>

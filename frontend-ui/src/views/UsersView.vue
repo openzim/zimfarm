@@ -11,7 +11,7 @@
     <div v-show="canReadUsers">
       <v-card class="mb-4" flat>
         <v-card-text>
-          <v-row align="center">
+          <v-row class="align-center">
             <v-col cols="12" sm="8">
               <v-text-field
                 v-model="searchUsername"
@@ -59,7 +59,7 @@
     <!-- Create User Dialog -->
     <v-dialog v-model="showCreateDialog" max-width="600" persistent>
       <v-card>
-        <v-card-title class="text-h6 bg-primary">
+        <v-card-title class="text-title-large bg-primary">
           <v-icon class="mr-2">mdi-account-plus</v-icon>
           Create New User
         </v-card-title>

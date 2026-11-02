@@ -30,7 +30,7 @@
       </v-btn>
     </div>
 
-    <div class="text-caption text-medium-emphasis mb-4">
+    <div class="text-body-small text-medium-emphasis mb-4">
       The recipe belongs to these teams. At least one team is required.
     </div>
 
@@ -397,9 +397,9 @@
             },
           ]"
         >
-          <div class="text-subtitle-2">
+          <div class="text-title-small">
             {{ field.label }}
-            <span v-if="field.required" class="text-red font-weight-bold text-subtitle-1">*</span>
+            <span v-if="field.required" class="text-red font-weight-bold text-body-large">*</span>
           </div>
         </v-col>
         <v-col cols="12" md="9">
@@ -581,7 +581,7 @@
                       }}
                     </v-chip>
                   </template>
-                  <div class="text-caption">
+                  <div class="text-body-small">
                     {{ item.url }}
                   </div>
                 </v-tooltip>
@@ -599,7 +599,7 @@
                       {{ item.raw.substring(0, 12) + (item.raw.length > 12 ? '...' : '') }}
                     </v-chip>
                   </template>
-                  <span class="text-caption">Unknown YouTube ID format</span>
+                  <span class="text-body-small">Unknown YouTube ID format</span>
                 </v-tooltip>
               </template>
             </div>
@@ -641,8 +641,8 @@
   >
     <template #content>
       <div class="mb-4">
-        <h3 class="text-h6 mb-2">Changes Summary</h3>
-        <p class="text-body-2 text-medium-emphasis mb-3">
+        <h3 class="text-title-large mb-2">Changes Summary</h3>
+        <p class="text-body-medium text-medium-emphasis mb-3">
           Please review the changes below and optionally add a comment describing what you've
           modified.
         </p>
@@ -1098,12 +1098,10 @@ const hasChanges = computed<boolean>(() => {
   const editedContext = editRecipe.value.context
   if (originalContext !== editedContext) {
     // Consider null and empty string as equivalent
-    if (
-      !(
-        (originalContext === null || originalContext === '') &&
-        (editedContext === null || editedContext === '')
-      )
-    ) {
+    if (!(
+      (originalContext === null || originalContext === '') &&
+      (editedContext === null || editedContext === '')
+    )) {
       return true
     }
   }
@@ -1706,12 +1704,10 @@ const buildPayload = (): RecipeUpdateSchema | null => {
   const editedContext = editRecipe.value.context
   if (originalContext !== editedContext) {
     // Consider null and empty string as equivalent
-    if (
-      !(
-        (originalContext === null || originalContext === '') &&
-        (editedContext === null || editedContext === '')
-      )
-    ) {
+    if (!(
+      (originalContext === null || originalContext === '') &&
+      (editedContext === null || editedContext === '')
+    )) {
       // If edited context is null (because the user cleared the field), set it to an
       // empty string as the API expects a string. Null values are considered as unset.
       payload.context = editedContext || ''

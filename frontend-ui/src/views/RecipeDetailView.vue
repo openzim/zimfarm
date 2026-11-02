@@ -25,7 +25,7 @@
     <!-- Title Row -->
     <v-row v-if="ready && recipe" class="mb-4">
       <v-col>
-        <h2 class="text-h6 text-md-h4">
+        <h2 class="text-title-large text-md-headline-large">
           <code>{{ recipe.name }}</code>
         </h2>
       </v-col>
@@ -34,7 +34,7 @@
     <!-- Loading State -->
     <div v-if="!ready && !error" class="text-center pa-8">
       <v-progress-circular indeterminate size="64" color="primary" />
-      <div class="mt-4 text-body-1">Loading recipe data...</div>
+      <div class="mt-4 text-body-large">Loading recipe data...</div>
     </div>
 
     <!-- Content -->
@@ -168,7 +168,7 @@
               <div class="ml-4 mr-4 mt-2 mb-2">
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">API</div>
+                    <div class="text-title-small">API</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <a
@@ -185,7 +185,7 @@
 
                 <v-row v-if="recipe?.teams?.length" no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Teams</div>
+                    <div class="text-title-small">Teams</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <div class="d-flex flex-row flex-wrap">
@@ -208,7 +208,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Language</div>
+                    <div class="text-title-small">Language</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     {{ recipe.language.name }}
@@ -220,7 +220,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Enabled</div>
+                    <div class="text-title-small">Enabled</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <v-chip
@@ -236,7 +236,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Archived</div>
+                    <div class="text-title-small">Archived</div>
                   </v-col>
                   <v-col cols="12" md="8">{{ recipe?.archived ? 'Yes' : 'No' }}</v-col>
                 </v-row>
@@ -244,7 +244,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Periodicity</div>
+                    <div class="text-title-small">Periodicity</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <code>{{ recipe?.periodicity }}</code>
@@ -254,7 +254,7 @@
 
                 <v-row v-if="recipe?.tags?.length" no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Tags</div>
+                    <div class="text-title-small">Tags</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <div class="d-flex flex-row flex-wrap">
@@ -265,7 +265,7 @@
                         color="primary"
                         variant="outlined"
                         density="comfortable"
-                        class="mr-2 mb-1 text-caption text-uppercase"
+                        class="mr-2 mb-1 text-body-small text-uppercase"
                       >
                         {{ tag }}
                       </v-chip>
@@ -276,7 +276,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Context</div>
+                    <div class="text-title-small">Context</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <v-chip
@@ -285,7 +285,7 @@
                       variant="outlined"
                       density="comfortable"
                       color="primary"
-                      class="mr-2 mb-1 text-caption text-uppercase"
+                      class="mr-2 mb-1 text-body-small text-uppercase"
                     >
                       {{ recipe.context }}
                     </v-chip>
@@ -295,7 +295,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Last run</div>
+                    <div class="text-title-small">Last run</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <StatusDisplay
@@ -315,7 +315,7 @@
 
                 <v-row v-if="recipeDurationDict" no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Scraper Duration</div>
+                    <div class="text-title-small">Scraper Duration</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <span v-if="recipeDurationDict.single">
@@ -372,7 +372,7 @@
 
                 <v-row v-if="totalDurationDict" no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Total Duration</div>
+                    <div class="text-title-small">Total Duration</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <span v-if="totalDurationDict.single">
@@ -429,7 +429,7 @@
 
                 <v-row v-if="!canRequestTasks" no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Requested</div>
+                    <div class="text-title-small">Requested</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <div v-if="loadingRequestedTask">
@@ -460,7 +460,7 @@
                 <div>
                   <v-row no-gutters class="py-2">
                     <v-col cols="12" md="4">
-                      <div class="text-subtitle-2">History</div>
+                      <div class="text-title-small">History</div>
                     </v-col>
                     <v-col cols="12" md="8">
                       <div class="text-grey-darken-1"></div>
@@ -483,7 +483,7 @@
                       <template #no-data>
                         <div class="text-center pa-4">
                           <v-icon size="x-large" class="mb-2">mdi-format-list-bulleted</v-icon>
-                          <div class="text-h6 text-grey-darken-1 mb-2">No history</div>
+                          <div class="text-title-large text-grey-darken-1 mb-2">No history</div>
                         </div>
                       </template>
 
@@ -538,7 +538,7 @@
               <div class="ml-4 mr-4 mt-2 mb-2">
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Offliner</div>
+                    <div class="text-title-small">Offliner</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <code>{{ offliner }}</code>
@@ -548,7 +548,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Offliner Definition</div>
+                    <div class="text-title-small">Offliner Definition</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <code>{{ recipe.version }}</code>
@@ -558,7 +558,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Platform</div>
+                    <div class="text-title-small">Platform</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <code>{{ platform || '-' }}</code>
@@ -568,7 +568,7 @@
 
                 <v-row no-gutters class="py-2" v-if="!appConfig.DISABLE_WAREHOUSE_PATH">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Warehouse Path</div>
+                    <div class="text-title-small">Warehouse Path</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <code>{{ warehousePath }}</code>
@@ -578,7 +578,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Image</div>
+                    <div class="text-title-small">Image</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <a target="_blank" :href="imageUrl" class="text-decoration-none">
@@ -590,7 +590,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Resources</div>
+                    <div class="text-title-small">Resources</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <div class="d-flex flex-row flex-wrap ga-1">
@@ -619,7 +619,7 @@
 
                 <v-row v-if="recipe?.config?.artifacts_globs" no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Artifacts</div>
+                    <div class="text-title-small">Artifacts</div>
                   </v-col>
                   <v-col cols="12" md="8">
                     <code class="text-pink-accent-2">{{ recipe?.config?.artifacts_globs }}</code>
@@ -629,7 +629,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">Config</div>
+                    <div class="text-title-small">Config</div>
                   </v-col>
                   <v-col cols="12" md="8" class="text-break">
                     <FlagsList :offliner="config.offliner" :flags-definition="flagsDefinition" />
@@ -639,7 +639,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">
+                    <div class="text-title-small">
                       Command
                       <v-btn
                         size="small"
@@ -660,7 +660,7 @@
 
                 <v-row no-gutters class="py-2">
                   <v-col cols="12" md="4">
-                    <div class="text-subtitle-2">
+                    <div class="text-title-small">
                       Offliner Command
                       <v-btn
                         size="small"
@@ -759,7 +759,7 @@
         <v-window-item value="similar">
           <v-card flat>
             <v-card-text>
-              <div class="mb-4 text-body-1">
+              <div class="mb-4 text-body-large">
                 Recipes similar to <code>{{ recipe.name }}</code>
               </div>
               <RecipesTable

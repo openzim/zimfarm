@@ -9,7 +9,7 @@
 
         <!-- Fallback to simple URL display on error -->
         <div v-else-if="loadFailed" class="pa-4">
-          <div class="text-body-2 text-break">
+          <div class="text-body-medium text-break">
             <span v-if="oldBlobUrl" class="text-error text-break">{{ oldBlobUrl }}</span>
             <span v-else class="text-medium-emphasis">null</span>
             <span class="mx-2 text-medium-emphasis">→</span>
@@ -22,10 +22,10 @@
         <div v-else-if="isImage" class="image-comparison">
           <v-row no-gutters>
             <v-col cols="6" class="pa-4 border-right">
-              <div class="text-caption text-medium-emphasis mb-2">Previous</div>
+              <div class="text-body-small text-medium-emphasis mb-2">Previous</div>
               <div v-if="!oldBlobUrl" class="pa-4 text-center text-medium-emphasis">
                 <v-icon size="large" class="mb-2">mdi-image-off</v-icon>
-                <div class="text-caption">No previous image/illustration</div>
+                <div class="text-body-small">No previous image/illustration</div>
               </div>
               <v-img
                 v-else-if="oldBlobContent"
@@ -35,15 +35,15 @@
                 alt="Previous image/illustration"
                 class="border rounded"
               />
-              <div v-else class="text-caption text-error">
+              <div v-else class="text-body-small text-error">
                 Failed to load previous image/illustration
               </div>
             </v-col>
             <v-col cols="6" class="pa-4">
-              <div class="text-caption text-medium-emphasis mb-2">Current</div>
+              <div class="text-body-small text-medium-emphasis mb-2">Current</div>
               <div v-if="!newBlobUrl" class="pa-4 text-center text-medium-emphasis">
                 <v-icon size="large" class="mb-2">mdi-image-off</v-icon>
-                <div class="text-caption">No current image/illustration (removed)</div>
+                <div class="text-body-small">No current image/illustration (removed)</div>
               </div>
               <v-img
                 v-else-if="newBlobContent"
@@ -53,7 +53,7 @@
                 alt="Current image/illustration"
                 class="border rounded"
               />
-              <div v-else class="text-caption text-error">
+              <div v-else class="text-body-small text-error">
                 Failed to load current image/illustration
               </div>
             </v-col>
@@ -68,8 +68,8 @@
         <!-- No differences -->
         <div v-else-if="!diffHtml && !loading && !loadFailed" class="pa-8 text-center">
           <v-icon size="large" color="success" class="mb-2">mdi-check-circle</v-icon>
-          <div class="text-h6">No differences found</div>
-          <div class="text-body-2 text-medium-emphasis">The blob contents are identical</div>
+          <div class="text-title-large">No differences found</div>
+          <div class="text-body-medium text-medium-emphasis">The blob contents are identical</div>
         </div>
       </v-card-text>
     </v-card>

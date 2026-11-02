@@ -1,5 +1,5 @@
 {
-  "extends": "@tsconfig/node22/tsconfig.json",
+  "extends": "@tsconfig/node26/tsconfig.json",
   "include": [
     "vite.config.*",
     "vitest.config.*",
@@ -14,6 +14,7 @@
 
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
     "types": ["node", "vite/client"]
   }
 }

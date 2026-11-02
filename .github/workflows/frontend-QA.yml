@@ -12,7 +12,7 @@ on:
 
 jobs:
   check-qa:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Retrieve source code
@@ -30,6 +30,10 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Check linting
+        working-directory: frontend-ui
+        run: yarn lint-check
+
+      - name: Check typing
         working-directory: frontend-ui
         run: yarn type-check
 

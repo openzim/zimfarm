@@ -1,7 +1,7 @@
 <template>
-  <v-row v-if="modelValue" dense>
+  <v-row v-if="modelValue" density="compact">
     <v-col cols="12">
-      <h3 class="text-subtitle-1">{{ eventTitle }}</h3>
+      <h3 class="text-body-large">{{ eventTitle }}</h3>
     </v-col>
     <v-col cols="12" sm="4">
       <v-combobox

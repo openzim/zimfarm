@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="isOpen" max-width="800">
     <v-card>
-      <v-card-title class="d-flex align-center bg-primary text-white text-subtitle-1">
+      <v-card-title class="d-flex align-center bg-primary text-white text-body-large">
         <v-icon class="mr-2">mdi-stethoscope</v-icon>
         <span v-if="!isDone && task">
           Running diagnostics for task <strong>{{ shortId }}</strong>

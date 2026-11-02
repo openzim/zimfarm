@@ -29,8 +29,7 @@ export interface ConfigWithOnlyOffliner {
 }
 
 export interface ConfigWithOnlyOfflinerAndResources
-  extends ConfigWithOnlyResources,
-    ConfigWithOnlyOffliner {}
+  extends ConfigWithOnlyResources, ConfigWithOnlyOffliner {}
 
 export interface DockerImage {
   name: string

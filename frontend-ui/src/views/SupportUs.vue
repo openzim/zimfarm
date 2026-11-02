@@ -1,14 +1,16 @@
 <template>
   <v-container class="py-8">
-    <v-row justify="center">
+    <v-row class="justify-center">
       <v-col cols="12" md="10" lg="8">
         <v-card class="pa-4 pa-sm-6" variant="flat">
           <v-card-title class="d-flex align-center mb-4 flex-wrap">
-            <h2 class="text-h5 text-sm-h4 font-weight-bold">Support Zimfarm</h2>
+            <h2 class="text-headline-small text-sm-headline-large font-weight-bold">
+              Support Zimfarm
+            </h2>
             <img src="/assets/logo.svg" width="32" height="32" class="ml-2" alt="Zimfarm Logo" />
           </v-card-title>
 
-          <v-card-text class="text-body-1">
+          <v-card-text class="text-body-large">
             <p class="mb-4">
               Zimfarm is
               <a href="https://kiwix.org" target="_blank" class="text-primary text-decoration-none">
@@ -28,7 +30,7 @@
 
             <div class="mb-4">
               <div
-                class="text-subtitle-1 text-sm-h6 font-weight-bold d-flex align-center flex-wrap mb-2"
+                class="text-body-large text-sm-title-large font-weight-bold d-flex align-center flex-wrap mb-2"
               >
                 <v-icon class="mr-2">mdi-heart</v-icon>
                 <span>Support with Donations</span>
@@ -50,7 +52,7 @@
 
             <div class="mb-2">
               <div
-                class="text-subtitle-1 text-sm-h6 font-weight-bold d-flex align-center flex-wrap mb-2"
+                class="text-body-large text-sm-title-large font-weight-bold d-flex align-center flex-wrap mb-2"
               >
                 <v-icon class="mr-2">mdi-server</v-icon>
                 <span>Donate a Worker</span>

@@ -13,14 +13,14 @@
     <!-- Loading state when data hasn't been loaded yet -->
     <div v-if="canReadAccounts && !dataLoaded && loadingStore.isLoading" class="text-center pa-8">
       <v-progress-circular indeterminate size="64" />
-      <div class="mt-4 text-body-1">{{ loadingStore.loadingText }}</div>
+      <div class="mt-4 text-body-large">{{ loadingStore.loadingText }}</div>
     </div>
 
     <!-- Content only shown when data is loaded -->
     <div v-if="canReadAccounts && dataLoaded">
       <v-row>
         <v-col cols="12">
-          <h2 class="text-h4 mb-4">
+          <h2 class="text-headline-large mb-4">
             <code>{{ user?.display_name }}</code>
             <span v-if="user">
               (<code>{{ user.role }}</code
@@ -67,7 +67,7 @@
                       <!-- Basic Info Card -->
                       <v-col cols="12">
                         <v-card variant="outlined" class="h-100">
-                          <v-card-title class="text-subtitle-1">
+                          <v-card-title class="text-body-large">
                             <v-icon class="mr-2">mdi-card-account-details</v-icon>
                             Basic Information
                           </v-card-title>
@@ -107,7 +107,7 @@
                       <!-- Authentication Card -->
                       <v-col cols="12" v-if="user.username || user.idp_sub">
                         <v-card variant="outlined" class="h-100">
-                          <v-card-title class="text-subtitle-1">
+                          <v-card-title class="text-body-large">
                             <v-icon class="mr-2">mdi-shield-key-outline</v-icon>
                             Authentication
                           </v-card-title>
@@ -118,13 +118,13 @@
                                 <div class="d-flex align-center mt-1">
                                   <span class="mr-2">Username:</span>
                                   <code v-if="user.username">{{ user.username }}</code>
-                                  <span v-else class="text-medium-emphasis text-body-2"
+                                  <span v-else class="text-medium-emphasis text-body-medium"
                                     >Not set</span
                                   >
                                 </div>
                                 <div class="d-flex align-center mt-1">
                                   <span class="mr-2">Password:</span>
-                                  <span class="text-body-2">{{
+                                  <span class="text-body-medium">{{
                                     user.has_password ? '**********' : 'Not set'
                                   }}</span>
                                 </div>
@@ -152,14 +152,14 @@
 
                     <!-- Permissions List -->
                     <v-card class="mb-4" variant="outlined">
-                      <v-card-title class="text-subtitle-1">
+                      <v-card-title class="text-body-large">
                         <v-icon class="mr-2">mdi-shield-account</v-icon>
                         Permissions
                       </v-card-title>
                       <v-card-text>
                         <div
                           v-if="Object.keys(scope).length === 0"
-                          class="text-body-2 text-medium-emphasis"
+                          class="text-body-medium text-medium-emphasis"
                         >
                           No permissions assigned
                         </div>
@@ -174,7 +174,7 @@
                               </v-icon>
                             </template>
 
-                            <v-list-item-title class="text-body-1 font-weight-medium">
+                            <v-list-item-title class="text-body-large font-weight-medium">
                               {{ formatNamespaceName(namespace) }}
                             </v-list-item-title>
 
@@ -190,7 +190,7 @@
                                     namespacePermissions[permissionName] ? 'flat' : 'outlined'
                                   "
                                   size="x-small"
-                                  class="text-caption text-uppercase"
+                                  class="text-body-small text-uppercase"
                                 >
                                   {{ formatPermissionName(permissionName) }}
                                 </v-chip>

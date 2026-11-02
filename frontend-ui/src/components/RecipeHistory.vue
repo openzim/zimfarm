@@ -34,7 +34,7 @@
               </template>
 
               <v-list-item-content>
-                <v-list-item-title class="text-subtitle-2">
+                <v-list-item-title class="text-title-small">
                   <template v-if="item.comment">
                     <span class="text-wrap">{{ item.comment }}</span>
                   </template>
@@ -43,15 +43,15 @@
 
                 <v-list-item-subtitle>
                   <div class="d-flex flex-column-reverse flex-sm-row justify-space-between mt-2">
-                    <div class="text-caption">
+                    <div class="text-body-small">
                       <v-icon size="small" class="me-1">mdi-identifier</v-icon>
                       {{ item.id.substring(0, 8) }}
                     </div>
-                    <div class="text-caption">
+                    <div class="text-body-small">
                       <v-icon size="small" class="me-1">mdi-account</v-icon>
                       {{ item.author }}
                     </div>
-                    <div class="text-subtitle-2">
+                    <div class="text-title-small">
                       <v-icon size="small" class="me-1">mdi-clock-outline</v-icon>
                       {{ formatDt(item.created_at, 'ff') }}
                     </div>
@@ -87,7 +87,7 @@
       <!-- Diff Viewer -->
       <template v-else>
         <v-card>
-          <v-card-title class="d-flex align-center text-wrap text-body-1">
+          <v-card-title class="d-flex align-center text-wrap text-body-large">
             <v-btn icon="mdi-arrow-left" variant="text" @click="backToHistoryList" class="me-2" />
             Comparing History Items
           </v-card-title>
@@ -118,7 +118,9 @@
       <v-row>
         <v-col cols="12" class="d-flex flex-column align-center justify-center">
           <v-icon size="x-large" color="grey" class="mb-4">mdi-history</v-icon>
-          <div class="text-h6 text-medium-emphasis">No history available for this recipe</div>
+          <div class="text-title-large text-medium-emphasis">
+            No history available for this recipe
+          </div>
         </v-col>
       </v-row>
     </template>

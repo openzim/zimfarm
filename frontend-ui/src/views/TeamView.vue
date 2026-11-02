@@ -8,14 +8,14 @@
     <!-- Loading state when data hasn't been loaded yet -->
     <div v-if="!dataLoaded && loadingStore.isLoading" class="text-center pa-8">
       <v-progress-circular indeterminate size="64" />
-      <div class="mt-4 text-body-1">{{ loadingStore.loadingText }}</div>
+      <div class="mt-4 text-body-large">{{ loadingStore.loadingText }}</div>
     </div>
 
     <!-- Content only shown when data is loaded -->
     <div v-if="dataLoaded">
       <v-row>
         <v-col cols="12">
-          <h2 class="text-h6 text-md-h4">
+          <h2 class="text-title-large text-md-headline-large">
             <code>{{ team?.name }}</code>
           </h2>
 
@@ -55,7 +55,7 @@
                     <div class="ml-4 mr-4 mt-2 mb-2">
                       <v-row no-gutters class="py-2">
                         <v-col cols="12" md="4">
-                          <div class="text-subtitle-2">API</div>
+                          <div class="text-title-small">API</div>
                         </v-col>
                         <v-col cols="12" md="8">
                           <a
@@ -72,7 +72,7 @@
 
                       <v-row no-gutters class="py-2">
                         <v-col cols="12" md="4">
-                          <div class="text-subtitle-2">Name</div>
+                          <div class="text-title-small">Name</div>
                         </v-col>
                         <v-col cols="12" md="8">
                           <code>{{ team.name }}</code>
@@ -82,7 +82,7 @@
 
                       <v-row no-gutters class="py-2">
                         <v-col cols="12" md="4">
-                          <div class="text-subtitle-2">Visibility</div>
+                          <div class="text-title-small">Visibility</div>
                         </v-col>
                         <v-col cols="12" md="8">
                           <v-chip
@@ -98,7 +98,7 @@
 
                       <v-row no-gutters class="py-2">
                         <v-col cols="12" md="4">
-                          <div class="text-subtitle-2">Recipes</div>
+                          <div class="text-title-small">Recipes</div>
                         </v-col>
                         <v-col cols="12" md="8">
                           <router-link
