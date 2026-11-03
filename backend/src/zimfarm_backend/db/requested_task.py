@@ -1,9 +1,11 @@
 import datetime
 from collections.abc import Sequence
-from typing import cast
+from copy import deepcopy
+from typing import Any, cast
 from uuid import UUID
 
 from humanfriendly import format_size, format_timespan
+from pydantic import ValidationError
 from sqlalchemy import BigInteger, delete, exists, func, or_, select, update
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import selectinload
@@ -23,7 +25,7 @@ from zimfarm_backend.common.constants import (
     ZIMCHECK_RESULTS_UPLOAD_URI,
 )
 from zimfarm_backend.common.enums import Platform, TaskStatus, WarehousePath
-from zimfarm_backend.common.schemas import BaseModel
+from zimfarm_backend.common.schemas import BaseModel, format_validation_errors
 from zimfarm_backend.common.schemas.models import (
     ExpandedRecipeConfigSchema,
     RecipeConfigSchema,
@@ -64,7 +66,10 @@ from zimfarm_backend.db.recipe import (
 )
 from zimfarm_backend.db.tasks import RunningTask, get_currently_running_tasks
 from zimfarm_backend.db.worker import create_worker_schema, get_worker_or_none
-from zimfarm_backend.utils.offliners import expanded_config
+from zimfarm_backend.utils.offliners import (
+    clear_unset_choices_dependents,
+    expanded_config,
+)
 from zimfarm_backend.utils.timestamp import (
     get_status_timestamp_expr,
     get_timestamp_for_status,
@@ -123,13 +128,64 @@ def _resource_mismatch_message(
     return mismatched_message
 
 
+def _recipe_config_with_flags(
+    recipe: Recipe,
+    offliner: OfflinerSchema,
+    offliner_definition: OfflinerDefinitionSchema,
+    flags: dict[str, Any] | None,
+) -> RecipeConfigSchema:
+    """Build the recipe config for a requested task, applying flag overrides."""
+    recipe_config = deepcopy(recipe.config)
+    offliner_data = recipe_config["offliner"]
+
+    if flags is not None:
+        offliner_data = clear_unset_choices_dependents(
+            offliner_definition.schema_,
+            {**offliner_data, **flags},
+            offliner.base_model,
+        )
+
+    return RecipeConfigSchema.model_validate(
+        {
+            **recipe_config,
+            "warehouse_path": (
+                WarehousePath.root
+                if DISABLE_WAREHOUSE_PATH
+                else recipe_config["warehouse_path"]
+            ),
+            "offliner": create_offliner_instance(
+                offliner=offliner,
+                offliner_definition=offliner_definition,
+                data=offliner_data,
+                skip_validation=False,
+            ),
+        }
+    )
+
+
+def build_requested_task_config(
+    *,
+    recipe: Recipe,
+    offliner: OfflinerSchema,
+    offliner_definition: OfflinerDefinitionSchema,
+    flags: dict[str, Any] | None = None,
+    show_secrets: bool = True,
+) -> ExpandedRecipeConfigSchema:
+    """Build the expanded config a requested task would be created with."""
+    return expanded_config(
+        offliner=offliner,
+        offliner_definition=offliner_definition,
+        config=_recipe_config_with_flags(recipe, offliner, offliner_definition, flags),
+        show_secrets=show_secrets,
+    )
+
+
 def _create_new_requested_task(
     session: OrmSession,
     *,
     requested_by: UUID,
     recipe: Recipe,
-    offliner: OfflinerSchema,
-    offliner_definition: OfflinerDefinitionSchema,
+    config: ExpandedRecipeConfigSchema,
     worker: WorkerLightSchema | None,
     priority: int = 0,
 ):
@@ -140,26 +196,7 @@ def _create_new_requested_task(
         timestamp=[(TaskStatus.requested.value, now)],
         events=[{"code": TaskStatus.requested, "timestamp": now}],
         priority=priority,
-        config=expanded_config(
-            offliner=offliner,
-            offliner_definition=offliner_definition,
-            config=RecipeConfigSchema.model_validate(
-                {
-                    **recipe.config,
-                    "warehouse_path": (
-                        WarehousePath.root
-                        if DISABLE_WAREHOUSE_PATH
-                        else recipe.config["warehouse_path"]
-                    ),
-                    "offliner": create_offliner_instance(
-                        offliner=offliner,
-                        offliner_definition=offliner_definition,
-                        data=recipe.config["offliner"],
-                        skip_validation=False,
-                    ),
-                }
-            ),
-        ).model_dump(mode="json", context={"show_secrets": True}),
+        config=config.model_dump(mode="json", context={"show_secrets": True}),
         upload={
             "zim": {
                 "upload_uri": ZIM_UPLOAD_URI,
@@ -287,6 +324,7 @@ def request_task(
     accessible_team_ids: Sequence[UUID] | None,
     worker_name: str | None = None,
     priority: int = 0,
+    flags: dict[str, Any] | None = None,
 ) -> RequestTaskResult:
     """Request a task for the given recipe name if possible else None
 
@@ -337,13 +375,29 @@ def request_task(
     )
     offliner = get_offliner(session, offliner_definition.offliner)
 
+    try:
+        config = build_requested_task_config(
+            recipe=recipe,
+            offliner=offliner,
+            offliner_definition=offliner_definition,
+            flags=flags,
+        )
+    except ValidationError as exc:
+        errors = format_validation_errors(exc)
+        details = "; ".join(
+            f"{key}: {', '.join(messages)}" for key, messages in errors.items()
+        )
+        return RequestTaskResult(
+            requested_task=None,
+            error=f"Invalid flags: {details}",
+        )
+
     # Otherwise, create a new requested task
     requested_task = _create_new_requested_task(
         session,
         requested_by=requested_by,
         recipe=recipe,
-        offliner=offliner,
-        offliner_definition=offliner_definition,
+        config=config,
         worker=worker,
         priority=priority,
     )

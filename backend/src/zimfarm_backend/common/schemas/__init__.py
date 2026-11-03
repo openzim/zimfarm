@@ -1,5 +1,6 @@
 import datetime
 import warnings
+from collections import defaultdict
 from typing import Any
 
 import pydantic
@@ -10,6 +11,18 @@ from pydantic import (
     model_serializer,
 )
 from pydantic.alias_generators import to_camel
+
+
+def format_validation_errors(
+    exc: pydantic.ValidationError,
+) -> dict[str | int, list[str]]:
+    """Map validation errors to a dictionary of field to list of errors."""
+    errors: dict[str | int, list[str]] = defaultdict(list)
+    for err in exc.errors():
+        loc = err["loc"]
+        key = loc[-1] if loc else "root"  # fallback for model level errors
+        errors[key].append(err["msg"])
+    return errors
 
 
 def serialize_datetime(value: datetime.datetime) -> str:

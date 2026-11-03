@@ -13,14 +13,6 @@
 
 <template>
   <div v-if="visible" class="d-flex justify-end">
-    <!-- Worker Selection Dropdown -->
-    <WorkerSelector
-      v-if="canSelectWorker"
-      v-model="selectedWorker"
-      :workers="workers"
-      :visible="canSelectWorker"
-    />
-
     <!-- Request Button -->
     <v-btn
       v-show="canRequest"
@@ -30,11 +22,27 @@
       class="mr-2"
       :loading="working"
       :disabled="working"
-      @click="emit('request-task', selectedWorker)"
+      @click="emit('request-task')"
     >
-      <v-tooltip activator="parent" location="top"> Request with normal priority </v-tooltip>
+      <v-tooltip activator="parent" location="top">Request with default options</v-tooltip>
       <v-icon size="small" class="mr-1">mdi-rocket-launch</v-icon>
       Request
+    </v-btn>
+
+    <!-- Custom Request Button -->
+    <v-btn
+      v-show="canRequest"
+      color="primary"
+      variant="outlined"
+      size="small"
+      class="mr-2"
+      :loading="working"
+      :disabled="working"
+      @click="emit('custom-request-task')"
+    >
+      <v-tooltip activator="parent" location="top">Choose worker, priority and flags</v-tooltip>
+      <v-icon size="small" class="mr-1">mdi-tune-variant</v-icon>
+      Custom request
     </v-btn>
 
     <!-- Un-request Button -->
@@ -68,22 +76,6 @@
       Cancel
     </v-btn>
 
-    <!-- Fire Button (High Priority Request) -->
-    <v-btn
-      v-show="canFire"
-      color="warning"
-      variant="elevated"
-      size="small"
-      class="mr-2"
-      :loading="working"
-      :disabled="working"
-      @click="emit('request-task', selectedWorker, true)"
-    >
-      <v-tooltip activator="parent" location="top"> Request with high priority </v-tooltip>
-      <v-icon size="small" class="mr-1">mdi-priority-high</v-icon>
-      Request
-    </v-btn>
-
     <!-- Prioritize Existing Task Button -->
     <v-btn
       v-show="canFireExisting"
@@ -108,12 +100,10 @@
 </template>
 
 <script setup lang="ts">
-import WorkerSelector from '@/components/WorkerSelector.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RequestedTaskLight } from '@/types/requestedTasks'
 import type { TaskLight } from '@/types/tasks'
-import type { Worker } from '@/types/workers'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 // Props
 interface Props {
@@ -121,14 +111,14 @@ interface Props {
   ready: boolean
   task: TaskLight | null
   requestedTask: RequestedTaskLight | null
-  workers: Worker[]
   workingText: string | null
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'request-task', workerName: string | null, priority?: boolean): void
+  (e: 'request-task'): void
+  (e: 'custom-request-task'): void
   (e: 'fire-existing-task'): void
   (e: 'cancel-task'): void
   (e: 'unrequest-task'): void
@@ -136,9 +126,6 @@ const emit = defineEmits<{
 
 // Stores
 const authStore = useAuthStore()
-
-// Reactive data
-const selectedWorker = ref<string | null>(null)
 
 // Computed properties
 const taskId = computed(() => (props.task ? props.task.id : null))
@@ -153,11 +140,9 @@ const isRequested = computed(() =>
 const canRequest = computed(
   () => props.enabled && !working.value && !isRunning.value && !isRequested.value,
 )
-const canFire = computed(() => !working.value && canRequest.value)
 const canFireExisting = computed(() => !working.value && isRequested.value)
 const canCancel = computed(() => !working.value && isRunning.value && taskId.value)
 const canUnRequest = computed(() => !working.value && isRequested.value)
-const canSelectWorker = computed(() => canRequest.value || canFire.value)
 const requestedTaskId = computed(() => props.requestedTask?.id || null)
 
 // Permission computed properties

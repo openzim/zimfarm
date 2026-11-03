@@ -12,12 +12,20 @@
           :ready="ready"
           :task="task"
           :requested-task="requestedTask"
-          :workers="workers"
           :working-text="workingText"
           @request-task="requestTask"
+          @custom-request-task="customRequestTask"
           @fire-existing-task="fireExistingTask"
           @cancel-task="cancelTask"
           @unrequest-task="unrequestTask"
+        />
+        <RequestTaskDialog
+          v-model="showRequestTaskDialog"
+          :recipe-name="recipe.name"
+          :flags="recipe.config.offliner"
+          :flags-definition="flagsDefinition"
+          :workers="workers"
+          @confirm="submitRequestTask"
         />
       </v-col>
     </v-row>
@@ -798,6 +806,7 @@ import RecipeActionButton from '@/components/RecipeActionButton.vue'
 import RecipeEditor from '@/components/RecipeEditor.vue'
 import RecipeHistory from '@/components/RecipeHistory.vue'
 import RecipesTable from '@/components/RecipesTable.vue'
+import RequestTaskDialog from '@/components/RequestTaskDialog.vue'
 import StatusDisplay from '@/components/StatusDisplay.vue'
 import type { Config } from '@/config'
 import constants from '@/constants'
@@ -816,7 +825,7 @@ import { useTeamStore } from '@/stores/team'
 import { useWorkersStore } from '@/stores/workers'
 import type { Language } from '@/types/language'
 import type { OfflinerDefinition } from '@/types/offliner'
-import type { RequestedTaskLight } from '@/types/requestedTasks'
+import type { RequestedTaskLight, RequestTaskOptions } from '@/types/requestedTasks'
 import type {
   CloneRecipePayload,
   ExpandedRecipeConfig,
@@ -878,6 +887,7 @@ const { smAndDown } = useDisplay()
 
 const error = ref<string | null>(null)
 const workingText = ref<string | null>(null)
+const showRequestTaskDialog = ref(false)
 const imageTags = ref<string[]>([])
 const tags = ref<string[]>([])
 const teams = ref<string[]>([])
@@ -1063,17 +1073,28 @@ const copyCommand = async (command: string) => {
   }
 }
 
-const requestTask = async (workerName: string | null, priority?: boolean) => {
+const requestTask = () => {
+  submitRequestTask({ worker: null, priority: null, flags: null })
+}
+
+const customRequestTask = () => {
+  showRequestTaskDialog.value = true
+}
+
+const submitRequestTask = async (options: RequestTaskOptions) => {
+  showRequestTaskDialog.value = false
   workingText.value = 'Requesting task…'
 
   const body: {
     recipeNames: string[]
     worker: string | null
     priority: number | null
+    flags?: Record<string, unknown> | null
   } = {
     recipeNames: [props.recipeName],
-    worker: workerName,
-    priority: priority ? constants.DEFAULT_FIRE_PRIORITY : null,
+    worker: options.worker,
+    priority: options.priority,
+    flags: options.flags,
   }
 
   const response = await requestedTasksStore.requestTasks(body)
@@ -1086,7 +1107,7 @@ const requestTask = async (workerName: string | null, priority?: boolean) => {
     // update the requested task
     if (requestedTask.value) {
       requestedTask.value.id = response.requested[0]
-      requestedTask.value.priority = priority ? constants.DEFAULT_FIRE_PRIORITY : 0
+      requestedTask.value.priority = options.priority ?? 0
     }
     await fetchRecipeTasks()
   } else {

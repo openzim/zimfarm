@@ -8,14 +8,15 @@
       :can-request-tasks="canRequestTasks"
       @filters-updated="handleFiltersUpdated"
     >
-      <template #actions="{ selectedRecipes, requestingText, workers, handleRequestTasks }">
+      <template
+        #actions="{ selectedRecipes, requestingText, handleRequestTasks, handleCustomRequestTasks }"
+      >
         <RequestSelectionButton
           v-if="canRequestTasks"
-          :can-request-tasks="canRequestTasks"
           :requesting-text="requestingText"
           :count="selectedRecipes.length"
-          :workers="workers"
           @request-tasks="handleRequestTasks"
+          @custom-request-tasks="handleCustomRequestTasks"
         />
       </template>
     </RecipesBaseView>
