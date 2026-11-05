@@ -44,8 +44,8 @@ export class OAuthOIDCProvider extends AuthProvider {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       scope: 'openid profile offline_access',
-      audience: this.config.audience,
     })
+    this.addAudienceParams(params)
 
     const authUrl = `${this.config.authorizeUrl}?${params.toString()}`
 
@@ -96,9 +96,9 @@ export class OAuthOIDCProvider extends AuthProvider {
       grant_type: 'refresh_token',
       client_id: this.config.clientId,
       refresh_token: refreshToken,
-      audience: this.config.audience,
       scope: 'openid profile offline_access',
     })
+    this.addAudienceParams(params)
 
     const response = await service.post<URLSearchParams, OAuthOIDCTokenResponse>('', params, {
       headers: {
@@ -220,6 +220,18 @@ export class OAuthOIDCProvider extends AuthProvider {
    */
   private getRedirectUri(returnUrl: string): string {
     return `${window.location.origin}${returnUrl}`
+  }
+
+  /**
+   * Add the configured audience(s) to the request parameters.
+   */
+  private addAudienceParams(params: URLSearchParams): void {
+    const audiences = Array.isArray(this.config.audience)
+      ? this.config.audience
+      : [this.config.audience]
+    if (audiences.length > 0) {
+      params.set('audience', audiences.join(' '))
+    }
   }
 
   /**

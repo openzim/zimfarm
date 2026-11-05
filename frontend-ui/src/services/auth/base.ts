@@ -3,7 +3,7 @@ import type { StoredToken } from '@/types/auth'
 
 export interface OAuthConfig {
   clientId: string
-  audience: string
+  audience: string | Array<string>
   authorizeUrl: string
   tokenUrl: string
   userInfoUrl: string
