@@ -23,6 +23,12 @@ export interface NewRequestedTaskSchemaResponse {
   requested: string[]
 }
 
+export interface RequestTaskOptions {
+  worker: string | null
+  priority: number | null
+  flags: Record<string, unknown> | null
+}
+
 export interface RequestedTaskFullSchema {
   config: ExpandedRecipeConfig
   events: Record<string, unknown>[]

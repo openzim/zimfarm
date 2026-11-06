@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from pydantic import Field
@@ -34,6 +35,8 @@ class NewRequestedTaskSchema(BaseModel):
     recipe_names: list[NotEmptyString] = Field(default_factory=list)
     priority: PriorityField | None = None
     worker: WorkerField | None = None
+    # Offliner flags overriding the recipe configuration for this request only.
+    flags: dict[str, Any] | None = None
 
 
 class NewRequestedTaskSchemaResponse(BaseModel):

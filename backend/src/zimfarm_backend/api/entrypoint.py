@@ -1,7 +1,7 @@
 import os
-from collections import defaultdict
 from contextlib import asynccontextmanager
 from http import HTTPStatus
+from typing import cast
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -34,6 +34,7 @@ from zimfarm_backend.common.constants import (
     DISABLE_WAREHOUSE_PATH,
     ZIMCHECK_OPTION,
 )
+from zimfarm_backend.common.schemas import format_validation_errors
 from zimfarm_backend.db.exceptions import (
     RecordAlreadyExistsError,
     RecordDoesNotExistError,
@@ -111,39 +112,24 @@ app = create_app(debug=DEBUG)
 
 @app.exception_handler(RequestValidationError)
 async def request_validation_error_handler(_, exc: RequestValidationError):
-    # transform the pydantic validation errors to a dictionary mapping
-    # the field to the list of errors
-    errors: dict[str | int, list[str]] = defaultdict(list)
-    for err in exc.errors():
-        loc = err["loc"]
-        key = loc[-1] if loc else "root"  # fallback for model level errors
-        errors[key].append(err["msg"])
-
     return JSONResponse(
         status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
         content={
             "success": False,
             "message": "Input values failed constraints validation",
-            "errors": errors,
+            "errors": format_validation_errors(cast(ValidationError, exc)),
         },
     )
 
 
 @app.exception_handler(ValidationError)
 async def validation_error_handler(_, exc: ValidationError):
-    # transform the pydantic validation errors to a dictionary mapping
-    # the field to the list of errors
-    errors: dict[str | int, list[str]] = defaultdict(list)
-    for err in exc.errors():
-        loc = err["loc"]
-        key = loc[-1] if loc else "root"  # fallback for model level errors
-        errors[key].append(err["msg"])
     return JSONResponse(
         status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
         content={
             "success": False,
             "message": "Input values failed constraints validation",
-            "errors": errors,
+            "errors": format_validation_errors(exc),
         },
     )
 

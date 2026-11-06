@@ -85,20 +85,22 @@ export const useRequestedTasksStore = defineStore('requestedTasks', () => {
     recipeNames: string[]
     worker?: string | null
     priority?: number | null
+    flags?: Record<string, unknown> | null
   }) => {
     const cleanedBody = Object.fromEntries(
       Object.entries({
         recipe_names: body.recipeNames,
         worker: body.worker,
         priority: body.priority,
-      }).filter(([, value]) => value !== null),
+        flags: body.flags,
+      }).filter(([, value]) => value !== null && value !== undefined),
     )
     try {
       const service = await authStore.getApiService('requested-tasks')
-      const response = await service.post<
-        Record<string, string[] | string | number>,
-        NewRequestedTaskSchemaResponse
-      >('', cleanedBody)
+      const response = await service.post<Record<string, unknown>, NewRequestedTaskSchemaResponse>(
+        '',
+        cleanedBody,
+      )
       return response
     } catch (_error) {
       errors.value = translateErrors(_error as ErrorResponse)

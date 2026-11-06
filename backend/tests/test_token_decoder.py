@@ -4,7 +4,7 @@ import base64
 import datetime
 from collections.abc import Callable
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from uuid import UUID, uuid4
 
 import jwt
@@ -727,42 +727,38 @@ def test_oauth_session_token_decoder_can_decode_with_wrong_audience(
 
 
 @pytest.mark.parametrize(
-    ["datetime_str", "message_modifier", "expected_exception", "exception_msg"],
+    ["delta", "message_modifier", "expected_exception", "exception_msg"],
     [
         pytest.param(
-            datetime.datetime.fromtimestamp(0, tz=datetime.UTC)
-            .replace(tzinfo=None)
-            .isoformat(timespec="seconds"),
+            datetime.timedelta(minutes=-5),
             lambda w, t, s: f"{w}.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
             ValueError,
             "Difference between message time and server time is greater than",
             id="outdated-timestamp",
         ),
         pytest.param(
-            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            datetime.timedelta(minutes=5),
             lambda w, t, s: "hello",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
             ValueError,
             "Invalid message format.",
             id="invalid-message-format",
         ),
         pytest.param(
-            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            datetime.timedelta(minutes=5),
             lambda w, t, s: f"{w}.{t}.not-base64-!@#",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
             ValueError,
             "Invalid signature format.*",
             id="invalid-signature-format",
         ),
         pytest.param(
-            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            datetime.timedelta(minutes=5),
             lambda w, t, s: f"unknownworker.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
             ValueError,
             "Worker unknownworker does not exist.",
             id="worker-does-not-exist",
         ),
         pytest.param(
-            # Before CI fully sets up, default timer has expired, so, add
-            # additional 5 minutes
-            (getnow() + datetime.timedelta(minutes=5)).isoformat(timespec="seconds"),
+            datetime.timedelta(minutes=5),
             lambda w, t, s: f"{w}.{t}.{s}",  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
             None,
             "",
@@ -770,18 +766,24 @@ def test_oauth_session_token_decoder_can_decode_with_wrong_audience(
         ),
     ],
 )
+@patch("zimfarm_backend.api.token.getnow")
 def test_ssh_token_decoder(
+    mock_get_now: Mock,
     account: Account,
     rsa_private_key: RSAPrivateKey,
-    datetime_str: str,
+    delta: datetime.timedelta,
     message_modifier: Callable[[str, str, str], str],
     expected_exception: type[Exception] | None,
     exception_msg: str,
     create_worker: Callable[..., Worker],
     dbsession: OrmSession,
 ):
+    now = getnow()
+    mock_get_now.return_value = now
+
     worker = create_worker(account=account)
 
+    datetime_str = (now + delta).isoformat(timespec="seconds")
     # signature is created with f"{worker_name}.{timestamp_str}"
     message_to_sign = f"{worker.name}.{datetime_str}"
     signature = sign_message_with_rsa_key(

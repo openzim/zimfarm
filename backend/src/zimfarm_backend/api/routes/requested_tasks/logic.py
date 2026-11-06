@@ -96,6 +96,14 @@ def create_request_task(
             "No enabled recipes found for the given names",
         )
 
+    if (
+        new_requested_task.flags is not None
+        and len(new_requested_task.recipe_names) != 1
+    ):
+        raise BadRequestError(
+            "Flag overrides can only be specified when requesting a single recipe"
+        )
+
     requested_tasks: list[RequestedTaskFullSchema] = []
     errors: dict[str, str] = {}
     for recipe_identifier in new_requested_task.recipe_names:
@@ -106,6 +114,7 @@ def create_request_task(
             accessible_team_ids=accessible_team_ids,
             worker_name=new_requested_task.worker,
             priority=new_requested_task.priority or 0,
+            flags=new_requested_task.flags,
         )
         if result.error:
             errors[recipe_identifier] = result.error

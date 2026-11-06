@@ -31,8 +31,8 @@
           :selected-recipes="selectedRecipes"
           :requesting-text="requestingText"
           :restoring-text="restoringText"
-          :workers="workers"
           :handle-request-tasks="handleRequestTasks"
+          :handle-custom-request-tasks="handleCustomRequestTasks"
           :handle-restore-recipes="handleRestoreRecipes"
         />
       </template>
@@ -75,6 +75,17 @@
         </div>
       </template>
     </ConfirmDialog>
+
+    <RequestTaskDialog
+      v-if="showRequestTaskDialog"
+      v-model="showRequestTaskDialog"
+      :recipe-name="requestTaskRecipe?.name"
+      :flags="requestTaskRecipe?.config.offliner"
+      :flags-definition="requestTaskFlagsDefinition"
+      :workers="workers"
+      :count="requestTaskRecipe ? 1 : selectedRecipes.length"
+      @confirm="submitRequestTask"
+    />
   </div>
 </template>
 
@@ -82,8 +93,8 @@
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import RecipesFilter from '@/components/RecipesFilter.vue'
 import RecipesTable from '@/components/RecipesTable.vue'
+import RequestTaskDialog from '@/components/RequestTaskDialog.vue'
 import type { Paginator } from '@/types/base'
-import constants from '@/constants'
 import { useLanguageStore } from '@/stores/language'
 import { useLoadingStore } from '@/stores/loading'
 import { useNotificationStore } from '@/stores/notification'
@@ -93,7 +104,9 @@ import { useRecipeStore } from '@/stores/recipe'
 import { useTagStore } from '@/stores/tag'
 import { useTeamStore } from '@/stores/team'
 import { useWorkersStore } from '@/stores/workers'
-import type { RecipeLight } from '@/types/recipe'
+import type { OfflinerDefinition } from '@/types/offliner'
+import type { Recipe, RecipeLight } from '@/types/recipe'
+import type { RequestTaskOptions } from '@/types/requestedTasks'
 import type { Worker } from '@/types/workers'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -182,6 +195,9 @@ const selectedRecipes = ref<string[]>([])
 const showRestoreCommentDialog = ref<boolean>(false)
 const restoreComment = ref<string>('')
 const workers = ref<Worker[]>([])
+const showRequestTaskDialog = ref(false)
+const requestTaskRecipe = ref<Recipe | null>(null)
+const requestTaskFlagsDefinition = ref<OfflinerDefinition[]>([])
 
 // Stores
 const router = useRouter()
@@ -288,36 +304,95 @@ async function fetchWorkers() {
   }
 }
 
-async function handleRequestTasks(workerName: string | null, highPriority: boolean) {
+async function handleRequestTasks() {
   if (!props.canRequestTasks) {
     return
   }
 
-  // Called by the RequestSelectionButton component
+  const recipeNames = selectedRecipes.value.filter((name) => !!name)
+  await performRequestTasks(recipeNames, null, null)
+}
+
+async function handleCustomRequestTasks() {
+  if (!props.canRequestTasks) {
+    return
+  }
+
+  const recipeNames = selectedRecipes.value.filter((name) => !!name)
+  if (recipeNames.length === 1) {
+    await openRequestTaskDialog(recipeNames[0])
+    return
+  }
+
+  requestTaskRecipe.value = null
+  requestTaskFlagsDefinition.value = []
+  showRequestTaskDialog.value = true
+}
+
+async function openRequestTaskDialog(recipeName: string) {
+  requestingText.value = 'Loading task flags...'
+  const recipe = await recipeStore.fetchRecipe(recipeName)
+  if (!recipe) {
+    for (const error of recipeStore.errors) {
+      notificationStore.showError(error)
+    }
+    requestingText.value = null
+    return
+  }
+
+  const definition = await offlinerStore.fetchOfflinerDefinitionByVersion(
+    recipe.offliner,
+    recipe.version,
+  )
+  if (!definition) {
+    for (const error of offlinerStore.errors) {
+      notificationStore.showError(error)
+    }
+  }
+
+  requestTaskRecipe.value = recipe
+  requestTaskFlagsDefinition.value = definition?.flags ?? []
+  showRequestTaskDialog.value = true
+  requestingText.value = null
+}
+
+async function submitRequestTask(options: RequestTaskOptions) {
+  const recipeNames = requestTaskRecipe.value
+    ? [requestTaskRecipe.value.name]
+    : selectedRecipes.value.filter((name) => !!name)
+
+  showRequestTaskDialog.value = false
+  await performRequestTasks(recipeNames, options.worker, options.priority, options.flags)
+}
+
+async function performRequestTasks(
+  recipeNames: string[],
+  workerName: string | null,
+  priority: number | null,
+  flags: Record<string, unknown> | null = null,
+) {
   requestingText.value = 'Requesting tasks...'
   if (errors.value.length > 0) {
     notificationStore.showError('Not requested!')
     notificationStore.showError(`Unable to fetch recipe names: ${errors.value.join(', ')}`)
-  } else {
-    const recipeNames = selectedRecipes.value.filter((name) => !!name)
-    if (recipeNames.length > 0) {
-      const body = {
-        recipeNames: recipeNames,
-        worker: workerName,
-        priority: highPriority ? constants.DEFAULT_FIRE_PRIORITY : null,
-      }
-      const requestedTasks = await requestedTasksStore.requestTasks(body)
-      if (requestedTasks) {
-        notificationStore.showSuccess(
-          `Exactly ${requestedTasks.requested.length} selected recipe${requestedTasks.requested.length !== 1 ? 's' : ''} have been requested`,
-        )
-        // Clear selections after successful request
-        selectedRecipes.value = []
-        await loadData(paginator.value.limit, paginator.value.skip)
-      } else {
-        for (const error of requestedTasksStore.errors) {
-          notificationStore.showError(error)
-        }
+  } else if (recipeNames.length > 0) {
+    const body = {
+      recipeNames,
+      worker: workerName,
+      priority,
+      flags,
+    }
+    const requestedTasks = await requestedTasksStore.requestTasks(body)
+    if (requestedTasks) {
+      notificationStore.showSuccess(
+        `Exactly ${requestedTasks.requested.length} selected recipe${requestedTasks.requested.length !== 1 ? 's' : ''} have been requested`,
+      )
+      // Clear selections after successful request
+      selectedRecipes.value = []
+      await loadData(paginator.value.limit, paginator.value.skip)
+    } else {
+      for (const error of requestedTasksStore.errors) {
+        notificationStore.showError(error)
       }
     }
   }

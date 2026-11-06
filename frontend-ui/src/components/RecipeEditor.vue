@@ -403,207 +403,14 @@
           </div>
         </v-col>
         <v-col cols="12" md="9">
-          <SwitchButton
-            v-if="field.component === 'switch'"
-            v-model="editFlags[field.dataKey]"
-            density="compact"
-            :details="field.description ?? undefined"
-            persistent-hint
-          />
-          <v-select
-            v-else-if="field.component === 'multiselect'"
-            v-model="editFlags[field.dataKey]"
-            :items="field.options"
-            multiple
-            chips
-            closable-chips
-            density="compact"
-            variant="outlined"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :clearable="!field.required"
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'eager blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          />
-          <v-select
-            v-else-if="field.component === 'select'"
-            v-model="editFlags[field.dataKey]"
-            :items="field.options"
-            density="compact"
-            variant="outlined"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :required="field.required"
-            :clearable="!field.required"
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          />
-          <v-text-field
-            v-else-if="field.component === 'number'"
-            v-model.trim="editFlags[field.dataKey]"
-            type="number"
-            density="compact"
-            variant="outlined"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :required="field.required"
-            :step="field.step"
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          />
-          <v-text-field
-            v-else-if="field.component === 'url'"
-            v-model.trim="editFlags[field.dataKey]"
-            type="url"
-            density="compact"
-            variant="outlined"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :required="field.required"
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          />
-          <v-text-field
-            v-else-if="field.component === 'email'"
-            v-model.trim="editFlags[field.dataKey]"
-            type="email"
-            density="compact"
-            variant="outlined"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :required="field.required"
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          />
-          <v-color-input
-            v-else-if="field.component === 'color'"
-            color-pip
-            pip-variant="flat"
-            v-model.trim="editFlags[field.dataKey]"
-            density="compact"
-            variant="outlined"
-            mode="hex"
-            :modes="['hex']"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :required="field.required"
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          />
-          <v-textarea
-            v-else-if="field.component === 'textarea'"
+          <OfflinerFlagInput
+            :field="field"
             :model-value="editFlags[field.dataKey]"
-            @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
-            density="compact"
-            variant="outlined"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :required="field.required"
-            auto-grow
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          >
-            <template v-if="field.max_graphemes" #counter>
-              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_graphemes }}
-            </template>
-          </v-textarea>
-          <BlobEditor
-            v-else-if="field.component === 'blob'"
-            v-model="editFlags[field.dataKey]"
-            :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :kind="field.kind"
-            :required="field.required"
-            :allow-remote-url="field.allowRemoteUrl"
-            :description="field.description ?? undefined"
+            :offliner="editRecipe.config.offliner.offliner_id"
             :recipe-name="recipe.name"
-            :flag-key="field.key"
-          />
-          <v-text-field
-            v-else
-            :model-value="editFlags[field.dataKey]"
-            @update:model-value="(value) => handleInputWithGraphemeLimit(field, value)"
-            density="compact"
-            variant="outlined"
             :label="smAndDown ? field.label + (field.required ? ' *' : '') : undefined"
-            :placeholder="field.placeholder"
-            :required="field.required"
-            :rules="getFieldRules(field)"
-            :hide-details="'auto'"
-            :validate-on="'blur'"
-            :hint="field.description ?? undefined"
-            persistent-hint
-          >
-            <template v-if="field.max_graphemes" #counter>
-              {{ getGraphemeCount(editFlags[field.dataKey]) }}/{{ field.max_graphemes }}
-            </template>
-          </v-text-field>
-          <div v-if="showYoutubeLinks && isIdentField(field)" class="mt-1">
-            <div class="d-flex flex-wrap align-center" style="gap: 6px">
-              <template v-for="item in youtubeLinkItems" :key="`${item.raw}-${item.kind}`">
-                <v-tooltip v-if="item.url" location="top">
-                  <template #activator="{ props: tooltipProps }">
-                    <v-chip
-                      v-bind="tooltipProps"
-                      :href="item.url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      variant="tonal"
-                      size="small"
-                      :color="getYoutubeLinkColor(item.kind)"
-                      :prepend-icon="getYoutubeLinkIcon(item.kind)"
-                      class="youtube-link-chip"
-                    >
-                      {{
-                        item.kind === 'handle'
-                          ? item.raw
-                          : item.raw.substring(0, 12) + (item.raw.length > 12 ? '...' : '')
-                      }}
-                    </v-chip>
-                  </template>
-                  <div class="text-body-small">
-                    {{ item.url }}
-                  </div>
-                </v-tooltip>
-                <v-tooltip v-else location="top">
-                  <template #activator="{ props: tooltipProps }">
-                    <v-chip
-                      v-bind="tooltipProps"
-                      disabled
-                      variant="outlined"
-                      size="small"
-                      color="grey"
-                      prepend-icon="mdi-help-circle"
-                      class="youtube-link-chip"
-                    >
-                      {{ item.raw.substring(0, 12) + (item.raw.length > 12 ? '...' : '') }}
-                    </v-chip>
-                  </template>
-                  <span class="text-body-small">Unknown YouTube ID format</span>
-                </v-tooltip>
-              </template>
-            </div>
-          </div>
+            @update:model-value="(value) => (editFlags[field.dataKey] = value)"
+          />
         </v-col>
         <v-divider class="mt-1"></v-divider>
       </v-row>
@@ -688,11 +495,11 @@
 </template>
 
 <script setup lang="ts">
-import BlobEditor from '@/components/BlobEditor.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import DiffViewer from '@/components/DiffViewer.vue'
 import type { Config } from '@/config'
 import NotificationEventFields from '@/components/NotificationEventFields.vue'
+import OfflinerFlagInput from '@/components/OfflinerFlagInput.vue'
 import SwitchButton from '@/components/SwitchButton.vue'
 import constants from '@/constants'
 import { useNotificationStore } from '@/stores/notification'
@@ -700,7 +507,7 @@ import { useRecipeStore } from '@/stores/recipe'
 import type { Resources } from '@/types/base'
 
 import type { Language } from '@/types/language'
-import type { OfflinerDefinition, Choice } from '@/types/offliner'
+import type { OfflinerDefinition } from '@/types/offliner'
 import type {
   EventNotification,
   Recipe,
@@ -710,31 +517,16 @@ import type {
 } from '@/types/recipe'
 import { fuzzyFilter, stringArrayEqual } from '@/utils/cmp'
 import { formattedBytesSize } from '@/utils/format'
-import { buildYoutubeLinks, type YoutubeLinkKind } from '@/utils/youtube'
-import type { BlobKind } from '@/utils/blob'
+import {
+  buildFlagFields,
+  buildFlagVisibilityContext,
+  getFieldRules,
+  isFlagFieldVisible,
+  type FlagField,
+} from '@/utils/offlinerFlags'
 import diff from 'deep-diff'
-import { byGrapheme } from 'split-by-grapheme'
 import { computed, onUnmounted, ref, watch, inject } from 'vue'
 import { useDisplay } from 'vuetify'
-
-interface FlagField {
-  label: string
-  dataKey: string
-  required: boolean
-  description: string | null
-  key: string
-  placeholder: string
-  component: string
-  options?: Array<Choice>
-  step?: number | null
-  min: number | null
-  max: number | null
-  min_graphemes: number | null
-  max_graphemes: number | null
-  pattern: string | null
-  kind?: BlobKind
-  allowRemoteUrl: boolean
-}
 
 export interface Props {
   recipe: Recipe
@@ -1161,330 +953,14 @@ const hasChanges = computed<boolean>(() => {
   return changes.length > 0
 })
 
-const flagsFields = computed(() => {
-  if (!props.flagsDefinition) return []
+const flagsFields = computed(() => buildFlagFields(props.flagsDefinition))
 
-  return props.flagsDefinition.map((field) => {
-    let component = 'text'
-    let options: Array<Choice> | undefined = undefined
-    let step = null
+const flagVisibility = computed(() => buildFlagVisibilityContext(props.flagsDefinition))
 
-    if (field.type === 'color') {
-      component = 'color'
-    } else if (field.type === 'url') {
-      component = 'url'
-    } else if (field.type === 'email') {
-      component = 'email'
-    } else if (field.type === 'integer') {
-      component = 'number'
-      step = 1
-    } else if (field.type === 'float') {
-      component = 'number'
-      step = 0.1
-    } else if (field.type === 'list-of-string-enum') {
-      component = 'multiselect'
-      options =
-        field.choices?.map((choice) => ({
-          title: choice.title,
-          value: choice.value,
-          dependents: choice.dependents,
-        })) || undefined
-    } else if (field.type === 'boolean') {
-      component = 'switch'
-    } else if (field.type === 'string-enum') {
-      component = 'select'
-      options =
-        field.choices?.map((choice) => ({
-          title: choice.title,
-          value: choice.value,
-          dependents: choice.dependents,
-        })) || undefined
-    } else if (field.type === 'long-text') {
-      component = 'textarea'
-    } else if (field.type === 'blob') {
-      component = 'blob'
-    }
+const isFieldVisible = (field: FlagField): boolean =>
+  isFlagFieldVisible(field, flagVisibility.value, editFlags.value)
 
-    return {
-      label: field.label || field.data_key,
-      dataKey: field.data_key,
-      key: field.key,
-      required: field.required,
-      description: field.description,
-      min: field.min,
-      max: field.max,
-      min_graphemes: field.min_graphemes,
-      max_graphemes: field.max_graphemes,
-      pattern: field.pattern,
-      placeholder: 'Not set',
-      component,
-      options,
-      step,
-      kind: field.kind,
-      allowRemoteUrl: field.allow_remote_url,
-    }
-  })
-})
-
-const isYoutubeOffliner = computed(() => {
-  const selected = editRecipe.value.config.offliner.offliner_id
-  const fallback = props.recipe.config.offliner.offliner_id
-  return (selected || fallback) === 'youtube'
-})
-
-const youtubeIdentField = computed(() => {
-  if (!isYoutubeOffliner.value) return null
-  return flagsFields.value.find((field) => field.key === 'ident' || field.dataKey === 'id') || null
-})
-
-const youtubeIdentValue = computed(() => {
-  const field = youtubeIdentField.value
-  if (!field) return ''
-  const value = editFlags.value[field.dataKey]
-  return typeof value === 'string' ? value : ''
-})
-
-const youtubeLinkItems = computed(() => buildYoutubeLinks(youtubeIdentValue.value))
-
-const showYoutubeLinks = computed(() => {
-  return (
-    isYoutubeOffliner.value &&
-    !!youtubeIdentField.value &&
-    youtubeIdentValue.value.trim().length > 0 &&
-    youtubeLinkItems.value.length > 0
-  )
-})
-
-const isIdentField = (field: FlagField) => {
-  return field === youtubeIdentField.value
-}
-
-const getYoutubeLinkColor = (kind: YoutubeLinkKind): string => {
-  switch (kind) {
-    case 'channel':
-      return 'red'
-    case 'playlist':
-      return 'blue'
-    case 'video':
-      return 'green'
-    case 'handle':
-      return 'purple'
-    case 'unknown':
-      return 'grey'
-  }
-}
-
-const getYoutubeLinkIcon = (kind: YoutubeLinkKind): string => {
-  switch (kind) {
-    case 'channel':
-      return 'mdi-account-circle'
-    case 'playlist':
-      return 'mdi-playlist-play'
-    case 'video':
-      return 'mdi-play-circle'
-    case 'handle':
-      return 'mdi-at'
-    case 'unknown':
-      return 'mdi-help-circle'
-  }
-}
-
-const getFieldRules = (field: FlagField) => {
-  const rules: Array<(value: unknown) => boolean | string> = []
-
-  if (field.required) {
-    rules.push((value: unknown) => {
-      if (!value || value === '' || value === undefined || value === null) {
-        return 'This field is required'
-      }
-      return true
-    })
-  }
-
-  // Add type-specific validation
-  if (field.component === 'url') {
-    rules.push((value: unknown) => {
-      if (value && typeof value === 'string' && value !== '') {
-        try {
-          new URL(value)
-          return true
-        } catch {
-          return 'Please enter a valid URL'
-        }
-      }
-      return true
-    })
-  }
-
-  if (field.component === 'email') {
-    rules.push((value: unknown) => {
-      if (value && typeof value === 'string' && value !== '') {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(value)) {
-          return 'Please enter a valid email address'
-        }
-      }
-      return true
-    })
-  }
-
-  if (field.component === 'number') {
-    rules.push((value: unknown) => {
-      if (value && value !== '') {
-        const num = Number(value)
-        if (isNaN(num)) {
-          return 'Please enter a valid number'
-        }
-      }
-      return true
-    })
-  }
-
-  // Add validation for min, max, min_graphemes, and pattern constraints
-  const shouldValidate = (value: unknown) => {
-    return value !== null && value !== undefined && value !== ''
-  }
-
-  // Min length validation
-  if (field.min_graphemes !== null) {
-    rules.push((value: unknown) => {
-      if (shouldValidate(value) && typeof value === 'string') {
-        if (value.split(byGrapheme).length < field.min_graphemes!) {
-          return `Minimum length is ${field.min_graphemes} characters`
-        }
-      }
-      return true
-    })
-  }
-
-  // Max length validation
-  if (field.max_graphemes !== null) {
-    rules.push((value: unknown) => {
-      if (shouldValidate(value) && typeof value === 'string') {
-        if (value.split(byGrapheme).length > field.max_graphemes!) {
-          return `Maximum length is ${field.max_graphemes} characters`
-        }
-      }
-      return true
-    })
-  }
-
-  // Min value validation (for numbers)
-  if (field.min !== null) {
-    rules.push((value: unknown) => {
-      if (shouldValidate(value)) {
-        const num = Number(value)
-        if (!isNaN(num) && num < field.min!) {
-          return `Minimum value is ${field.min}`
-        }
-      }
-      return true
-    })
-  }
-
-  // Max value validation (for numbers)
-  if (field.max !== null) {
-    rules.push((value: unknown) => {
-      if (shouldValidate(value)) {
-        const num = Number(value)
-        if (!isNaN(num) && num > field.max!) {
-          return `Maximum value is ${field.max}`
-        }
-      }
-      return true
-    })
-  }
-
-  // Pattern validation (regex)
-  if (field.pattern !== null) {
-    rules.push((value: unknown) => {
-      if (shouldValidate(value) && typeof value === 'string') {
-        try {
-          // construct the regex from the pattern string
-          const regex = new RegExp(field.pattern!)
-          if (!regex.test(value)) {
-            return `Value must match pattern: ${field.pattern}`
-          }
-        } catch {
-          // If regex is invalid, skip validation
-          console.warn(`Invalid regex pattern for field ${field.dataKey}:`, field.pattern)
-        }
-      }
-      return true
-    })
-  }
-
-  return rules
-}
-
-const getGraphemeCount = (value: unknown): number => {
-  if (typeof value === 'string') {
-    return value.split(byGrapheme).length
-  }
-  return 0
-}
-
-const truncateToMaxGraphemes = (value: string, maxLength: number): string => {
-  const graphemes = value.split(byGrapheme)
-  if (graphemes.length <= maxLength) {
-    return value
-  }
-  return graphemes.slice(0, maxLength).join('')
-}
-
-const handleInputWithGraphemeLimit = (field: FlagField, value: string) => {
-  const trimmedValue = value?.trim() || value
-  if (field.max_graphemes && typeof trimmedValue === 'string') {
-    const truncatedValue = truncateToMaxGraphemes(trimmedValue, field.max_graphemes)
-    editFlags.value[field.dataKey] = truncatedValue
-  } else {
-    editFlags.value[field.dataKey] = trimmedValue
-  }
-}
-
-const dependentDataKeys = computed(() => {
-  const map = new Map<string, string>()
-  for (const field of props.flagsDefinition) {
-    map.set(field.key, field.data_key)
-    map.set(field.data_key, field.data_key)
-  }
-  return map
-})
-
-const enumFields = computed(() =>
-  props.flagsDefinition.filter(
-    (fieldDefintion) => fieldDefintion.type === 'string-enum' && !!fieldDefintion.choices,
-  ),
-)
-
-const isFieldVisible = (field: FlagField): boolean => {
-  let isDependent = false
-
-  for (const enumField of enumFields.value) {
-    if (!enumField.choices) continue
-    const selectedValue = editFlags.value[enumField.data_key]
-
-    for (const choice of enumField.choices) {
-      const dependsOnField = choice.dependents.some(
-        (dependent) => dependentDataKeys.value.get(dependent) === field.dataKey,
-      )
-      if (!dependsOnField) continue
-
-      isDependent = true
-      if (choice.value === selectedValue) {
-        // A selected choice depends on this field, so show it.
-        return true
-      }
-    }
-  }
-
-  // Only visible when it is not a dependent of any choice.
-  return !isDependent
-}
-
-const visibleFlagsFields = computed(() =>
-  flagsFields.value.filter((field) => isFieldVisible(field)),
-)
+const visibleFlagsFields = computed(() => flagsFields.value.filter(isFieldVisible))
 
 const languageNames = computed(() => props.languages.map((language) => language.name))
 
@@ -1661,7 +1137,7 @@ const clearUnsetChoicesDependents = (flags: Record<string, unknown>): Record<str
       // This choice was not selected, so its dependents must be cleared. Dependents
       // reference flags by name, so resolve them to the data_key used in the config.
       for (const dependent of choice.dependents) {
-        const dataKey = dependentDataKeys.value.get(dependent) ?? dependent
+        const dataKey = flagVisibility.value.dependentDataKeys.get(dependent) ?? dependent
         const value = flags[dataKey]
 
         // Only remove dependents that are actually set, so unset fields are not
@@ -1841,14 +1317,5 @@ const cleanFlagsPayload = (flags: Record<string, any>) => {
 <style type="text/css" scoped>
 .align-top {
   align-self: start;
-}
-
-.youtube-link-chip {
-  font-size: 0.8125rem;
-  height: 24px;
-}
-
-.youtube-link-chip:hover {
-  opacity: 0.85;
 }
 </style>

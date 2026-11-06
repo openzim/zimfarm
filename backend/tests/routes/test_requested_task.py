@@ -768,3 +768,64 @@ def test_get_requested_task_with_deleted_recipe_uses_team_snapshot(
 
     response = client.get(f"/v2/requested-tasks/{requested_task.id}")
     assert response.status_code == expected_status
+
+
+def test_create_request_task_with_flag_overrides(
+    client: TestClient,
+    access_token: str,
+    recipe: Recipe,
+):
+    """Flag overrides only apply to the requested task, not to the recipe"""
+    response = client.post(
+        "/v2/requested-tasks",
+        json={
+            "recipe_names": [recipe.name],
+            "flags": {"format": ["nodet"]},
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+
+    requested_task_id = response.json()["requested"][0]
+    requested_task_response = client.get(
+        f"/v2/requested-tasks/{requested_task_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert requested_task_response.status_code == HTTPStatus.OK
+    assert "--format=nodet" in requested_task_response.json()["config"]["command"]
+    assert "format" not in recipe.config["offliner"]
+
+
+def test_create_request_task_rejects_invalid_flags(
+    client: TestClient,
+    access_token: str,
+    recipe: Recipe,
+):
+    response = client.post(
+        "/v2/requested-tasks",
+        json={
+            "recipe_names": [recipe.name],
+            "flags": {"format": ["invalid"]},
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_create_request_task_rejects_flags_for_multiple_recipes(
+    client: TestClient,
+    access_token: str,
+    create_recipe: Callable[..., Recipe],
+    recipe: Recipe,
+):
+    other_recipe = create_recipe(name="other_recipe")
+
+    response = client.post(
+        "/v2/requested-tasks",
+        json={
+            "recipe_names": [recipe.name, other_recipe.name],
+            "flags": {"format": ["nodet"]},
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.BAD_REQUEST
