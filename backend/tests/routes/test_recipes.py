@@ -1359,6 +1359,45 @@ def test_update_recipe_config_top_level_attributes(
                 assert data["config"][attr] == payload[attr]
 
 
+def test_update_recipe_version_only(
+    client: TestClient,
+    dbsession: OrmSession,
+    create_account: Callable[..., Account],
+    create_recipe: Callable[..., Recipe],
+    mwoffliner_definition_v2: OfflinerDefinitionSchema,
+):
+    """A pure version bump (same offliner, same flags) must actually apply.
+
+    Regression test: previously, when neither "offliner" nor "flags" changed,
+    the route kept reusing the recipe's existing offliner_definition_id and
+    silently ignored the requested "version", so the bump never stuck.
+    """
+    account = create_account(permission=RoleEnum.ADMIN)
+    access_token = generate_access_token(
+        issue_time=getnow(),
+        account_id=str(account.id),
+    )
+
+    recipe = create_recipe(name="test_recipe")
+    dbsession.add(recipe)
+    dbsession.flush()
+
+    response = client.patch(
+        f"/v2/recipes/{recipe.name}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"version": mwoffliner_definition_v2.version},
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()["version"] == mwoffliner_definition_v2.version
+
+    response = client.get(
+        f"/v2/recipes/{recipe.name}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()["version"] == mwoffliner_definition_v2.version
+
+
 @pytest.mark.parametrize(
     "permission,expected_status_code",
     [
