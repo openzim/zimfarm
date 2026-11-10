@@ -70,43 +70,24 @@
             <div>No flags to display.</div>
           </div>
 
-          <div v-else class="flags-list">
-            <div
-              v-for="field in filteredFields"
-              :key="field.dataKey"
-              class="flag-row d-flex flex-column ga-2 py-3"
-            >
-              <div class="flag-label">
-                <div class="d-flex flex-wrap align-center ga-2">
-                  <span class="text-title-small">{{ field.label }}</span>
-                  <v-chip
-                    v-if="isChanged(field.dataKey)"
-                    size="x-small"
-                    color="warning"
-                    variant="tonal"
-                  >
-                    modified
-                  </v-chip>
-                  <v-chip v-if="field.required" size="x-small" color="error" variant="tonal">
-                    required
-                  </v-chip>
+          <div v-else>
+            <v-row v-for="field in filteredFields" :key="field.dataKey" no-gutters class="py-2">
+              <v-col cols="12">
+                <div v-if="isChanged(field.dataKey)" class="d-flex justify-end mb-1">
+                  <v-chip size="x-small" color="warning" variant="tonal">modified</v-chip>
                 </div>
-                <div v-if="field.description" class="text-body-small text-medium-emphasis mt-1">
-                  {{ field.description }}
-                </div>
-              </div>
 
-              <div class="flag-input">
                 <OfflinerFlagInput
                   :field="field"
                   :model-value="localFlags[field.dataKey]"
                   :offliner="flags?.offliner_id"
-                  :hide-details="true"
-                  :show-hint="false"
+                  :label="field.label + (field.required ? ' *' : '')"
                   @update:model-value="(value) => setFlagValue(field.dataKey, value)"
                 />
-              </div>
-            </div>
+              </v-col>
+
+              <v-divider class="mt-1" />
+            </v-row>
           </div>
         </template>
       </v-card-text>
@@ -268,27 +249,3 @@ const handleDialogUpdate = (value: boolean) => {
   emit('update:modelValue', value)
 }
 </script>
-
-<style scoped>
-.flags-list {
-  max-height: 55vh;
-  overflow-y: auto;
-}
-
-.flag-row {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.flag-row:last-child {
-  border-bottom: none;
-}
-
-.flag-label {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.flag-input {
-  width: 100%;
-}
-</style>
