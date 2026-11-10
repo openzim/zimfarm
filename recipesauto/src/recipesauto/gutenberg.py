@@ -94,7 +94,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
     en_shelves = get_en_shelves()
     ref_data = get_ref_data()
 
-    return [
+    language_recipes = [
         {
             "category": "gutenberg",
             "config": {
@@ -118,7 +118,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             },
             # force nah despite lang code being unrecognized in pycountry
             # disable recipes with unknown language
-            # disable yi (Yiddish) which contains only an audio book so far (not Zimmed)
+            # disable yi (Yiddish): only an audio book so far, not Zimmed
             "enabled": lang_code in ["nah"]
             or (
                 get_iso_639_3_code(lang_code) is not None
@@ -135,7 +135,9 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "version": "1.1.0",
         }
         for lang_code in lang_codes
-    ] + [
+    ]
+
+    shelf_recipes = [
         {
             "category": "gutenberg",
             "config": {
@@ -178,3 +180,39 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         }
         for shelve in en_shelves
     ]
+
+    # single recipe aggregating all languages together, kept separate from the
+    # per-language ones since it is a long-running, heavy, singleton task (hence
+    # no "platform" throttling, unlike all other gutenberg recipes)
+    mul_recipe = {
+        "category": "gutenberg",
+        "config": {
+            "offliner": {
+                "source": "gutenberg",
+                "lcc-shelves": "all",
+                "no-index": True,
+                "with-author-bio": True,
+                "with-author-portrait": True,
+                "publisher": "openZIM",
+                "offliner_id": "papers",
+                "stats-filename": "/output/task_progress.json",
+                "optimization-cache": context.values["gutenberg_optim_url"],
+            },
+            "monitor": False,
+            "platform": None,
+            "image": {"name": "ghcr.io/openzim/papers", "tag": "1.1.0"},
+            "resources": {"cpu": 3, "disk": 268435456000, "memory": 8589934592},
+            "warehouse_path": "/gutenberg",
+        },
+        "enabled": True,
+        "language": "mul",
+        "name": check_zim_name("gutenberg_mul_all"),
+        "periodicity": "quarterly",
+        "tags": ["gutenberg", "multi"],
+        "archived": False,
+        "context": "",
+        "offliner": "papers",
+        "version": "1.1.0",
+    }
+
+    return [*language_recipes, *shelf_recipes, mul_recipe]
