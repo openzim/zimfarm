@@ -74,6 +74,8 @@ class Processor:
             import recipesauto.stackexchange as setmodule
         elif context.kind == "maps":
             import recipesauto.maps as setmodule
+        elif context.kind == "onemorelibrary":
+            import recipesauto.onemorelibrary as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
