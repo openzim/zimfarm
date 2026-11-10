@@ -395,8 +395,12 @@ class Processor:
     def _delete_obsolete_recipes(
         self, expected_recipes: list[dict[str, Any]], existing_recipe_names: list[str]
     ):
-        """Phase where we delete obsolete recipes"""
-        recipes_to_delete = [
+        """Phase where we archive obsolete recipes
+
+        We used to delete them outright, but we do not delete recipes anymore ;
+        obsolete recipes are archived instead so they can still be restored later.
+        """
+        recipes_to_archive = [
             existing_recipe_name
             for existing_recipe_name in existing_recipe_names
             if not any(
@@ -405,37 +409,40 @@ class Processor:
             )
             and existing_recipe_name not in self.overrides["do_not_delete"]
         ]
-        if len(recipes_to_delete) == 0:
-            logger.info("No recipe to delete")
+        if len(recipes_to_archive) == 0:
+            logger.info("No recipe to archive")
         else:
             if context.push:
-                logger.info(f"Deleting automatically {len(recipes_to_delete)} recipes:")
+                logger.info(
+                    f"Archiving automatically {len(recipes_to_archive)} recipes:"
+                )
             else:
                 logger.info(
-                    f"{len(recipes_to_delete)} recipes would have been deleted:"
+                    f"{len(recipes_to_archive)} recipes would have been archived:"
                 )
             ask_for_confirmation = True
-            for recipe in recipes_to_delete:
+            for recipe in recipes_to_archive:
                 logger.info(f"- {recipe}")
                 if not context.push:
                     continue
                 if ask_for_confirmation:
                     response = input(
-                        "Do you really want to delete this recipe? [y/N/a]"
+                        "Do you really want to archive this recipe? [y/N/a]"
                     ).upper()
                     if response not in ("Y", "A"):
                         continue
                     if response == "A":
                         ask_for_confirmation = False
-                self._delete_recipe_on_zf(recipe)
-                logger.info("Recipe deleted successfully")
+                self._archive_recipe_on_zf(recipe)
+                logger.info("Recipe archived successfully")
 
-    def _delete_recipe_on_zf(self, recipe_name: str):
-        """Really delete a recipe from Zimfarm"""
-        response = requests.delete(
-            self.get_zf_url(f"/recipes/{recipe_name}"),
+    def _archive_recipe_on_zf(self, recipe_name: str):
+        """Archive a recipe on the Zimfarm (soft removal, can be restored)"""
+        response = requests.patch(
+            self.get_zf_url(f"/recipes/{recipe_name}/archive"),
             headers=self.get_zf_headers(),
             timeout=context.http_timeout,
+            json={"comment": "Archived automatically by recipesauto"},
         )
         if not HTTPStatus(response.status_code).is_success:
             logger.error(response.text)
