@@ -76,6 +76,8 @@ class Processor:
             import recipesauto.maps as setmodule
         elif context.kind == "onemorelibrary":
             import recipesauto.onemorelibrary as setmodule
+        elif context.kind == "open_textbook_library":
+            import recipesauto.open_textbook_library as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
