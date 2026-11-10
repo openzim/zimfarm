@@ -24,16 +24,20 @@ class Shelve:
 
 def get_en_shelves() -> list[Shelve]:
     resp = requests.get(
-        "https://raw.githubusercontent.com/openzim/gutenberg/refs/heads/main/locales/en.json",
+        "https://raw.githubusercontent.com/openzim/papers/refs/heads/main/locales/en.json",
         allow_redirects=True,
         timeout=context.http_timeout,
     )
     resp.raise_for_status()
     data = resp.json()
+    ref_data = get_ref_data()
     return [
-        Shelve(letter=key[10:], label=value["textContent"][len(key) - 9 :])
-        for key, value in data["ui_strings"].items()
-        if key.startswith("lcc-shelf-")
+        Shelve(letter=letter, label=label)
+        for letter, label in data["gutenberg"]["collections"].items()
+        # the papers locale still lists "C", "D", "E" and "F" individually even
+        # though papers2zim merges them into a single "CDEF" shelf ; skip those
+        # individual ones since we only maintain a recipe for the merged shelf
+        if f"en_lcc_{letter.lower()}" in ref_data
     ]
 
 
@@ -95,16 +99,20 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "category": "gutenberg",
             "config": {
                 "offliner": {
+                    "source": "gutenberg",
                     "lcc-shelves": "all",
                     "languages": lang_code,
+                    "with-author-bio": True,
+                    "with-author-portrait": True,
                     "publisher": "openZIM",
-                    "offliner_id": "gutenberg",
+                    "offliner_id": "papers",
                     "stats-filename": "/output/task_progress.json",
                     "zim-languages": SPECIAL_ZIM_LANGUAGES.get(lang_code),
+                    "optimization-cache": context.values["gutenberg_optim_url"],
                 },
                 "monitor": False,
                 "platform": "gutenberg",
-                "image": {"name": "ghcr.io/openzim/gutenberg", "tag": "3.0.1"},
+                "image": {"name": "ghcr.io/openzim/papers", "tag": "1.1.0"},
                 "resources": {"cpu": 3, "disk": 322122547200, "memory": 16106127360},
                 "warehouse_path": "/gutenberg",
             },
@@ -123,8 +131,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": ["gutenberg"],
             "archived": False,
             "context": "",
-            "offliner": "gutenberg",
-            "version": "3.0.1",
+            "offliner": "papers",
+            "version": "1.1.0",
         }
         for lang_code in lang_codes
     ] + [
@@ -132,6 +140,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "category": "gutenberg",
             "config": {
                 "offliner": {
+                    "source": "gutenberg",
                     "lcc-shelves": shelve.letter,
                     "zim-title": "Project Gutenberg Library",
                     "zim-desc": ref_data[f"en_lcc_{shelve.letter.lower()}"][
@@ -141,16 +150,19 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                         "long_description"
                     ],
                     "languages": "en",
+                    "with-author-bio": True,
+                    "with-author-portrait": True,
                     "publisher": "openZIM",
-                    "offliner_id": "gutenberg",
+                    "offliner_id": "papers",
                     "stats-filename": "/output/task_progress.json",
                     "zim-name": check_zim_name(
                         f"gutenberg_en_lcc-{shelve.letter.lower()}"
                     ),
+                    "optimization-cache": context.values["gutenberg_optim_url"],
                 },
                 "monitor": False,
                 "platform": "gutenberg",
-                "image": {"name": "ghcr.io/openzim/gutenberg", "tag": "3.0.1"},
+                "image": {"name": "ghcr.io/openzim/papers", "tag": "1.1.0"},
                 "resources": {"cpu": 3, "disk": 322122547200, "memory": 16106127360},
                 "warehouse_path": "/gutenberg",
             },
@@ -161,8 +173,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": ["gutenberg"],
             "archived": False,
             "context": "",
-            "offliner": "gutenberg",
-            "version": "3.0.1",
+            "offliner": "papers",
+            "version": "1.1.0",
         }
         for shelve in en_shelves
     ]
