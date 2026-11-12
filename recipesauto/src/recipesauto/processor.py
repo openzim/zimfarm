@@ -86,9 +86,14 @@ class Processor:
         self.recipe_tag = setmodule.get_recipe_tag()
 
         existing_recipe_names = self._list_zf_recipes()
+        archived_recipe_names = self._list_zf_recipes(archived=True)
 
         logger.info(f"{len(existing_recipe_names)} recipes already exist in ZF")
         logger.debug(",".join(existing_recipe_names))
+        logger.info(
+            f"{len(archived_recipe_names)} recipes already exist in ZF but are archived"
+        )
+        logger.debug(",".join(archived_recipe_names))
 
         expected_recipes = setmodule.get_expected_recipes()
 
@@ -120,14 +125,18 @@ class Processor:
         for recipe in self.overrides["overrides"]:
             logger.info(f"- {recipe['name']}")
 
-        self._create_new_recipes(
+        restored_recipe_names = self._create_new_recipes(
             expected_recipes=expected_recipes,
             existing_recipe_names=existing_recipe_names,
+            archived_recipe_names=archived_recipe_names,
         )
 
         self._maintain_existing_recipes(
             expected_recipes=expected_recipes,
-            existing_recipe_names=existing_recipe_names,
+            # a just-restored recipe keeps whatever configuration it had before
+            # being archived, which may be stale ; let the maintain phase bring
+            # it back in line with what is now expected
+            existing_recipe_names=[*existing_recipe_names, *restored_recipe_names],
         )
 
         self._delete_obsolete_recipes(
@@ -136,58 +145,126 @@ class Processor:
         )
 
     def _create_new_recipes(
-        self, expected_recipes: list[dict[str, Any]], existing_recipe_names: list[str]
-    ):
-        """Phase where we create the new recipes"""
-        recipes_to_create = [
-            recipe
+        self,
+        expected_recipes: list[dict[str, Any]],
+        existing_recipe_names: list[str],
+        archived_recipe_names: list[str],
+    ) -> list[str]:
+        """Phase where we create new recipes, restoring archived ones instead
+
+        A recipe whose name already exists but is archived cannot be created
+        (the name is already taken), which would otherwise end up as a
+        conflict ; it is restored instead. Its (possibly stale, pre-archival)
+        configuration is then brought back in line with what is now expected
+        by the maintain phase, which the caller must still run on the names
+        returned here.
+
+        Returns the names of the recipes that were restored.
+        """
+        missing_recipe_names = [
+            recipe["name"]
             for recipe in expected_recipes
             if recipe["name"]
             not in [*existing_recipe_names, *self.overrides["do_not_create"]]
         ]
-        if len(recipes_to_create) == 0:
-            logger.info("No recipe to create")
+        recipes_to_restore = [
+            recipe
+            for recipe in expected_recipes
+            if recipe["name"] in missing_recipe_names
+            and recipe["name"] in archived_recipe_names
+        ]
+        recipes_to_create = [
+            recipe
+            for recipe in expected_recipes
+            if recipe["name"] in missing_recipe_names
+            and recipe["name"] not in archived_recipe_names
+        ]
+
+        restored_recipe_names = self._restore_archived_recipes(recipes_to_restore)
+        self._create_brand_new_recipes(recipes_to_create)
+        return restored_recipe_names
+
+    def _restore_archived_recipes(
+        self, recipes_to_restore: list[dict[str, Any]]
+    ) -> list[str]:
+        """Restore recipes which already exist on the Zimfarm but are archived"""
+        if len(recipes_to_restore) == 0:
+            logger.info("No archived recipe to restore")
+            return []
+        if context.push:
+            logger.info(
+                f"Restoring automatically {len(recipes_to_restore)} archived recipes:"
+            )
         else:
-            if context.push:
-                logger.info(f"Creating automatically {len(recipes_to_create)} recipes:")
-            else:
-                logger.info(
-                    f"{len(recipes_to_create)} recipes would have been created:"
-                )
-            ask_for_confirmation = True
-            for recipe in recipes_to_create:
-                logger.info(f"- {recipe['name']}")
-                if not self._check_blob_sources(recipe):
-                    logger.warning(
-                        f"Skipping creation of {recipe['name']} since some blob "
-                        "sources are not available"
-                    )
+            logger.info(
+                f"{len(recipes_to_restore)} archived recipes would have been restored:"
+            )
+        restored_recipe_names: list[str] = []
+        ask_for_confirmation = True
+        for recipe in recipes_to_restore:
+            logger.info(f"- {recipe['name']} (already exists, archived)")
+            if not context.push:
+                continue
+            if ask_for_confirmation:
+                response = input(
+                    f"'{recipe['name']}' already exists but is archived ; do you "
+                    "really want to RESTORE it (not create a new one)? [y/N/a]"
+                ).upper()
+                if response not in ("Y", "A"):
                     continue
-                if not context.push:
-                    continue
-                if ask_for_confirmation:
-                    response = input(
-                        "Do you really want to create this recipe? [y/N/a]"
-                    ).upper()
-                    if response not in ("Y", "A"):
-                        continue
-                    if response == "A":
-                        ask_for_confirmation = False
-                created_offliner_flags = self._create_recipe_on_zf(recipe)
-                logger.info("Recipe created successfully")
-                # blobs can only be uploaded once the recipe exists, so recipe has
-                # been created without blob flags, which we now upload
-                offliner_flags = copy.deepcopy(recipe["config"]["offliner"])
-                self._resolve_blob_flags(
-                    recipe_name=recipe["name"],
-                    version=recipe["version"],
-                    offliner_flags=offliner_flags,
-                    current_offliner_flags=created_offliner_flags,
-                    upload=True,
+                if response == "A":
+                    ask_for_confirmation = False
+            self._restore_recipe_on_zf(recipe["name"])
+            logger.info("Recipe restored successfully")
+            restored_recipe_names.append(recipe["name"])
+        return restored_recipe_names
+
+    def _create_brand_new_recipes(self, recipes_to_create: list[dict[str, Any]]):
+        """Phase where we create recipes which never existed on the Zimfarm"""
+        if len(recipes_to_create) == 0:
+            logger.info("No new recipe to create")
+            return
+        if context.push:
+            logger.info(f"Creating automatically {len(recipes_to_create)} new recipes:")
+        else:
+            logger.info(
+                f"{len(recipes_to_create)} new recipes would have been created:"
+            )
+        ask_for_confirmation = True
+        for recipe in recipes_to_create:
+            logger.info(f"- {recipe['name']} (new recipe)")
+            if not self._check_blob_sources(recipe):
+                logger.warning(
+                    f"Skipping creation of {recipe['name']} since some blob "
+                    "sources are not available"
                 )
-                if offliner_flags != created_offliner_flags:
-                    self._patch_recipe_on_zf(recipe["name"], {"flags": offliner_flags})
-                    logger.info("Recipe blobs uploaded successfully")
+                continue
+            if not context.push:
+                continue
+            if ask_for_confirmation:
+                response = input(
+                    f"'{recipe['name']}' does not exist yet ; do you really want "
+                    "to CREATE it (new recipe)? [y/N/a]"
+                ).upper()
+                if response not in ("Y", "A"):
+                    continue
+                if response == "A":
+                    ask_for_confirmation = False
+            created_offliner_flags = self._create_recipe_on_zf(recipe)
+            logger.info("Recipe created successfully")
+            # blobs can only be uploaded once the recipe exists, so recipe has
+            # been created without blob flags, which we now upload
+            offliner_flags = copy.deepcopy(recipe["config"]["offliner"])
+            self._resolve_blob_flags(
+                recipe_name=recipe["name"],
+                version=recipe["version"],
+                offliner_flags=offliner_flags,
+                current_offliner_flags=created_offliner_flags,
+                upload=True,
+            )
+            if offliner_flags != created_offliner_flags:
+                self._patch_recipe_on_zf(recipe["name"], {"flags": offliner_flags})
+                logger.info("Recipe blobs uploaded successfully")
 
     def _create_recipe_on_zf(self, recipe: dict[str, Any]) -> dict[str, Any]:
         """Really create the recipe on the Zimfarm
@@ -462,7 +539,19 @@ class Processor:
             logger.error(response.text)
         response.raise_for_status()
 
-    def _list_zf_recipes(self) -> list[str]:
+    def _restore_recipe_on_zf(self, recipe_name: str):
+        """Restore a previously archived recipe on the Zimfarm"""
+        response = requests.patch(
+            self.get_zf_url(f"/recipes/{recipe_name}/restore"),
+            headers=self.get_zf_headers(),
+            timeout=context.http_timeout,
+            json={"comment": "Restored automatically by recipesauto"},
+        )
+        if not HTTPStatus(response.status_code).is_success:
+            logger.error(response.text)
+        response.raise_for_status()
+
+    def _list_zf_recipes(self, *, archived: bool = False) -> list[str]:
         """Get a list of existing recipes on zimfarm matching our set"""
 
         skip = 0
@@ -473,6 +562,7 @@ class Processor:
             response = requests.get(
                 self.get_zf_url(
                     f"/recipes/?limit={per_page}&skip={skip}&tag={self.recipe_tag}"
+                    f"&archived={'true' if archived else 'false'}"
                 ),
                 headers=self.get_zf_headers(),
                 timeout=context.http_timeout,
