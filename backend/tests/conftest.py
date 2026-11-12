@@ -467,6 +467,24 @@ def mwoffliner_definition(
 
 
 @pytest.fixture
+def mwoffliner_definition_v2(
+    dbsession: OrmSession,
+    mwoffliner: OfflinerSchema,
+    mwoffliner_flags: OfflinerSpecSchema,
+) -> OfflinerDefinitionSchema:
+    """Create a second mwoffliner definition (same flags, different version)."""
+    definition = OfflinerDefinition(
+        offliner=mwoffliner.id,
+        version="updated",
+        schema=mwoffliner_flags.model_dump(mode="json"),
+        created_at=getnow(),
+    )
+    dbsession.add(definition)
+    dbsession.flush()
+    return create_offliner_definition_schema(definition)
+
+
+@pytest.fixture
 def mwoffliner_schema_cls(
     mwoffliner_flags: OfflinerSpecSchema, mwoffliner: OfflinerSchema
 ):

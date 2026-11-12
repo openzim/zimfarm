@@ -528,9 +528,16 @@ def update_recipe(
         # Case 3: Attempting to change a top level configuration that doesn't
         # affect the offliner
         new_recipe_config = recipe_config
-        offliner_definition = db_offliner_definition.get_offliner_definition_by_id(
-            session, recipe.offliner_definition_id
-        )
+        if request.version:
+            # allow bumping the offliner definition version even when the flags
+            # themselves are not changing (e.g. a pure image/version update)
+            offliner_definition = db_offliner_definition.get_offliner_definition(
+                session, offliner.id, request.version
+            )
+        else:
+            offliner_definition = db_offliner_definition.get_offliner_definition_by_id(
+                session, recipe.offliner_definition_id
+            )
 
     if request.image is not None:
         # Ensure the image for the offliner is a valid preset
