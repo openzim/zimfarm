@@ -78,6 +78,8 @@ class Processor:
             import recipesauto.onemorelibrary as setmodule
         elif context.kind == "open_textbook_library":
             import recipesauto.open_textbook_library as setmodule
+        elif context.kind == "wikisource":
+            import recipesauto.wikisource as setmodule
         else:
             raise Exception(f"Unsupported kind: {context.kind}")
 
