@@ -1131,12 +1131,19 @@ const clearUnsetChoicesDependents = (flags: Record<string, unknown>): Record<str
     const selectedValue = flags[field.data_key]
     if (selectedValue === null || selectedValue === undefined) continue
 
+    // Dependents of the selected choice must be kept even if an unselected choice
+    // also lists them.
+    const selectedChoice = field.choices.find((choice) => choice.value == selectedValue)
+    const keptDependents = new Set<string>(selectedChoice?.dependents ?? [])
+
     for (const choice of field.choices) {
       if (choice.value === selectedValue) continue
 
       // This choice was not selected, so its dependents must be cleared. Dependents
       // reference flags by name, so resolve them to the data_key used in the config.
       for (const dependent of choice.dependents) {
+        if (keptDependents.has(dependent)) continue
+
         const dataKey = flagVisibility.value.dependentDataKeys.get(dependent) ?? dependent
         const value = flags[dataKey]
 

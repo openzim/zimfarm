@@ -126,22 +126,6 @@ class FlagSchema(BaseFlagSchema):
         return self
 
     @model_validator(mode="after")
-    def validate_choice_dependents(self) -> Self:
-        """Validate that the dependents for a choice field are mutually exclusive."""
-
-        if self.choices:
-            all_dependents = [
-                dependent
-                for choice in self.choices
-                if not isinstance(choice, str)
-                for dependent in choice.dependents
-            ]
-            if len(set(all_dependents)) != len(all_dependents):
-                raise ValueError("Dependents must be unique and mutually exclusive")
-
-        return self
-
-    @model_validator(mode="after")
     def validate_unique_choices(self) -> Self:
         """Validate that the choice values and titles are unique"""
 

@@ -725,7 +725,6 @@ rejected , so a mistyped key fails fast at registration time rather than being s
     The `dependents` introduces the following restrictions:
     - they can only be set for `string-enum` types
     - the dependents for a particular choice must be unique
-    - the dependents across all choices must be mutually exclusive
     - each field must be a valid flag name as used in the top-level `flags` mapping
 - `customValidator` (**optional**): name of a registered per-field validator function
   applied to the value. See [Validators](#validators).

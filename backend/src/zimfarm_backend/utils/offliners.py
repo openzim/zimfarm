@@ -13,6 +13,7 @@ from zimfarm_backend.common.schemas.models import (
     ResourcesSchema,
 )
 from zimfarm_backend.common.schemas.offliners.models import (
+    Choice,
     FlagSchema,
     OfflinerSpecSchema,
 )
@@ -252,6 +253,15 @@ def clear_unset_choices_dependents(
             # Enum is an optional field and nothing was selected
             continue
 
+        selected_choice = next(
+            (
+                choice
+                for choice in flag.choices
+                if not isinstance(choice, str) and choice.value == selected_value
+            ),
+            Choice(title="", value="", dependents=[]),
+        )
+
         for choice in flag.choices:
             if isinstance(choice, str):
                 continue
@@ -262,11 +272,13 @@ def clear_unset_choices_dependents(
             # Clear the flags specified in the dependents as this choice option was
             # not selected
             for dependent in choice.dependents:
-                if dependent in config:
+                # Dependents of the selected choice must be kept even if an unselected
+                # choice lists them
+                if dependent in config and dependent not in selected_choice.dependents:
                     del config[dependent]
 
                 alias = flag_alias(dependent, spec.flags[dependent], base_model)
-                if alias in config:
+                if alias in config and alias not in selected_choice.dependents:
                     del config[alias]
 
     return config

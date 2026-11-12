@@ -343,6 +343,26 @@ def test_command_for_std_stats_unset(
                 "authorNationality": "france",
             },
         ),
+        pytest.param(
+            {
+                "mwUrl": "https://www.example.com",
+                "adminEmail": "admin@example.com",
+                "source": "authors",
+                "bookId": "hello",
+                "bookFormat": "pdf",
+                "authorName": "admin",
+                "authorNationality": "france",
+                "fetchCover": True,
+            },
+            {
+                "mwUrl": "https://www.example.com",
+                "adminEmail": "admin@example.com",
+                "source": "authors",
+                "authorName": "admin",
+                "authorNationality": "france",
+                "fetchCover": True,
+            },
+        ),
     ],
 )
 def test_clear_unset_flag_values_for_unchosen_choice_options(
