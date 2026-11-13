@@ -352,13 +352,21 @@ class Processor:
                         changes[current_recipe_key] = expected_value
                     else:
                         logger.info("Flags have changed:")
-                        current_flags = set(current_recipe_value.items())
-                        expected_flags = set(
-                            expected_recipe["config"]["offliner"].items()
-                        )
-                        if new_keys := expected_flags - current_flags:
+                        # not using sets of (key, value) pairs here: some flag
+                        # values are lists (e.g. mwoffliner's "format"), which
+                        # are unhashable and cannot go into a set
+                        expected_offliner = expected_recipe["config"]["offliner"]
+                        if new_keys := {
+                            key: value
+                            for key, value in expected_offliner.items()
+                            if current_recipe_value.get(key, ...) != value
+                        }:
                             logger.info(f"Added keys: {new_keys}")
-                        if previous_keys := current_flags - expected_flags:
+                        if previous_keys := {
+                            key: value
+                            for key, value in current_recipe_value.items()
+                            if expected_offliner.get(key, ...) != value
+                        }:
                             logger.info(f"Removed keys: {previous_keys}")
                         # 'offliner' at read time ends up in 'flags' at write time
                         changes["flags"] = expected_value
