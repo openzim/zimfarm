@@ -1361,8 +1361,8 @@
  "stackoverflow.com_en": {
   "resources": {
    "cpu": 6,
-   "disk": 268435456000,
-   "memory": 137438953472
+   "disk": 858993459200,
+   "memory": 85899345920
   },
   "title": "Stack Overflow",
   "description": "Q&A for professional and enthusiast informatics programmers"

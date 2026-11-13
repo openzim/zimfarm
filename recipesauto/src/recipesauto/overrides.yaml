@@ -37,5 +37,6 @@ overrides:
           description: A collection of TED videos about NASA
 do_not_create:
   - ted_topic_artificial-intelligence # too few videos after removing the ones we fail to download + there is also an "AI" topic which is far more complete
+  - windowsphone.stackexchange.com_en # archived on SE side
 do_not_delete:
   - ted_topic_all
