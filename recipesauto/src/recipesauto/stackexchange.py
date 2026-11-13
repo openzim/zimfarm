@@ -71,7 +71,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "optimization-cache": context.values["stackexchange_optim_url"],
                     "mirror": "https://org-kiwix-stackexchange.s3.us-west-1.wasabisys.com",
                     "publisher": "openZIM",
-                    "threads": "8",
+                    "threads": 8,
                     "domain": archive,
                     "stats-filename": "/output/task_progress.json",
                     "output": "/output",
@@ -82,8 +82,8 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                     "offliner_id": "sotoki",
                 },
                 "monitor": False,
-                "platform": None,
-                "image": {"name": "ghcr.io/openzim/sotoki", "tag": "2.2.1"},
+                "platform": "stackexchange",
+                "image": {"name": "ghcr.io/openzim/sotoki", "tag": "3.1.1"},
                 "resources": config_data[get_name(archive)]["resources"],
                 "warehouse_path": "/stack_exchange",
             },
@@ -92,6 +92,10 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "name": get_name(archive),
             "periodicity": "biannualy",
             "tags": ["stack-exchange"],
+            "archived": False,
+            "context": "",
+            "offliner": "sotoki",
+            "version": "3.1.1",
         }
         for archive in archives
         if archive not in IGNORED_DOMAINS
