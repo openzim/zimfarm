@@ -5,7 +5,7 @@ from typing import Any
 import pydantic
 import pytest
 from _pytest.raises import RaisesExc
-from pydantic import ValidationError, create_model
+from pydantic import ValidationError, create_model, model_validator
 
 from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.schemas import BaseModel, CamelModel
@@ -18,6 +18,9 @@ from zimfarm_backend.common.schemas.offliners.builder import generate_field_type
 from zimfarm_backend.common.schemas.offliners.models import (
     FlagSchema,
     OfflinerSpecSchema,
+)
+from zimfarm_backend.common.schemas.offliners.validators import (
+    check_mutually_exclusive_fields,
 )
 
 
@@ -140,6 +143,35 @@ def test_ted_flags_schema_fields_exclusivity(
             offliner_id="ted",
             name="ted-talks_mul_football",
         )
+
+
+@pytest.mark.parametrize(
+    "field_one,field_two,expected",
+    [
+        pytest.param("value", None, does_not_raise(), id="only-field-one-set"),
+        pytest.param(None, "value", does_not_raise(), id="only-field-two-set"),
+        pytest.param(None, None, does_not_raise(), id="none-set"),
+        pytest.param("value", "value", pytest.raises(ValidationError), id="both-set"),
+    ],
+)
+def test_check_mutually_exclusive_fields(
+    field_one: str | None,
+    field_two: str | None,
+    expected: RaisesExc[Exception],
+):
+    validators: dict[str, Any] = {  # pyright: ignore[reportAssignmentType]
+        "check_mutually_exclusive_fields_validator": model_validator(mode="after")(
+            check_mutually_exclusive_fields(["field_one", "field_two"])
+        ),
+    }
+    model_cls = create_model(
+        "MutuallyExclusiveModel",
+        field_one=(str | None, None),
+        field_two=(str | None, None),
+        __validators__=validators,
+    )
+    with expected:
+        model_cls(field_one=field_one, field_two=field_two)
 
 
 @pytest.mark.parametrize(

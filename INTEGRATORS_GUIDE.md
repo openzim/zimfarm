@@ -754,6 +754,8 @@ Two kinds of validators are supported:
   list of field names to pass to the validator. The registered model validators are:
   - `check_exclusive_fields`, which requires that exactly one of the listed `fields` be
     set.
+  - `check_mutually_exclusive_fields`, which requires that at most one of the listed
+    `fields` be set (leaving all of them unset is valid).
 
 ### Similarity data
 
