@@ -561,7 +561,7 @@ class Processor:
         while True:
             response = requests.get(
                 self.get_zf_url(
-                    f"/recipes/?limit={per_page}&skip={skip}&tag={self.recipe_tag}"
+                    f"/recipes?limit={per_page}&skip={skip}&tag={self.recipe_tag}"
                     f"&archived={'true' if archived else 'false'}"
                 ),
                 headers=self.get_zf_headers(),
