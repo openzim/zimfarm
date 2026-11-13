@@ -78,6 +78,7 @@ def prepare_context(raw_args: list[str]) -> None:
             "stackexchange",
             "maps",
             "onemorelibrary",
+            "open_textbook_library",
         ],
     )
 
