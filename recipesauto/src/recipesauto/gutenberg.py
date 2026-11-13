@@ -132,7 +132,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "archived": False,
             "context": "",
             "offliner": "papers",
-            "version": "1.2.0",
+            "version": "dev",
         }
         for lang_code in lang_codes
     ]
@@ -176,7 +176,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "archived": False,
             "context": "",
             "offliner": "papers",
-            "version": "1.2.0",
+            "version": "dev",
         }
         for shelve in en_shelves
     ]
@@ -212,7 +212,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         "archived": False,
         "context": "",
         "offliner": "papers",
-        "version": "1.2.0",
+        "version": "dev",
     }
 
     return [*language_recipes, *shelf_recipes, mul_recipe]
