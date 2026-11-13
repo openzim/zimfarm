@@ -112,7 +112,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "monitor": False,
                 "platform": "gutenberg",
-                "image": {"name": "ghcr.io/openzim/papers", "tag": "1.1.0"},
+                "image": {"name": "ghcr.io/openzim/papers", "tag": "1.2.0"},
                 "resources": {"cpu": 3, "disk": 322122547200, "memory": 16106127360},
                 "warehouse_path": "/gutenberg",
             },
@@ -132,7 +132,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "archived": False,
             "context": "",
             "offliner": "papers",
-            "version": "1.1.0",
+            "version": "1.2.0",
         }
         for lang_code in lang_codes
     ]
@@ -164,7 +164,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "monitor": False,
                 "platform": "gutenberg",
-                "image": {"name": "ghcr.io/openzim/papers", "tag": "1.1.0"},
+                "image": {"name": "ghcr.io/openzim/papers", "tag": "1.2.0"},
                 "resources": {"cpu": 3, "disk": 322122547200, "memory": 16106127360},
                 "warehouse_path": "/gutenberg",
             },
@@ -176,7 +176,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "archived": False,
             "context": "",
             "offliner": "papers",
-            "version": "1.1.0",
+            "version": "1.2.0",
         }
         for shelve in en_shelves
     ]
@@ -200,7 +200,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             },
             "monitor": False,
             "platform": None,
-            "image": {"name": "ghcr.io/openzim/papers", "tag": "1.1.0"},
+            "image": {"name": "ghcr.io/openzim/papers", "tag": "1.2.0"},
             "resources": {"cpu": 3, "disk": 268435456000, "memory": 8589934592},
             "warehouse_path": "/gutenberg",
         },
@@ -212,7 +212,7 @@ def get_expected_recipes() -> list[dict[str, Any]]:
         "archived": False,
         "context": "",
         "offliner": "papers",
-        "version": "1.1.0",
+        "version": "1.2.0",
     }
 
     return [*language_recipes, *shelf_recipes, mul_recipe]
