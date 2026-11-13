@@ -1,0 +1,46 @@
+{
+    "en": {
+        "title": "One More Library",
+        "description": "Free public-domain books"
+    },
+    "es": {
+        "title": "One More Library",
+        "description": "Libros gratuitos de dominio público"
+    },
+    "fr": {
+        "title": "One More Library",
+        "description": "Livres gratuits du domaine public"
+    },
+    "de": {
+        "title": "One More Library",
+        "description": "Kostenlose gemeinfreie Bücher"
+    },
+    "it": {
+        "title": "One More Library",
+        "description": "Libri gratuiti di pubblico dominio"
+    },
+    "ar": {
+        "title": "One More Library",
+        "description": "كتب مجانية من الملكية العامة"
+    },
+    "ru": {
+        "title": "One More Library",
+        "description": "Бесплатные книги в общественном достоянии"
+    },
+    "fi": {
+        "title": "One More Library",
+        "description": "Ilmaisia tekijänoikeudettomia kirjoja"
+    },
+    "sv": {
+        "title": "One More Library",
+        "description": "Fria böcker utan upphovsrätt"
+    },
+    "la": {
+        "title": "One More Library",
+        "description": "Libri iuris publici gratuiti"
+    },
+    "grc": {
+        "title": "One More Library",
+        "description": "Δωρεὰν βιβλία δημόσια"
+    }
+}
