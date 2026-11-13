@@ -253,8 +253,8 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "description": "...",
       "type": "string-enum",
         "choices": [
-          { "title": "Books",   "value": "books", "dependents": [ "bookId", "bookFormat" ] },
-          { "title": "Authors", "value": "authors", "dependents": ["authorName", "authorNationality"] }
+          { "title": "Books",   "value": "books", "dependents": [ "bookId", "bookFormat", "fetchCover" ] },
+          { "title": "Authors", "value": "authors", "dependents": ["authorName", "authorNationality", "fetchCover"] }
         ]
     },
     "bookId": { "type": "string", "label": "Book ID", "description": "..." },
@@ -280,6 +280,12 @@ def mwoffliner_flags() -> OfflinerSpecSchema:
       "title": "Optimisation Cache URL",
       "description": "S3 Storage URL including credentials and bucket",
       "secret": true
+    },
+    "fetchCover": {
+      "type": "boolean",
+      "required": false,
+      "title": "Fetch Cover",
+      "description": "Fetch cover illustrations"
     },
     "addNamespaces": {
       "type": "string",

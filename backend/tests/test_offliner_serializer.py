@@ -66,6 +66,7 @@ def test_mw_offliner_schema_to_flags(mwoffliner_schema_cls: type[BaseModel]):
             "webp",
             "insecure",
             "withoutZimFullTextIndex",
+            "fetchCover",
         ):
             assert flag.type == "boolean"
             assert flag.choices is None

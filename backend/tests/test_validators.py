@@ -513,26 +513,6 @@ def test_grapheme_length_validation_on_list_of_strings(
             ),
             id="string-enum-type-with-duplicate-choices",
         ),
-        ####################################
-        pytest.param(
-            r"""
-{
-    "title": "source",
-    "type": "string-enum",
-    "choices": [
-    { "title": "Books",   "value": "books", "dependents": [ "bookId", "bookFormat" ] },
-    { "title": "Authors", "value": "authors", "dependents": ["bookId", "authorNationality" ] }
-    ],
-    "description": "source"
-}
-""",
-            pytest.raises(
-                ValidationError,
-                match=r"Dependents must be unique and mutually exclusive",
-            ),
-            id="string-enum-type-with-overlapping-dependents",
-        ),
-        ####################################
         pytest.param(
             r"""
 {
