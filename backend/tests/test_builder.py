@@ -14,6 +14,7 @@ from zimfarm_backend.common.schemas.offliners.builder import (
     "validator_name,exception",
     [
         ("check_exclusive_fields", does_not_raise()),
+        ("check_mutually_exclusive_fields", does_not_raise()),
         ("invalid_validator", pytest.raises(ValueError)),
     ],
 )

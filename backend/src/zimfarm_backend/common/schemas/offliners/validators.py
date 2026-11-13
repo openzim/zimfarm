@@ -32,3 +32,21 @@ def check_exclusive_fields(fields: list[str]):
         return model
 
     return _check_exclusive_fields
+
+
+def check_mutually_exclusive_fields(fields: list[str]):
+    """At most one of `fields` may be set; leaving all of them unset is valid."""
+
+    def _check_mutually_exclusive_fields(model: Any, info: ValidationInfo):
+        context = info.context
+        if context and context.get("skip_validation"):
+            return model
+
+        set_fields = [name for name in fields if getattr(model, name) is not None]
+
+        if len(set_fields) > 1:
+            raise ValueError(f"At most one of fields in {fields} must be set")
+
+        return model
+
+    return _check_mutually_exclusive_fields

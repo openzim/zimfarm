@@ -39,6 +39,7 @@ from zimfarm_backend.common.schemas.offliners.models import (
 from zimfarm_backend.common.schemas.offliners.transformers import transform_data
 from zimfarm_backend.common.schemas.offliners.validators import (
     check_exclusive_fields,
+    check_mutually_exclusive_fields,
     validate_ted_links,
 )
 from zimfarm_backend.common.schemas.orms import OfflinerSchema
@@ -71,6 +72,8 @@ def get_model_validator(validator_name: str):
     match validator_name:
         case "check_exclusive_fields":
             return check_exclusive_fields
+        case "check_mutually_exclusive_fields":
+            return check_mutually_exclusive_fields
         case _:
             raise ValueError(f"No validator functions registered for '{validator_name}")
 
