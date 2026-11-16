@@ -1,11 +1,13 @@
+import json
 import re
 import time
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
 
-from recipesauto.constants import logger
+from recipesauto.constants import ROOT_DIR, logger
 from recipesauto.context import Context
 from recipesauto.utils import check_zim_name
 
@@ -13,14 +15,49 @@ context = Context.get()
 
 book_re = re.compile(r"https://shamela.ws/book/(\d*)")
 
+# web.archive.org has repeatedly shown real (if usually brief) outages, on
+# top of being a free, often overloaded nonprofit service in general ;
+# cache each category's resolved scopeIncludeRx locally so a run only ever
+# needs to reach archive.org once per category per CATEGORY_CACHE_TTL, and
+# is otherwise immune to its availability. This also matches the fact that
+# a given snapshot's book listing does not change until a newer one is
+# captured anyway.
+CATEGORY_CACHE_FILE = ROOT_DIR / "shamela_category_cache.json"
+CATEGORY_CACHE_TTL = timedelta(days=30)
+
+
+def _load_category_cache() -> dict[str, Any]:
+    if not CATEGORY_CACHE_FILE.exists():
+        return {}
+    try:
+        return json.loads(CATEGORY_CACHE_FILE.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_category_cache(cache: dict[str, Any]) -> None:
+    CATEGORY_CACHE_FILE.write_text(
+        json.dumps(cache, indent=2, ensure_ascii=False, sort_keys=True)
+    )
+
+
 # archive.org is a free, often overloaded nonprofit service and regularly
 # has brief outages/connection failures ; retry rather than let one bad
 # request kill a whole run across dozens of categories
-WAYBACK_RETRIES = 3
+WAYBACK_RETRIES = 6
 WAYBACK_RETRY_DELAY = 5
+
+# archive.org's API docs ask bulk/automated users to identify themselves
+# with a descriptive User-Agent, rather than the plain python-requests
+# default, to help them manage load and reach us if there is ever a problem
+WAYBACK_USER_AGENT = (
+    f"zimfarm-recipesauto (https://github.com/openzim/zimfarm; "
+    f"contact+crawl@kiwix.org) requests/{requests.__version__}"
+)
 
 
 def _get_with_retries(url: str, **kwargs: Any) -> requests.Response:
+    kwargs.setdefault("headers", {}).setdefault("User-Agent", WAYBACK_USER_AGENT)
     for attempt in range(1, WAYBACK_RETRIES + 1):
         try:
             resp = requests.get(url, timeout=context.http_timeout, **kwargs)
@@ -264,24 +301,47 @@ def get_recipe_tag() -> str:
 
 def _get_wayback_snapshot_url(url: str) -> str:
     """Get the URL of the closest Internet Archive Wayback Machine snapshot of url"""
-    resp = _get_with_retries(
-        "https://archive.org/wayback/available", params={"url": url}
-    )
-    snapshot = resp.json().get("archived_snapshots", {}).get("closest")
-    if not snapshot:
-        raise Exception(f"No Internet Archive snapshot found for {url}")
-    # the API suggests a plain http:// URL even though web.archive.org fully
-    # supports https ; force it, as some networks block outbound port 80
-    return snapshot["url"].replace("http://", "https://", 1)
+    for attempt in range(1, WAYBACK_RETRIES + 1):
+        resp = _get_with_retries(
+            "https://archive.org/wayback/available", params={"url": url}
+        )
+        snapshot = resp.json().get("archived_snapshots", {}).get("closest")
+        if snapshot:
+            # the API suggests a plain http:// URL even though web.archive.org
+            # fully supports https ; force it, as some networks block
+            # outbound port 80
+            return snapshot["url"].replace("http://", "https://", 1)
+        if attempt == WAYBACK_RETRIES:
+            raise Exception(f"No Internet Archive snapshot found for {url}")
+        # a 200 response with no "closest" snapshot can be transient
+        # flakiness rather than a real "not archived" case ; retry before
+        # giving up
+        logger.warning(
+            f"No snapshot returned for {url} (attempt {attempt}/"
+            f"{WAYBACK_RETRIES}), retrying..."
+        )
+        time.sleep(WAYBACK_RETRY_DELAY * attempt)
+    raise AssertionError("unreachable")  # pragma: no cover
 
 
-def _get_category_include_regex(category: int):
+def _get_category_include_regex(category: int) -> str:
+    cache = _load_category_cache()
+    cache_key = str(category)
+    cached = cache.get(cache_key)
+    if (
+        cached
+        and datetime.now(UTC) - datetime.fromisoformat(cached["cached_at"])
+        < CATEGORY_CACHE_TTL
+    ):
+        return cached["regex"]
+
     # shamela.ws rejects all automated requests outright with a 403 (even
     # with a browser-like User-Agent, which works around similar blocks on
     # other sites) ; fetch the category page from the Internet Archive
     # Wayback Machine instead, which still has it indexed. This means book
     # listings can lag behind shamela.ws's current content by however old
-    # the latest snapshot is.
+    # the latest snapshot is (and by up to CATEGORY_CACHE_TTL on top of
+    # that, since results are cached).
     category_url = f"https://shamela.ws/category/{category}"
     resp = _get_with_retries(_get_wayback_snapshot_url(category_url))
 
@@ -297,10 +357,15 @@ def _get_category_include_regex(category: int):
             book = match.group(1)
             books.append(book)
 
-    return (
+    regex = (
         f"^https:\\/\\/shamela\\.ws\\/(book\\/({'|'.join(books)})($|\\/.*)"
         f"|category\\/{category}|author\\/.+)"
     )
+
+    cache[cache_key] = {"regex": regex, "cached_at": datetime.now(UTC).isoformat()}
+    _save_category_cache(cache)
+
+    return regex
 
 
 def get_expected_recipes() -> list[dict[str, Any]]:
