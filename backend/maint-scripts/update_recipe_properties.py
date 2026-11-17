@@ -62,7 +62,7 @@ from zimfarm_backend.common.constants import parse_bool
 from zimfarm_backend.common.enums import Platform, RecipePeriodicity, WarehousePath
 from zimfarm_backend.common.schemas.models import RecipeConfigSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.account import get_account_by_username
+from zimfarm_backend.db.account import get_account_by_identifier
 from zimfarm_backend.db.language import get_language_from_code
 from zimfarm_backend.db.models import Recipe, Team, TeamRecipe
 from zimfarm_backend.db.offliner import get_offliner
@@ -208,7 +208,7 @@ def main(
     values: dict[str, str],
     comment: str | None,
     dry_run: bool,
-    username: str,
+    account_identifier: str,
 ) -> None:
     filter_clauses = build_filters(filters)
     updates, config_updates = build_updates(values)
@@ -223,7 +223,9 @@ def main(
             stmt = stmt.where(clause)
 
         recipes = session.scalars(stmt).all()
-        author_id = get_account_by_username(session, username=username).id
+        author_id = get_account_by_identifier(
+            session, account_identifier=account_identifier
+        ).id
 
         logger.info(f"Matched {len(recipes)} recipe(s)")
 
@@ -302,9 +304,11 @@ if __name__ == "__main__":
         help="Comment recorded in the recipe history entry for each update.",
     )
 
-    parser.add_argument(
-        "--username", required=True, help="Username of account applying these updates."
+    author_group = parser.add_mutually_exclusive_group(required=True)
+    author_group.add_argument(
+        "--username", help="Username of account applying these updates."
     )
+    author_group.add_argument("--user-id", help="ID of account applying these updates.")
 
     parser.add_argument(
         "--dry-run", action="store_true", help="Do not apply the changes"
@@ -324,7 +328,7 @@ if __name__ == "__main__":
             values=values,
             comment=args.comment,
             dry_run=args.dry_run,
-            username=args.username,
+            account_identifier=args.user_id or args.username,
         )
     except ValueError as exc:
         logger.error(str(exc))
