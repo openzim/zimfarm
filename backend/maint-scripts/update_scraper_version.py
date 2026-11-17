@@ -61,6 +61,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, cast
+from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy import and_
@@ -79,7 +80,7 @@ from zimfarm_backend.common.schemas.offliners.models import (
 )
 from zimfarm_backend.common.schemas.orms import OfflinerDefinitionSchema, OfflinerSchema
 from zimfarm_backend.db import Session
-from zimfarm_backend.db.account import get_account_by_username
+from zimfarm_backend.db.account import get_account_by_identifier
 from zimfarm_backend.db.models import OfflinerDefinition, Recipe, RequestedTask
 from zimfarm_backend.db.offliner import get_offliner
 from zimfarm_backend.db.offliner_definition import (
@@ -367,7 +368,7 @@ def update_recipes(
     exclude_contexts: list[str] | None,
     dry_run: bool,
     changes: list[dict[str, Any]] | None = None,
-    username: str,
+    author_id: UUID,
 ) -> int:
     nb_modified: int = 0
 
@@ -492,7 +493,7 @@ def update_recipes(
 
         update_recipe(
             session,
-            author_id=get_account_by_username(session, username=username).id,
+            author_id=author_id,
             recipe_identifier=recipe.name,
             accessible_team_ids=None,
             payload=RecipeUpdateSchema(
@@ -737,9 +738,11 @@ requested tasks.
         default={},
     )
 
-    parser.add_argument(
-        "--username", required=True, help="Username of account applying these updates."
+    author_group = parser.add_mutually_exclusive_group(required=True)
+    author_group.add_argument(
+        "--username", help="Username of account applying these updates."
     )
+    author_group.add_argument("--user-id", help="ID of account applying these updates.")
     args = parser.parse_args()
 
     # Ensure there is at least one update/set operation to perform
@@ -786,6 +789,9 @@ requested tasks.
             offliner_definition = None
 
         changes: list[dict[str, Any]] = []
+        author_id = get_account_by_identifier(
+            session, account_identifier=args.user_id or args.username
+        ).id
 
         nb_recipes_modified = update_recipes(
             session,
@@ -800,7 +806,7 @@ requested tasks.
             exclude_contexts=args.exclude_contexts,
             dry_run=args.dry_run,
             changes=changes,
-            username=args.username,
+            author_id=author_id,
         )
         logger.info(f"updated {nb_recipes_modified} recipe(s) ")
 
