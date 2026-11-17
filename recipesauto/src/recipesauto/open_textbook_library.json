@@ -23,10 +23,6 @@
         "title": "Open Textbook Library",
         "description": "免费同行评审教科书"
     },
-    "pl": {
-        "title": "Open Textbook Library",
-        "description": "Darmowe podręczniki recenzowane naukowo"
-    },
     "ko": {
         "title": "Open Textbook Library",
         "description": "무료 동료 검토 교과서"
@@ -38,10 +34,6 @@
     "el": {
         "title": "Open Textbook Library",
         "description": "Δωρεάν, αξιολογημένα διδακτικά βιβλία"
-    },
-    "pt": {
-        "title": "Open Textbook Library",
-        "description": "Livros didáticos gratuitos e revisados por pares"
     },
     "bg": {
         "title": "Open Textbook Library",
@@ -62,17 +54,5 @@
     "uk": {
         "title": "Open Textbook Library",
         "description": "Безкоштовні рецензовані підручники"
-    },
-    "sw": {
-        "title": "Open Textbook Library",
-        "description": "Vitabu huru vilivyopitiwa na wenzao"
-    },
-    "it": {
-        "title": "Open Textbook Library",
-        "description": "Libri di testo gratuiti e peer-reviewed"
-    },
-    "ar": {
-        "title": "Open Textbook Library",
-        "description": "كتب دراسية مجانية ومُحكَّمة"
     }
 }
