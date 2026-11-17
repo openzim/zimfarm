@@ -12,37 +12,30 @@ def get_recipe_tag() -> str:
     return "open-textbook-library"
 
 
-# languages observed in Open Textbook Library's own catalog (polled live via
-# https://open.umn.edu/opentextbooks/textbooks.json, 2040 books as of writing),
-# mapped to their standard ISO 639-1 code regardless of how few books exist in
-# that language (per explicit choice: one recipe per language found, not just
-# the most popular ones)
+# Languages with actual valid, ZIM-able books in Open Textbook Library.
 #
-# IMPORTANT: as of writing, papers2zim's opentextbooks source does not
-# actually filter by language yet (see https://github.com/openzim/papers/issues/180)
-# so all these per-language recipes are kept disabled until that lands, to
-# avoid running N recipes that would all produce the exact same full-catalog
-# ZIM. Re-enable once the issue above is fixed and released.
+# This is narrower than simply tallying the "language" field across every
+# catalog entry (see https://open.umn.edu/opentextbooks/textbooks.json):
+# some languages only show up on books that end up with no valid content to
+# include once papers2zim actually resolves them (e.g. no downloadable
+# format, license issue, ...). The authoritative source is papers2zim's own
+# generated "bookLanguages" metadata from a real scrape of the full (mul)
+# catalog ; see https://github.com/openzim/zimfarm/issues/2111.
 LANGUAGES = [
+    "az",
+    "bg",
+    "de",
+    "el",
     "en",
     "es",
     "fr",
-    "nl",
-    "de",
-    "zh",
-    "pl",
-    "ko",
     "ja",
-    "el",
-    "pt",
-    "bg",
+    "ko",
+    "nl",
     "ru",
-    "az",
     "sl",
     "uk",
-    "sw",
-    "it",
-    "ar",
+    "zh",
 ]
 
 
