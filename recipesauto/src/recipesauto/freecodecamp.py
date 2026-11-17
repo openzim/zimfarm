@@ -787,7 +787,7 @@ def _get_all_long_description(language: SpokenLanguage) -> str:
 
 
 def _get_image_version(_: SpokenLanguage) -> str:
-    return "2.0.3"
+    return "2.1.0"
 
 
 def _get_warehouse_path(_: SpokenLanguage) -> str:

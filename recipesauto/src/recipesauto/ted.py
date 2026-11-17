@@ -75,14 +75,14 @@ def get_expected_recipes() -> list[dict[str, Any]]:
                 },
                 "image": {
                     "name": "ghcr.io/openzim/ted",
-                    "tag": "3.2.0",
+                    "tag": "3.2.1",
                 },
                 "monitor": False,
                 "platform": "ted",
                 "resources": {
                     "cpu": 3,
                     "disk": 32212254720,
-                    "memory": 2147483648,
+                    "memory": _get_memory_for_topic(topic),
                 },
                 "warehouse_path": "/ted",
             },
@@ -93,13 +93,22 @@ def get_expected_recipes() -> list[dict[str, Any]]:
             "tags": [
                 "ted-by-topic",
             ],
-            "version": "3.2.0",
+            "version": "3.2.1",
             "archived": False,
             "context": "",
             "offliner": "ted",
         }
         for topic in topics
     ]
+
+
+def _get_memory_for_topic(topic: str) -> int:
+    clean_topic = _get_clean_topic_name(topic)
+    if clean_topic == "ted-conference":
+        return 4294967296
+    if clean_topic == "animation":
+        return 3221225472
+    return 2147483648
 
 
 def _get_clean_topic_name(ted_topic_name: str) -> str:
