@@ -17,7 +17,10 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
 import { createPinia } from 'pinia'
-import VueMatomo from 'vue-matomo'
+import VueMatomoImport from 'vue-matomo'
+
+// See https://github.com/AmazingDreams/vue-matomo/issues/144
+const VueMatomo = VueMatomoImport?.default ?? VueMatomoImport
 
 // config
 import getConfig, { configPlugin } from '@/config'
